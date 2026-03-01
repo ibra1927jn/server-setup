@@ -1,0 +1,108 @@
+# ==============================================================================
+# Anykernel OS v2.1 — Build System
+#
+# Cross-compiles the kernel using clang targeting x86_64-elf (freestanding).
+# Creates a bootable ISO with Limine via xorriso.
+#
+# Usage (from MSYS2 mingw64 shell):
+#   make          — build kernel.elf
+#   make iso      — build bootable ISO
+#   make run      — launch QEMU with serial output
+#   make clean    — remove build artifacts
+# ==============================================================================
+
+# ── Toolchain ────────────────────────────────────────────────────
+CC      := clang
+LD      := ld.lld
+NASM    := nasm
+
+# Target triple for freestanding x86_64
+TARGET  := x86_64-unknown-none
+
+# ── Compiler flags ───────────────────────────────────────────────
+CFLAGS  := --target=$(TARGET)       \
+           -ffreestanding           \
+           -fno-stack-protector     \
+           -fno-pic                 \
+           -mno-red-zone            \
+           -mno-sse                 \
+           -mno-sse2                \
+           -mno-mmx                 \
+           -mcmodel=kernel          \
+           -Wall -Wextra -Werror    \
+           -std=gnu11               \
+           -O2                      \
+           -g                       \
+           -Ikernel                 \
+           -Ilimine
+
+LDFLAGS := -flavor gnu                 \
+           -m elf_x86_64               \
+           -nostdlib                    \
+           -static                     \
+           -T linker.ld                \
+           -z max-page-size=0x1000
+
+# ── Sources and objects ──────────────────────────────────────────
+KERNEL_SRC := kernel/main.c kernel/uart.c kernel/gdt.c
+KERNEL_OBJ := $(patsubst kernel/%.c,build/%.o,$(KERNEL_SRC))
+KERNEL_ELF := build/kernel.elf
+
+# ── ISO configuration ───────────────────────────────────────────
+ISO_DIR    := build/iso_root
+ISO_FILE   := build/os.iso
+LIMINE_DIR := limine
+
+# ── QEMU ─────────────────────────────────────────────────────────
+QEMU       := qemu-system-x86_64
+QEMU_FLAGS := -serial stdio          \
+              -no-reboot             \
+              -no-shutdown           \
+              -m 128M                \
+              -cdrom $(ISO_FILE)
+
+# ==============================================================================
+# Targets
+# ==============================================================================
+
+.PHONY: all iso run clean
+
+all: $(KERNEL_ELF)
+
+# ── Compile C sources ────────────────────────────────────────────
+build/%.o: kernel/%.c | build
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# ── Link kernel ELF ──────────────────────────────────────────────
+$(KERNEL_ELF): $(KERNEL_OBJ) linker.ld | build
+	$(LD) $(LDFLAGS) $(KERNEL_OBJ) -o $@
+
+# ── Build bootable ISO ───────────────────────────────────────────
+iso: $(KERNEL_ELF)
+	@mkdir -p $(ISO_DIR)/boot/limine $(ISO_DIR)/EFI/BOOT
+	cp $(KERNEL_ELF)                     $(ISO_DIR)/boot/kernel.elf
+	cp limine.conf                       $(ISO_DIR)/boot/limine/limine.conf
+	cp $(LIMINE_DIR)/limine-bios.sys     $(ISO_DIR)/boot/limine/limine-bios.sys
+	cp $(LIMINE_DIR)/limine-bios-cd.bin  $(ISO_DIR)/boot/limine/limine-bios-cd.bin
+	cp $(LIMINE_DIR)/BOOTX64.EFI        $(ISO_DIR)/EFI/BOOT/BOOTX64.EFI
+	xorriso -as mkisofs                                                  \
+	    -b boot/limine/limine-bios-cd.bin                                \
+	    -no-emul-boot -boot-load-size 4 -boot-info-table                 \
+	    --efi-boot EFI/BOOT/BOOTX64.EFI                                  \
+	    -efi-boot-part --efi-boot-image                                  \
+	    --protective-msdos-label                                         \
+	    $(ISO_DIR) -o $(ISO_FILE)
+	@echo ""
+	@echo "=== ISO created: $(ISO_FILE) ==="
+
+# ── Run in QEMU ──────────────────────────────────────────────────
+run: iso
+	$(QEMU) $(QEMU_FLAGS)
+
+# ── Build directory ──────────────────────────────────────────────
+build:
+	@mkdir -p build
+
+# ── Clean ────────────────────────────────────────────────────────
+clean:
+	rm -rf build
