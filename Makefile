@@ -22,7 +22,7 @@ TARGET  := x86_64-unknown-none
 # ── Compiler flags ───────────────────────────────────────────────
 CFLAGS  := --target=$(TARGET)       \
            -ffreestanding           \
-           -fno-stack-protector     \
+           -fstack-protector-strong \
            -fno-pic                 \
            -mno-red-zone            \
            -mno-sse                 \
@@ -44,7 +44,7 @@ LDFLAGS := -flavor gnu                 \
            -z max-page-size=0x1000
 
 # ── Sources and objects ──────────────────────────────────────────
-KERNEL_SRC := kernel/main.c kernel/uart.c kernel/gdt.c
+KERNEL_SRC := kernel/main.c kernel/uart.c kernel/gdt.c kernel/panic.c kernel/kprintf.c kernel/ssp.c
 KERNEL_OBJ := $(patsubst kernel/%.c,build/%.o,$(KERNEL_SRC))
 KERNEL_ELF := build/kernel.elf
 

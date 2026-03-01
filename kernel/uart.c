@@ -57,9 +57,25 @@ static inline uint8_t inb(uint16_t port) {
  */
 #define BAUD_DIVISOR 1
 
+/* Timeout for TX polling — prevents deadlock on missing hardware */
+#define UART_TIMEOUT 100000
+
+/* Hardware presence flag */
+static int uart_available = 0;
+
 /* ── Implementation ───────────────────────────────────────────── */
 
 void uart_init(void) {
+    /* Detect if COM1 hardware exists:
+     * Write a known value to the scratch register and read it back.
+     * If the value matches, hardware is present. */
+    outb(COM1_BASE + 7, 0xAE);  /* Scratch register at base+7 */
+    if (inb(COM1_BASE + 7) != 0xAE) {
+        uart_available = 0;
+        return;  /* No serial hardware — all uart_put* become no-ops */
+    }
+    uart_available = 1;
+
     /* 1. Disable all interrupts */
     outb(REG_IER, 0x00);
 
@@ -82,9 +98,13 @@ void uart_init(void) {
 }
 
 void uart_putc(char c) {
-    /* Poll LSR bit 5 (THRE) — wait until transmit buffer is empty */
-    while (!(inb(REG_LSR) & LSR_THRE))
-        ;
+    if (!uart_available) return;
+
+    /* Poll LSR bit 5 (THRE) with timeout — prevents deadlock */
+    uint32_t timeout = UART_TIMEOUT;
+    while (!(inb(REG_LSR) & LSR_THRE)) {
+        if (--timeout == 0) return;  /* Fail safe and silent */
+    }
 
     /* Send the byte */
     outb(REG_THR, c);
