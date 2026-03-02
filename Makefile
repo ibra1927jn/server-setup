@@ -44,7 +44,7 @@ LDFLAGS := -flavor gnu                 \
            -z max-page-size=0x1000
 
 # ── Sources and objects ──────────────────────────────────────────
-KERNEL_SRC := kernel/main.c kernel/uart.c kernel/gdt.c kernel/panic.c kernel/kprintf.c kernel/ssp.c
+KERNEL_SRC := kernel/main.c kernel/uart.c kernel/gdt.c kernel/panic.c kernel/kprintf.c kernel/ssp.c kernel/string.c kernel/idt.c
 KERNEL_OBJ := $(patsubst kernel/%.c,build/%.o,$(KERNEL_SRC))
 KERNEL_ELF := build/kernel.elf
 
