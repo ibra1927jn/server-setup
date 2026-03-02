@@ -13,8 +13,10 @@
 #include "idt.h"
 #include "panic.h"
 #include "kprintf.h"
+#include "log.h"
 #include "memory.h"
 #include "string.h"
+#include "spinlock.h"
 
 /* Limine protocol */
 #include "../limine/limine.h"
@@ -77,30 +79,38 @@ static const char *memmap_type_str(uint64_t type) {
 void _start(void) {
     /* 1. UART — must be first */
     uart_init();
-    kprintf("[UART] COM1 initialized at 115200 baud\n");
+    LOG_OK("UART COM1 initialized at 115200 baud");
 
     /* 2. SSP — randomize stack canary */
     ssp_init();
-    kprintf("[SSP]  Stack canary randomized (RDTSC)\n");
+    LOG_OK("Stack canary randomized (RDTSC)");
 
     /* 3. Verify Limine protocol */
     KASSERT(LIMINE_BASE_REVISION_SUPPORTED);
-    kprintf("[BOOT] Limine base revision OK\n");
+    LOG_OK("Limine base revision OK");
 
     /* 4. GDT + TSS */
     gdt_init();
-    kprintf("[GDT]  Loaded (7 entries, TSS with RSP0 + IST1)\n");
+    LOG_OK("GDT loaded (7 entries, TSS with RSP0 + IST1)");
 
-    /* 5. IDT — catch exceptions before we touch memory */
+    /* 5. IDT — catch exceptions */
     idt_init();
-    kprintf("[IDT]  Loaded (5 exception handlers: #DE #UD #DF #GP #PF)\n");
+    LOG_OK("IDT loaded (#DE #UD #DF #GP #PF)");
 
-    /* 6. HHDM — export offset for PHYS2VIRT */
+    /* 6. HHDM */
     KASSERT(hhdm_request.response != NULL);
     hhdm_offset = hhdm_request.response->offset;
-    kprintf("[HHDM] Offset: 0x%016lx\n", hhdm_offset);
+    LOG_INFO("HHDM offset: 0x%016lx", hhdm_offset);
 
-    /* 7. memset/memcpy self-test */
+    /* 7. Spinlock self-test */
+    {
+        spinlock_t test_lock = SPINLOCK_INIT;
+        KASSERT(spin_trylock(&test_lock));   /* Should succeed */
+        spin_unlock(&test_lock);
+        LOG_OK("Spinlock self-test passed");
+    }
+
+    /* 8. memset/memcpy self-test */
     {
         uint8_t test_buf[16];
         memset(test_buf, 0xAA, sizeof(test_buf));
@@ -110,16 +120,16 @@ void _start(void) {
         memcpy(copy_buf, test_buf, sizeof(test_buf));
         KASSERT(memcmp(test_buf, copy_buf, sizeof(test_buf)) == 0);
 
-        kprintf("[MEM]  memset/memcpy/memcmp self-test passed\n");
+        LOG_OK("memset/memcpy/memcmp self-test passed");
     }
 
-    /* 8. Test PHYS2VIRT (read first byte of physical address 0x0 via HHDM) */
-    kprintf("[MEM]  PHYS2VIRT(0x0) = %p\n", PHYS2VIRT(0x0));
+    /* 9. PHYS2VIRT demo */
+    LOG_DEBUG("PHYS2VIRT(0x0) = %p", PHYS2VIRT(0x0));
 
-    /* 9. Memory map */
+    /* 10. Memory map */
     KASSERT(memmap_request.response != NULL);
     uint64_t entry_count = memmap_request.response->entry_count;
-    kprintf("[MMAP] %lu entries:\n", entry_count);
+    LOG_INFO("Memory map: %lu entries", entry_count);
 
     uint64_t usable_bytes = 0;
     uint64_t usable_pages = 0;
@@ -128,33 +138,30 @@ void _start(void) {
 
         uint64_t aligned_base = PAGE_ALIGN_UP(e->base);
         uint64_t aligned_end  = PAGE_ALIGN_DOWN(e->base + e->length);
-        uint64_t aligned_pages = (aligned_end > aligned_base)
-                                 ? (aligned_end - aligned_base) / PAGE_SIZE
-                                 : 0;
+        uint64_t pages = (aligned_end > aligned_base)
+                         ? (aligned_end - aligned_base) / PAGE_SIZE : 0;
 
         kprintf("  [%lu] %p-%p %8lu KB %s",
-                i,
-                (void *)e->base,
-                (void *)(e->base + e->length),
-                e->length / 1024,
-                memmap_type_str(e->type));
+                i, (void *)e->base, (void *)(e->base + e->length),
+                e->length / 1024, memmap_type_str(e->type));
 
         if (e->type == LIMINE_MEMMAP_USABLE) {
-            kprintf(" (%lu pages)", aligned_pages);
+            kprintf(" (%lu pages)", pages);
             usable_bytes += e->length;
-            usable_pages += aligned_pages;
+            usable_pages += pages;
         }
         kprintf("\n");
     }
-    kprintf("[MMAP] Total usable: %lu KB (%lu MB) = %lu pages\n",
-            usable_bytes / 1024, usable_bytes / (1024 * 1024), usable_pages);
+    LOG_INFO("Total usable: %lu KB (%lu MB) = %lu pages",
+             usable_bytes / 1024, usable_bytes / (1024 * 1024), usable_pages);
 
-    /* 10. Banner */
+    /* 11. Banner */
     kprintf("\n==============================\n");
     kprintf("  Hola Mundo - Anykernel OS\n");
-    kprintf("  Pre-Sprint 2 Ready!\n");
+    kprintf("  v0.1.3 — Ready for Sprint 2\n");
     kprintf("==============================\n");
 
-    kprintf("\n[KERN] System halted.\n");
+    kprintf("\n");
+    LOG_INFO("System halted.");
     halt();
 }
