@@ -21,6 +21,8 @@
 #include "log.h"
 #include "panic.h"
 #include "spinlock.h"
+#include "gdt.h"
+#include "limine.h"
 
 /* ── Linker-provided section boundaries ──────────────────────── */
 
@@ -132,6 +134,15 @@ void vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags) {
 
     uint64_t pt_phys = pte_to_phys(*pde);
     uint64_t *pt = (uint64_t *)PHYS2VIRT(pt_phys);
+
+    /* Collision detection: warn if remapping to a DIFFERENT phys address.
+     * Re-mapping the same phys with different flags is normal
+     * (e.g. per-section permission changes). */
+    uint64_t old = pt[PT_INDEX(virt)];
+    if ((old & PTE_PRESENT) && (old & PTE_ADDR_MASK) != phys) {
+        LOG_WARN("VMM: remap 0x%lx: old phys 0x%lx → new phys 0x%lx",
+                 virt, old & PTE_ADDR_MASK, phys);
+    }
 
     pt[PT_INDEX(virt)] = phys | flags;
 
@@ -301,23 +312,28 @@ void vmm_init(void) {
     LOG_OK("VMM: Kernel mapped (%lu pages)", kernel_size / PAGE_SIZE);
 
     /* 4. Map HHDM: all physical memory using 2MB huge pages.
-     *    The HHDM maps physical [0, max_phys) at virtual [hhdm_offset, ...).
-     *    We use 2MB pages for efficiency (128MB / 2MB = 64 entries). */
+     *    We use the memory map to find the actual highest physical address
+     *    instead of guessing from PMM page counts. */
     extern uint64_t hhdm_offset;
 
-    /* Round up to 2MB boundary for huge pages */
-    uint64_t max_phys = pmm_free_count() + pmm_used_count();
-    /* max_phys is in pages, convert to bytes */
-    max_phys = (max_phys + 256) * PAGE_SIZE;  /* +256 for reserved pages */
+    /* Find the highest physical address from the memory map */
+    extern struct limine_memmap_response *memmap_resp_saved;
+    uint64_t max_phys = 0;
+    if (memmap_resp_saved) {
+        for (uint64_t i = 0; i < memmap_resp_saved->entry_count; i++) {
+            uint64_t top = memmap_resp_saved->entries[i]->base
+                         + memmap_resp_saved->entries[i]->length;
+            if (top > max_phys) max_phys = top;
+        }
+    }
+    /* Fallback: use PMM counts if memmap not saved */
+    if (max_phys == 0) {
+        max_phys = (pmm_free_count() + pmm_used_count() + 256) * PAGE_SIZE;
+    }
     max_phys = ALIGN_UP(max_phys, MB(2));
 
-    /* Also need to map at least up to where the kernel and PMM metadata are */
-    uint64_t min_hhdm = ALIGN_UP(kernel_phys_base + kernel_size, MB(2));
-    if (min_hhdm > max_phys) max_phys = min_hhdm;
-
-    /* Extra safety: map at least 256MB to cover any MMIO/firmware areas
-     * that Limine's HHDM might have covered */
-    if (max_phys < MB(256)) max_phys = MB(256);
+    /* Cap at 4GB for now (avoid mapping huge reserved MMIO ranges) */
+    if (max_phys > (4UL * 1024 * MB(1))) max_phys = 4UL * 1024 * MB(1);
 
     vmm_map_range_huge(
         hhdm_offset,     /* Virtual base of HHDM */
@@ -377,18 +393,43 @@ void vmm_init(void) {
         LOG_INFO("  .bss:    %lu KB (RW+NX)", bss_size / 1024);
     }
 
-    /* 7. Stack guard page: unmap the page below current RSP.
-     *    If kernel stack overflows, we get a clean #PF instead of
-     *    silent memory corruption. */
+    /* 7. Kernel stack improvements:
+     *    a) Allocate a proper 16KB stack for TSS RSP0 (used during
+     *       privilege transitions when we add user-mode in Sprint 4+).
+     *    b) Add guard page on Limine's current boot stack.
+     *
+     *    NOTE: We do NOT switch RSP here because doing so via inline
+     *    asm would destroy the current C stack frame. The actual boot
+     *    stack switch will happen in Sprint 4 via a dedicated asm
+     *    trampoline during scheduler init. */
     {
+        #define KERNEL_STACK_PAGES 4   /* 16 KB */
+        #define KERNEL_STACK_VIRT  0xFFFFFF0000100000UL
+
+        /* Allocate IST/RSP0 stack pages */
+        for (int i = 0; i < KERNEL_STACK_PAGES; i++) {
+            uint64_t phys_page = pmm_alloc_pages_zero(0);
+            KASSERT(phys_page != 0);
+            vmm_map_page(
+                KERNEL_STACK_VIRT + (i + 1) * PAGE_SIZE,
+                phys_page,
+                VMM_FLAGS_KERNEL_RW
+            );
+        }
+        /* Page at KERNEL_STACK_VIRT is NOT mapped = guard page */
+
+        uint64_t rsp0_top = KERNEL_STACK_VIRT + (KERNEL_STACK_PAGES + 1) * PAGE_SIZE;
+        tss_set_rsp0(rsp0_top);
+
+        LOG_OK("VMM: TSS RSP0 stack at 0x%lx (16 KB, guard at 0x%lx)",
+               KERNEL_STACK_VIRT + PAGE_SIZE, KERNEL_STACK_VIRT);
+
+        /* Guard page on Limine's boot stack */
         uint64_t rsp;
         asm volatile("mov %%rsp, %0" : "=r"(rsp));
-        /* The stack grows downward. The guard page is the page
-         * below the bottom of the stack. We go 2 pages below current
-         * RSP to be safe (stack may be nearly full). */
         uint64_t guard_page = PAGE_ALIGN_DOWN(rsp) - PAGE_SIZE;
         vmm_unmap_page(guard_page);
-        LOG_OK("VMM: Stack guard page at 0x%lx", guard_page);
+        LOG_OK("VMM: Boot stack guard page at 0x%lx", guard_page);
     }
 
     LOG_INFO("VMM: %lu page tables allocated (%lu KB overhead)",

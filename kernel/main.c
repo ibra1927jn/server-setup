@@ -76,6 +76,9 @@ static const char *memmap_type_str(uint64_t type) {
 /* Tests are in kernel/tests.c */
 extern void register_selftests(void);
 
+/* Saved for VMM to determine HHDM size from actual memory map */
+struct limine_memmap_response *memmap_resp_saved = 0;
+
 /* ── Kernel main ──────────────────────────────────────────────── */
 
 void _start(void) {
@@ -113,6 +116,7 @@ void _start(void) {
 
     /* 8. Memory map */
     KASSERT(memmap_request.response != NULL);
+    memmap_resp_saved = memmap_request.response;
     uint64_t entry_count = memmap_request.response->entry_count;
     LOG_INFO("Memory map: %lu entries", entry_count);
 
