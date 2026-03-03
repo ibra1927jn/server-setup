@@ -106,12 +106,12 @@ void _start(void) {
     asm volatile("sti");    /* ENABLE INTERRUPTS! */
     LOG_OK("PIC remapped, PIT at 100 Hz, interrupts ENABLED");
 
-    /* 6. HHDM */
+    /* 7. HHDM */
     KASSERT(hhdm_request.response != NULL);
     hhdm_offset = hhdm_request.response->offset;
     LOG_INFO("HHDM offset: 0x%016lx", hhdm_offset);
 
-    /* 7. Memory map */
+    /* 8. Memory map */
     KASSERT(memmap_request.response != NULL);
     uint64_t entry_count = memmap_request.response->entry_count;
     LOG_INFO("Memory map: %lu entries", entry_count);
@@ -141,19 +141,19 @@ void _start(void) {
              usable_bytes / 1024, usable_bytes / (1024 * 1024), usable_pages);
 
     /* ─────────────────────────────────────────────────────────────
-     * 11. PMM — Physical Memory Manager (Buddy Allocator)
+     * 9. PMM — Physical Memory Manager (Buddy Allocator)
      * ───────────────────────────────────────────────────────────── */
     pmm_init(memmap_request.response, hhdm_offset);
     pmm_dump_stats();
 
     /* ─────────────────────────────────────────────────────────────
-     * 12. VMM — Virtual Memory Manager (Paging)
+     * 10. VMM — Virtual Memory Manager (Paging)
      * ───────────────────────────────────────────────────────────── */
     vmm_init();
     vmm_dump_tables();
 
     /* ─────────────────────────────────────────────────────────────
-     * 13. Self-tests (registered via selftest framework)
+     * 11. Self-tests
      * ───────────────────────────────────────────────────────────── */
     register_selftests();
     int failures = run_all_selftests();

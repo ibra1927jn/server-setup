@@ -22,4 +22,13 @@ void *memmove(void *dest, const void *src, size_t n);
 /* Compare n bytes of a and b. Returns 0 if equal. */
 int memcmp(const void *a, const void *b, size_t n);
 
+/* Return length of null-terminated string */
+size_t strlen(const char *s);
+
+/* Compare at most n chars of a and b. Returns 0 if equal. */
+int strncmp(const char *a, const char *b, size_t n);
+
+/* Copy at most n chars from src to dest, null-padding. */
+char *strncpy(char *dest, const char *src, size_t n);
+
 #endif /* STRING_H */
