@@ -45,6 +45,21 @@ void kfree(void *ptr);
 void *kzmalloc(uint64_t size);
 
 /*
+ * Resize a previously allocated block.
+ * - If ptr is NULL, equivalent to kmalloc(new_size).
+ * - If new_size is 0, equivalent to kfree(ptr), returns NULL.
+ * - Otherwise, allocates new block, copies min(old, new) bytes, frees old.
+ */
+void *krealloc(void *ptr, uint64_t new_size);
+
+/*
+ * Return the usable size of a kmalloc'd block.
+ * This is the size class (e.g., 64 for a 50-byte request)
+ * or the full page allocation size for large blocks.
+ */
+uint64_t kmalloc_usable_size(void *ptr);
+
+/*
  * Diagnostic: print slab allocator statistics.
  */
 void kmalloc_dump_stats(void);

@@ -216,12 +216,76 @@ void _start(void) {
         LOG_OK("kzmalloc(128) zeroing verified");
     }
 
+    /* Poison self-test: verify freed memory contains 0xDE */
+    {
+        uint8_t *p = kmalloc(64);
+        KASSERT(p != NULL);
+        memset(p, 0x42, 64);
+        /* After free, bytes 8..63 should be poisoned with 0xDE */
+        uint8_t *saved = p;  /* Keep pointer to check after free */
+        kfree(p);
+        /* Check poison pattern (bytes 8+ are poisoned, 0-7 = free list ptr) */
+        int poisoned = 1;
+        for (int i = 8; i < 64; i++) {
+            if (saved[i] != 0xDE) { poisoned = 0; break; }
+        }
+        KASSERT(poisoned);
+        LOG_OK("Poison test: freed memory contains 0xDE");
+    }
+
+    /* krealloc self-test */
+    {
+        uint8_t *p = kmalloc(32);
+        KASSERT(p != NULL);
+        memset(p, 0xAA, 32);
+        /* Grow to 256 — should copy old data */
+        uint8_t *p2 = krealloc(p, 256);
+        KASSERT(p2 != NULL);
+        KASSERT(p2[0] == 0xAA && p2[31] == 0xAA);
+        KASSERT(kmalloc_usable_size(p2) >= 256);
+        kfree(p2);
+        LOG_OK("krealloc(32→256) + data preservation passed");
+    }
+
+    /* Slab reclamation test: alloc+free should return page to PMM */
+    {
+        uint64_t free_before = pmm_free_count();
+        void *p = kmalloc(64);
+        KASSERT(pmm_free_count() < free_before);  /* Page taken for slab */
+        kfree(p);
+        KASSERT(pmm_free_count() == free_before);  /* Page reclaimed! */
+        LOG_OK("Slab reclamation: empty slab returned to PMM");
+    }
+
+    /* PMM Watermark check */
+    {
+        uint64_t free = pmm_free_count();
+        uint64_t total = free + pmm_used_count();
+        uint64_t pct = (free * 100) / (total > 0 ? total : 1);
+        if (pct < 10) {
+            LOG_WARN("PMM WATERMARK: only %lu%% free (%lu pages)", pct, free);
+        } else {
+            LOG_OK("PMM watermark OK: %lu%% free (%lu/%lu pages)", pct, free, total);
+        }
+    }
+
+    /* Boot memory report */
+    kprintf("\n--- Boot Memory Report ---\n");
+    {
+        uint64_t free_pg = pmm_free_count();
+        uint64_t used_pg = pmm_used_count();
+        kprintf("  Physical RAM managed: %lu pages (%lu MB)\n",
+                free_pg + used_pg, (free_pg + used_pg) * 4 / 1024);
+        kprintf("  Free:     %lu pages (%lu KB)\n", free_pg, free_pg * 4);
+        kprintf("  Used:     %lu pages (%lu KB)\n", used_pg, used_pg * 4);
+    }
+
     kmalloc_dump_stats();
 
     /* 13. Banner */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.2.1\n");
-    kprintf("  Sprint 2: PMM + Heap!\n");
+    kprintf("  Anykernel OS v0.2.3\n");
+    kprintf("  Sprint 2: COMPLETE\n");
     kprintf("==============================\n");
 
     kprintf("\n");

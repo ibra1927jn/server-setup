@@ -237,6 +237,7 @@ void kfree(void *ptr) {
 
     /* Slab allocation — find the slab header */
     struct slab_header *slab = slab_from_ptr(ptr);
+    int cls_idx = size_to_class(slab->obj_size);
     KASSERT(slab->used > 0);
 
     /* Poison the slot (except first 8 bytes — used for free list link) */
@@ -249,10 +250,30 @@ void kfree(void *ptr) {
     slab->free = ptr;
     slab->used--;
 
-    /* Find the class (by obj_size) and update stats */
-    int cls_idx = size_to_class(slab->obj_size);
-    if (cls_idx >= 0) {
-        classes[cls_idx].total_frees++;
+    /* Slab reclamation: if all slots are free, return page to PMM */
+    if (slab->used == 0) {
+        /* Update stats before destroying slab header */
+        if (cls_idx >= 0) {
+            classes[cls_idx].total_frees++;
+        }
+        /* Unlink from class list */
+        if (cls_idx >= 0) {
+            struct slab_header **pp = &classes[cls_idx].slabs;
+            while (*pp && *pp != slab) {
+                pp = &(*pp)->next;
+            }
+            if (*pp == slab) {
+                *pp = slab->next;
+            }
+        }
+        /* Poison entire page and return to PMM */
+        memset(slab, POISON_BYTE, PAGE_SIZE);
+        uint64_t phys = virt_to_phys((void *)slab);
+        pmm_free_pages(phys, 0);
+    } else {
+        if (cls_idx >= 0) {
+            classes[cls_idx].total_frees++;
+        }
     }
 
     spin_unlock_irqrestore(&heap_lock, irq_flags);
@@ -266,6 +287,50 @@ void *kzmalloc(uint64_t size) {
         memset(ptr, 0, size);
     }
     return ptr;
+}
+
+/* ── kmalloc_usable_size ──────────────────────────────────────── */
+
+uint64_t kmalloc_usable_size(void *ptr) {
+    if (ptr == NULL) return 0;
+
+    uint64_t addr = (uint64_t)ptr;
+
+    /* Large allocation? */
+    if (((addr - 8) & (PAGE_SIZE - 1)) == 0) {
+        void *base = (void *)(addr - 8);
+        uint32_t order = (uint32_t)(*(uint64_t *)base);
+        return ((1UL << order) * PAGE_SIZE) - 8;
+    }
+
+    /* Slab allocation — size is the class obj_size */
+    struct slab_header *slab = slab_from_ptr(ptr);
+    return slab->obj_size;
+}
+
+/* ── krealloc ─────────────────────────────────────────────────── */
+
+void *krealloc(void *ptr, uint64_t new_size) {
+    if (ptr == NULL) return kmalloc(new_size);
+    if (new_size == 0) { kfree(ptr); return NULL; }
+
+    uint64_t old_size = kmalloc_usable_size(ptr);
+
+    /* If new_size fits in the same size class, return as-is */
+    if (new_size <= old_size) {
+        int old_cls = size_to_class(old_size);
+        int new_cls = size_to_class(new_size);
+        if (old_cls == new_cls && old_cls >= 0) return ptr;
+    }
+
+    /* Allocate new, copy, free old */
+    void *new_ptr = kmalloc(new_size);
+    if (new_ptr == NULL) return NULL;
+
+    uint64_t copy_size = old_size < new_size ? old_size : new_size;
+    memcpy(new_ptr, ptr, copy_size);
+    kfree(ptr);
+    return new_ptr;
 }
 
 /* ── Diagnostics ──────────────────────────────────────────────── */
