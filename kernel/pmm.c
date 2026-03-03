@@ -136,7 +136,8 @@ uint64_t pmm_alloc_pages(uint32_t order) {
     PMM_ASSERT(order <= PMM_MAX_ORDER);
 
 #ifndef PMM_USERSPACE_TEST
-    spin_lock(&pmm_lock);
+    uint64_t irq_flags;
+    spin_lock_irqsave(&pmm_lock, &irq_flags);
 #endif
 
     /* Find the smallest free block that can satisfy this request */
@@ -151,7 +152,7 @@ uint64_t pmm_alloc_pages(uint32_t order) {
     if (current_order > PMM_MAX_ORDER) {
         /* No block large enough */
 #ifndef PMM_USERSPACE_TEST
-        spin_unlock(&pmm_lock);
+        spin_unlock_irqrestore(&pmm_lock, irq_flags);
 #endif
         return 0;
     }
@@ -183,7 +184,7 @@ uint64_t pmm_alloc_pages(uint32_t order) {
     pmm.used_pages += (1UL << order);
 
 #ifndef PMM_USERSPACE_TEST
-    spin_unlock(&pmm_lock);
+    spin_unlock_irqrestore(&pmm_lock, irq_flags);
 #endif
 
     return pfn_to_phys(page_to_pfn(block));
@@ -222,7 +223,8 @@ void pmm_free_pages(uint64_t phys_addr, uint32_t order) {
     PMM_ASSERT(pg->flags & PAGE_USED);  /* Must be allocated */
 
 #ifndef PMM_USERSPACE_TEST
-    spin_lock(&pmm_lock);
+    uint64_t irq_flags;
+    spin_lock_irqsave(&pmm_lock, &irq_flags);
 #endif
 
     pg->flags = PAGE_FREE | PAGE_BUDDY_HEAD;
@@ -259,7 +261,7 @@ void pmm_free_pages(uint64_t phys_addr, uint32_t order) {
     list_add(&pmm.free_lists[order], pg);
 
 #ifndef PMM_USERSPACE_TEST
-    spin_unlock(&pmm_lock);
+    spin_unlock_irqrestore(&pmm_lock, irq_flags);
 #endif
 }
 

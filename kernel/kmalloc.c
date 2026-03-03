@@ -37,6 +37,11 @@
 #define SLAB_MIN_SIZE     16
 #define SLAB_MAX_SIZE     2048
 
+/* Poison pattern: written to freed memory to detect use-after-free.
+ * If you see 0xDEADBEEF in a register dump, you freed too early. */
+#define POISON_PATTERN    0xDEADBEEFDEADBEEFULL
+#define POISON_BYTE       0xDE
+
 /* ── Slab header (at the start of each slab page) ─────────────── */
 
 struct slab_header {
@@ -147,7 +152,8 @@ static void kmalloc_init(void) {
 void *kmalloc(uint64_t size) {
     if (size == 0) return NULL;
 
-    spin_lock(&heap_lock);
+    uint64_t irq_flags;
+    spin_lock_irqsave(&heap_lock, &irq_flags);
 
     if (!initialized) kmalloc_init();
 
@@ -163,7 +169,7 @@ void *kmalloc(uint64_t size) {
 
         uint64_t phys = pmm_alloc_pages_zero(order);
         if (phys == 0) {
-            spin_unlock(&heap_lock);
+            spin_unlock_irqrestore(&heap_lock, irq_flags);
             return NULL;
         }
 
@@ -171,7 +177,7 @@ void *kmalloc(uint64_t size) {
         /* Store order in first 8 bytes */
         *(uint64_t *)virt = order;
         large_allocs++;
-        spin_unlock(&heap_lock);
+        spin_unlock_irqrestore(&heap_lock, irq_flags);
         return (void *)((uint64_t)virt + 8);
     }
 
@@ -187,7 +193,7 @@ void *kmalloc(uint64_t size) {
     if (slab == NULL) {
         slab = slab_new(cls);
         if (slab == NULL) {
-            spin_unlock(&heap_lock);
+            spin_unlock_irqrestore(&heap_lock, irq_flags);
             return NULL;
         }
         /* Prepend to class list */
@@ -201,7 +207,7 @@ void *kmalloc(uint64_t size) {
     slab->used++;
     cls->total_allocs++;
 
-    spin_unlock(&heap_lock);
+    spin_unlock_irqrestore(&heap_lock, irq_flags);
     return slot;
 }
 
@@ -210,7 +216,8 @@ void *kmalloc(uint64_t size) {
 void kfree(void *ptr) {
     if (ptr == NULL) return;
 
-    spin_lock(&heap_lock);
+    uint64_t irq_flags;
+    spin_lock_irqsave(&heap_lock, &irq_flags);
 
     /* Check if this is a large allocation (page-aligned - 8 bytes) */
     uint64_t addr = (uint64_t)ptr;
@@ -219,16 +226,23 @@ void kfree(void *ptr) {
     if (((addr - 8) & (PAGE_SIZE - 1)) == 0) {
         void *base = (void *)(addr - 8);
         uint32_t order = (uint32_t)(*(uint64_t *)base);
+        /* Poison the entire allocation before freeing */
+        memset(base, POISON_BYTE, (1UL << order) * PAGE_SIZE);
         uint64_t phys = virt_to_phys(base);
         pmm_free_pages(phys, order);
         large_frees++;
-        spin_unlock(&heap_lock);
+        spin_unlock_irqrestore(&heap_lock, irq_flags);
         return;
     }
 
     /* Slab allocation — find the slab header */
     struct slab_header *slab = slab_from_ptr(ptr);
     KASSERT(slab->used > 0);
+
+    /* Poison the slot (except first 8 bytes — used for free list link) */
+    if (slab->obj_size > 8) {
+        memset((uint8_t *)ptr + 8, POISON_BYTE, slab->obj_size - 8);
+    }
 
     /* Push back onto free list */
     *(void **)ptr = slab->free;
@@ -241,7 +255,7 @@ void kfree(void *ptr) {
         classes[cls_idx].total_frees++;
     }
 
-    spin_unlock(&heap_lock);
+    spin_unlock_irqrestore(&heap_lock, irq_flags);
 }
 
 /* ── kzmalloc ─────────────────────────────────────────────────── */
