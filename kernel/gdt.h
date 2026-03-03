@@ -35,4 +35,7 @@ void gdt_init(void);
 /* Update RSP0 in the TSS (called during context switch) */
 void tss_set_rsp0(uint64_t rsp0);
 
+/* Update IST1 in the TSS (Double Fault stack) */
+void tss_set_ist1(uint64_t ist1);
+
 #endif /* GDT_H */

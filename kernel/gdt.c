@@ -177,3 +177,7 @@ void gdt_init(void) {
 void tss_set_rsp0(uint64_t rsp0) {
     tss_instance.rsp0 = rsp0;
 }
+
+void tss_set_ist1(uint64_t ist1) {
+    tss_instance.ist[0] = ist1;  /* IST entries are 0-indexed: ist[0] = IST1 */
+}

@@ -430,6 +430,24 @@ void vmm_init(void) {
         uint64_t guard_page = PAGE_ALIGN_DOWN(rsp) - PAGE_SIZE;
         vmm_unmap_page(guard_page);
         LOG_OK("VMM: Boot stack guard page at 0x%lx", guard_page);
+
+        /* IST1 stack for Double Fault (8KB = 2 pages + guard) */
+        #define IST1_STACK_PAGES 2
+        #define IST1_STACK_VIRT  0xFFFFFF0000200000UL
+
+        for (int i = 0; i < IST1_STACK_PAGES; i++) {
+            uint64_t phys_page = pmm_alloc_pages_zero(0);
+            KASSERT(phys_page != 0);
+            vmm_map_page(
+                IST1_STACK_VIRT + (i + 1) * PAGE_SIZE,
+                phys_page,
+                VMM_FLAGS_KERNEL_RW
+            );
+        }
+        uint64_t ist1_top = IST1_STACK_VIRT + (IST1_STACK_PAGES + 1) * PAGE_SIZE;
+        tss_set_ist1(ist1_top);
+        LOG_OK("VMM: IST1 (#DF) stack at 0x%lx (8 KB, guard at 0x%lx)",
+               IST1_STACK_VIRT + PAGE_SIZE, IST1_STACK_VIRT);
     }
 
     LOG_INFO("VMM: %lu page tables allocated (%lu KB overhead)",

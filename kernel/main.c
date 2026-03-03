@@ -185,7 +185,7 @@ void _start(void) {
 
     /* 14. Banner */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.3.2\n");
+    kprintf("  Anykernel OS v0.3.5\n");
     kprintf("  %d tests, %d failures\n", selftest_count(), failures);
     kprintf("  PIT ticks: %lu\n", pit_get_ticks());
     kprintf("==============================\n");
