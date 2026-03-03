@@ -189,6 +189,26 @@ uint64_t pmm_alloc_pages(uint32_t order) {
     return pfn_to_phys(page_to_pfn(block));
 }
 
+/* ── Core: Allocate Zeroed ────────────────────────────────────── */
+
+uint64_t pmm_alloc_pages_zero(uint32_t order) {
+    uint64_t addr = pmm_alloc_pages(order);
+    if (addr == 0) return 0;
+
+    uint64_t size = (1UL << order) * PAGE_SIZE;
+
+#ifdef PMM_USERSPACE_TEST
+    /* In test mode we can't actually zero the "physical" memory */
+    (void)size;
+#else
+    /* Zero through HHDM virtual mapping */
+    extern uint64_t hhdm_offset;
+    memset((void *)(addr + hhdm_offset), 0, size);
+#endif
+
+    return addr;
+}
+
 /* ── Core: Free + Coalesce ────────────────────────────────────── */
 
 void pmm_free_pages(uint64_t phys_addr, uint32_t order) {

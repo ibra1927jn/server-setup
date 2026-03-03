@@ -18,6 +18,7 @@
 #include "string.h"
 #include "spinlock.h"
 #include "pmm.h"
+#include "kmalloc.h"
 
 /* Limine protocol */
 #include "../limine/limine.h"
@@ -180,10 +181,47 @@ void _start(void) {
         LOG_OK("PMM order-5 alloc/free self-test passed");
     }
 
-    /* 12. Banner */
+    /* ─────────────────────────────────────────────────────────────
+     * 12. kmalloc — Kernel Heap Allocator
+     * ───────────────────────────────────────────────────────────── */
+
+    /* Small alloc: 64-byte struct */
+    {
+        void *p = kmalloc(64);
+        KASSERT(p != NULL);
+        memset(p, 0xBB, 64);
+        kfree(p);
+        LOG_OK("kmalloc(64) + kfree passed");
+    }
+
+    /* Large alloc: 8KB (falls back to PMM pages) */
+    {
+        void *p = kmalloc(8192);
+        KASSERT(p != NULL);
+        memset(p, 0xCC, 8192);
+        kfree(p);
+        LOG_OK("kmalloc(8192) large alloc + kfree passed");
+    }
+
+    /* kzmalloc: verify zeroing */
+    {
+        uint8_t *p = kzmalloc(128);
+        KASSERT(p != NULL);
+        int all_zero = 1;
+        for (int i = 0; i < 128; i++) {
+            if (p[i] != 0) { all_zero = 0; break; }
+        }
+        KASSERT(all_zero);
+        kfree(p);
+        LOG_OK("kzmalloc(128) zeroing verified");
+    }
+
+    kmalloc_dump_stats();
+
+    /* 13. Banner */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.2.0\n");
-    kprintf("  Sprint 2: Buddy Allocator!\n");
+    kprintf("  Anykernel OS v0.2.1\n");
+    kprintf("  Sprint 2: PMM + Heap!\n");
     kprintf("==============================\n");
 
     kprintf("\n");

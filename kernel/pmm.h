@@ -83,6 +83,13 @@ void pmm_init(struct limine_memmap_response *memmap, uint64_t hhdm);
 uint64_t pmm_alloc_pages(uint32_t order);
 
 /*
+ * Allocate 2^order contiguous ZEROED page frames.
+ * Returns physical address, or 0 on failure.
+ * Use this for page tables, new process stacks, etc.
+ */
+uint64_t pmm_alloc_pages_zero(uint32_t order);
+
+/*
  * Free 2^order contiguous page frames starting at phys_addr.
  * Coalesces with buddy if possible.
  */
