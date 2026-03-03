@@ -141,7 +141,7 @@ void _start(void) {
         uint64_t pages = (aligned_end > aligned_base)
                          ? (aligned_end - aligned_base) / PAGE_SIZE : 0;
 
-        kprintf("  [%lu] %p-%p %8lu KB %s",
+        kprintf("  [%2lu] %p-%p %8lu KB %-22s",
                 i, (void *)e->base, (void *)(e->base + e->length),
                 e->length / 1024, memmap_type_str(e->type));
 

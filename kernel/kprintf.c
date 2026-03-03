@@ -3,6 +3,19 @@
  *
  * Zero-allocation printf for kernel diagnostics.
  * All output goes through uart_putc().
+ *
+ * Supported:
+ *   %s          — string (with optional width: %20s, %-20s)
+ *   %d / %ld    — signed decimal
+ *   %u / %lu    — unsigned decimal
+ *   %x / %lx    — hex lowercase
+ *   %X / %lX    — hex uppercase
+ *   %p          — pointer (0x + 16-digit hex)
+ *   %c          — character
+ *   %%          — literal %
+ *   %0Nx        — zero-padded to N digits (e.g. %016lx, %08x, %02x)
+ *   %-Ns        — left-aligned string in N-width field
+ *   %ll*        — same as %l* (both treat as 64-bit)
  */
 
 #include "kprintf.h"
@@ -20,10 +33,26 @@ static void kprint_char(char c) {
     uart_putc(c);
 }
 
-static void kprint_string(const char *s) {
+static void kprint_string_padded(const char *s, int width, bool left_align) {
     if (!s) s = "(null)";
-    while (*s) {
-        kprint_char(*s++);
+
+    /* Measure string length */
+    int len = 0;
+    const char *p = s;
+    while (*p++) len++;
+
+    /* Right-pad (default): print spaces first, then string */
+    if (!left_align) {
+        for (int i = len; i < width; i++) kprint_char(' ');
+    }
+
+    /* Print the string */
+    p = s;
+    while (*p) kprint_char(*p++);
+
+    /* Left-align: print trailing spaces */
+    if (left_align) {
+        for (int i = len; i < width; i++) kprint_char(' ');
     }
 }
 
@@ -80,9 +109,14 @@ void kprintf(const char *fmt, ...) {
 
         fmt++; /* skip '%' */
 
-        /* Parse padding */
+        /* Parse flags */
+        bool left_align = false;
         char pad = ' ';
-        if (*fmt == '0') {
+
+        if (*fmt == '-') {
+            left_align = true;
+            fmt++;
+        } else if (*fmt == '0') {
             pad = '0';
             fmt++;
         }
@@ -94,17 +128,18 @@ void kprintf(const char *fmt, ...) {
             fmt++;
         }
 
-        /* Parse length modifier */
+        /* Parse length modifier: l or ll */
         bool is_long = false;
         if (*fmt == 'l') {
             is_long = true;
             fmt++;
+            if (*fmt == 'l') fmt++;  /* skip second 'l' in %lld/%llx */
         }
 
         /* Format specifier */
         switch (*fmt) {
         case 's':
-            kprint_string(va_arg(args, const char *));
+            kprint_string_padded(va_arg(args, const char *), width, left_align);
             break;
 
         case 'd':
@@ -140,7 +175,7 @@ void kprintf(const char *fmt, ...) {
             break;
 
         case 'p':
-            kprint_string("0x");
+            kprint_string_padded("0x", 0, false);
             kprint_unsigned((uint64_t)va_arg(args, void *), 16, 16, '0', false);
             break;
 
