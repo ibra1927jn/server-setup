@@ -20,6 +20,8 @@
 #include "pmm.h"
 #include "kmalloc.h"
 #include "vmm.h"
+#include "kb.h"
+#include "console.h"
 
 /* Limine protocol */
 #include "../limine/limine.h"
@@ -51,6 +53,12 @@ static volatile struct limine_hhdm_request hhdm_request = {
 __attribute__((used, section(".limine_requests")))
 static volatile struct limine_memmap_request memmap_request = {
     .id = LIMINE_MEMMAP_REQUEST,
+    .revision = 0
+};
+
+__attribute__((used, section(".limine_requests")))
+static volatile struct limine_framebuffer_request fb_request = {
+    .id = LIMINE_FRAMEBUFFER_REQUEST,
     .revision = 0
 };
 
@@ -157,6 +165,21 @@ void _start(void) {
     vmm_dump_tables();
 
     /* ─────────────────────────────────────────────────────────────
+     * 11. Framebuffer Console
+     * ───────────────────────────────────────────────────────────── */
+    if (fb_request.response && fb_request.response->framebuffer_count > 0) {
+        struct limine_framebuffer *fb = fb_request.response->framebuffers[0];
+        console_init(fb->address, fb->width, fb->height, fb->pitch, fb->bpp);
+        LOG_OK("Framebuffer console: %lux%lu, %u bpp",
+               fb->width, fb->height, fb->bpp);
+    }
+
+    /* ─────────────────────────────────────────────────────────────
+     * 12. Keyboard
+     * ───────────────────────────────────────────────────────────── */
+    kb_init();
+
+    /* ─────────────────────────────────────────────────────────────
      * 11. Self-tests
      * ───────────────────────────────────────────────────────────── */
     register_selftests();
@@ -185,16 +208,24 @@ void _start(void) {
 
     /* 14. Banner */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.3.5\n");
+    kprintf("  Anykernel OS v0.3.6\n");
     kprintf("  %d tests, %d failures\n", selftest_count(), failures);
     kprintf("  PIT ticks: %lu\n", pit_get_ticks());
     kprintf("==============================\n");
+
+    /* Mirror banner to framebuffer console */
+    if (console_available()) {
+        console_puts("\n  Anykernel OS v0.3.6\n");
+        console_puts("  System ready.\n\n");
+    }
 
     kprintf("\n");
     if (failures > 0) {
         LOG_ERROR("SELF-TEST FAILURES: %d", failures);
     }
     LOG_INFO("System halted (interrupts active).");
+
+    /* Efficient idle: hlt suspends CPU until next interrupt */
     for (;;) {
         asm volatile("hlt");
     }

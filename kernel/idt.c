@@ -114,6 +114,8 @@ void exception_handler_c(struct interrupt_frame *frame) {
 
 /* ── IRQ handler (called from irq_common in interrupts.asm) ──── */
 
+#include "kb.h"
+
 void irq_handler_c(struct interrupt_frame *frame) {
     uint8_t irq = (uint8_t)(frame->vector - PIC_IRQ_BASE_MASTER);
 
@@ -122,8 +124,7 @@ void irq_handler_c(struct interrupt_frame *frame) {
             pit_tick();
             break;
         case IRQ_KEYBOARD:
-            /* Read scancode to acknowledge */
-            asm volatile("inb $0x60, %%al" ::: "al");
+            kb_irq_handler();
             break;
         default:
             break;

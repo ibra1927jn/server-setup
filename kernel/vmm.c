@@ -316,24 +316,30 @@ void vmm_init(void) {
      *    instead of guessing from PMM page counts. */
     extern uint64_t hhdm_offset;
 
-    /* Find the highest physical address from the memory map */
+    /* Find the highest physical address from usable/kernel/FB regions only.
+     * Skip reserved MMIO ranges (some go to 1TB!) to save page tables. */
     extern struct limine_memmap_response *memmap_resp_saved;
     uint64_t max_phys = 0;
     if (memmap_resp_saved) {
         for (uint64_t i = 0; i < memmap_resp_saved->entry_count; i++) {
-            uint64_t top = memmap_resp_saved->entries[i]->base
-                         + memmap_resp_saved->entries[i]->length;
-            if (top > max_phys) max_phys = top;
+            uint64_t type = memmap_resp_saved->entries[i]->type;
+            /* Only count regions that contain actual data we need to access */
+            if (type == LIMINE_MEMMAP_USABLE ||
+                type == LIMINE_MEMMAP_BOOTLOADER_RECLAIMABLE ||
+                type == LIMINE_MEMMAP_KERNEL_AND_MODULES ||
+                type == LIMINE_MEMMAP_FRAMEBUFFER) {
+                uint64_t top = memmap_resp_saved->entries[i]->base
+                             + memmap_resp_saved->entries[i]->length;
+                if (top > max_phys) max_phys = top;
+            }
         }
     }
-    /* Fallback: use PMM counts if memmap not saved */
+    /* Fallback */
     if (max_phys == 0) {
         max_phys = (pmm_free_count() + pmm_used_count() + 256) * PAGE_SIZE;
     }
+    /* Round up to 2MB and add some headroom */
     max_phys = ALIGN_UP(max_phys, MB(2));
-
-    /* Cap at 4GB for now (avoid mapping huge reserved MMIO ranges) */
-    if (max_phys > (4UL * 1024 * MB(1))) max_phys = 4UL * 1024 * MB(1);
 
     vmm_map_range_huge(
         hhdm_offset,     /* Virtual base of HHDM */
