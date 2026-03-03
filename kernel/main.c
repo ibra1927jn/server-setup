@@ -102,31 +102,31 @@ void _start(void) {
     /* 3. CPU identification */
     cpuid_detect();
 
-    /* 3. Verify Limine protocol */
+    /* 4. Verify Limine protocol */
     KASSERT(LIMINE_BASE_REVISION_SUPPORTED);
     LOG_OK("Limine base revision OK");
 
-    /* 4. GDT + TSS */
+    /* 5. GDT + TSS */
     gdt_init();
     LOG_OK("GDT loaded (7 entries, TSS with RSP0 + IST1)");
 
-    /* 5. IDT — catch exceptions + handle IRQs */
+    /* 6. IDT — catch exceptions + handle IRQs */
     idt_init();
     LOG_OK("IDT loaded (#DE #UD #DF #GP #PF + IRQ0/1)");
 
-    /* 6. PIC + PIT — hardware interrupt infrastructure */
+    /* 7. PIC + PIT — hardware interrupt infrastructure */
     pic_init();
     pit_init(100);  /* 100 Hz = 10ms tick */
     pic_unmask(IRQ_TIMER);  /* Enable timer IRQ */
     asm volatile("sti");    /* ENABLE INTERRUPTS! */
     LOG_OK("PIC remapped, PIT at 100 Hz, interrupts ENABLED");
 
-    /* 7. HHDM */
+    /* 8. HHDM */
     KASSERT(hhdm_request.response != NULL);
     hhdm_offset = hhdm_request.response->offset;
     LOG_INFO("HHDM offset: 0x%016lx", hhdm_offset);
 
-    /* 8. Memory map */
+    /* 9. Memory map */
     KASSERT(memmap_request.response != NULL);
     memmap_resp_saved = memmap_request.response;
     uint64_t entry_count = memmap_request.response->entry_count;
@@ -157,19 +157,19 @@ void _start(void) {
              usable_bytes / 1024, usable_bytes / (1024 * 1024), usable_pages);
 
     /* ─────────────────────────────────────────────────────────────
-     * 9. PMM — Physical Memory Manager (Buddy Allocator)
+     * 10. PMM — Physical Memory Manager (Buddy Allocator)
      * ───────────────────────────────────────────────────────────── */
     pmm_init(memmap_request.response, hhdm_offset);
     pmm_dump_stats();
 
     /* ─────────────────────────────────────────────────────────────
-     * 10. VMM — Virtual Memory Manager (Paging)
+     * 11. VMM — Virtual Memory Manager (Paging)
      * ───────────────────────────────────────────────────────────── */
     vmm_init();
     vmm_dump_tables();
 
     /* ─────────────────────────────────────────────────────────────
-     * 11. Framebuffer Console
+     * 12. Framebuffer Console
      * ───────────────────────────────────────────────────────────── */
     if (fb_request.response && fb_request.response->framebuffer_count > 0) {
         struct limine_framebuffer *fb = fb_request.response->framebuffers[0];
@@ -179,18 +179,18 @@ void _start(void) {
     }
 
     /* ─────────────────────────────────────────────────────────────
-     * 12. Keyboard
+     * 13. Keyboard
      * ───────────────────────────────────────────────────────────── */
     kb_init();
 
     /* ─────────────────────────────────────────────────────────────
-     * 11. Self-tests
+     * 14. Self-tests
      * ───────────────────────────────────────────────────────────── */
     register_selftests();
     int failures = run_all_selftests();
 
     /* ─────────────────────────────────────────────────────────────
-     * 13. Boot memory report
+     * 15. Boot memory report
      * ───────────────────────────────────────────────────────────── */
     kprintf("\n--- Boot Memory Report ---\n");
     {
@@ -210,18 +210,13 @@ void _start(void) {
 
     kmalloc_dump_stats();
 
-    /* 14. Banner */
+    /* Banner */
+    uint64_t uptime_ms = pit_get_ticks() * 10;  /* 100 Hz = 10ms per tick */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.3.6\n");
+    kprintf("  Anykernel OS v0.3.8\n");
     kprintf("  %d tests, %d failures\n", selftest_count(), failures);
-    kprintf("  PIT ticks: %lu\n", pit_get_ticks());
+    kprintf("  Boot time: %lu ms\n", uptime_ms);
     kprintf("==============================\n");
-
-    /* Mirror banner to framebuffer console */
-    if (console_available()) {
-        console_puts("\n  Anykernel OS v0.3.6\n");
-        console_puts("  System ready.\n\n");
-    }
 
     kprintf("\n");
     if (failures > 0) {

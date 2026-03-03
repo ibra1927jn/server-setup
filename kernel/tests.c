@@ -14,6 +14,8 @@
 #include "memory.h"
 #include "string.h"
 #include "pic.h"
+#include "console.h"
+#include "kb.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -275,6 +277,18 @@ static bool test_vmm_unmap_verify(void) {
     return ok;
 }
 
+/* ── Console / Keyboard tests ────────────────────────────────── */
+
+static bool test_console_available(void) {
+    /* Console should be initialized by boot sequence */
+    return console_available() != 0;
+}
+
+static bool test_kb_buffer_empty(void) {
+    /* Keyboard buffer should be empty at boot (no keys pressed) */
+    return !kb_has_input();
+}
+
 /* ── Registration ────────────────────────────────────────────── */
 
 void register_selftests(void) {
@@ -315,4 +329,8 @@ void register_selftests(void) {
     selftest_register("memmove overlap correctness",    test_memmove_overlap);
     selftest_register("Spinlock IRQ save/restore",      test_spinlock_irqsave);
     selftest_register("VMM unmap + verify unmapped",    test_vmm_unmap_verify);
+
+    /* Console / Keyboard */
+    selftest_register("Framebuffer console active",     test_console_available);
+    selftest_register("Keyboard buffer starts empty",   test_kb_buffer_empty);
 }
