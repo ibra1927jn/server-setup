@@ -47,7 +47,7 @@ LDFLAGS := -flavor gnu                 \
 NASMFLAGS := -f elf64 -g -F dwarf
 
 # ── Sources and objects ──────────────────────────────────────────
-KERNEL_SRC := kernel/main.c kernel/uart.c kernel/gdt.c kernel/panic.c kernel/kprintf.c kernel/ssp.c kernel/string.c kernel/idt.c
+KERNEL_SRC := kernel/main.c kernel/uart.c kernel/gdt.c kernel/panic.c kernel/kprintf.c kernel/ssp.c kernel/string.c kernel/idt.c kernel/pmm.c
 KERNEL_OBJ := $(patsubst kernel/%.c,build/%.o,$(KERNEL_SRC))
 
 ASM_SRC    := kernel/interrupts.asm

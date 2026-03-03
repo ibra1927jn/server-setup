@@ -17,6 +17,7 @@
 #include "memory.h"
 #include "string.h"
 #include "spinlock.h"
+#include "pmm.h"
 
 /* Limine protocol */
 #include "../limine/limine.h"
@@ -155,13 +156,38 @@ void _start(void) {
     LOG_INFO("Total usable: %lu KB (%lu MB) = %lu pages",
              usable_bytes / 1024, usable_bytes / (1024 * 1024), usable_pages);
 
-    /* 11. Banner */
+    /* ─────────────────────────────────────────────────────────────
+     * 11. PMM — Physical Memory Manager (Buddy Allocator)
+     * ───────────────────────────────────────────────────────────── */
+    pmm_init(memmap_request.response, hhdm_offset);
+    pmm_dump_stats();
+
+    /* PMM self-test: alloc and free a page */
+    {
+        uint64_t p = pmm_alloc_pages(0);
+        KASSERT(p != 0);
+        KASSERT((p & (PAGE_SIZE - 1)) == 0);  /* Must be page-aligned */
+        pmm_free_pages(p, 0);
+        LOG_OK("PMM alloc/free self-test passed");
+    }
+
+    /* PMM self-test: alloc order-5 (128KB) */
+    {
+        uint64_t p = pmm_alloc_pages(5);
+        KASSERT(p != 0);
+        KASSERT((p % (32 * PAGE_SIZE)) == 0);  /* 128KB aligned */
+        pmm_free_pages(p, 5);
+        LOG_OK("PMM order-5 alloc/free self-test passed");
+    }
+
+    /* 12. Banner */
     kprintf("\n==============================\n");
-    kprintf("  Hola Mundo - Anykernel OS\n");
-    kprintf("  v0.1.3 — Ready for Sprint 2\n");
+    kprintf("  Anykernel OS v0.2.0\n");
+    kprintf("  Sprint 2: Buddy Allocator!\n");
     kprintf("==============================\n");
 
     kprintf("\n");
     LOG_INFO("System halted.");
     halt();
 }
+
