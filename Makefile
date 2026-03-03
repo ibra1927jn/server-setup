@@ -43,9 +43,17 @@ LDFLAGS := -flavor gnu                 \
            -T linker.ld                \
            -z max-page-size=0x1000
 
+# ── NASM flags ───────────────────────────────────────────────────
+NASMFLAGS := -f elf64 -g -F dwarf
+
 # ── Sources and objects ──────────────────────────────────────────
 KERNEL_SRC := kernel/main.c kernel/uart.c kernel/gdt.c kernel/panic.c kernel/kprintf.c kernel/ssp.c kernel/string.c kernel/idt.c
 KERNEL_OBJ := $(patsubst kernel/%.c,build/%.o,$(KERNEL_SRC))
+
+ASM_SRC    := kernel/interrupts.asm
+ASM_OBJ    := $(patsubst kernel/%.asm,build/%.o,$(ASM_SRC))
+
+ALL_OBJ    := $(KERNEL_OBJ) $(ASM_OBJ)
 KERNEL_ELF := build/kernel.elf
 
 # ── ISO configuration ───────────────────────────────────────────
@@ -73,9 +81,13 @@ all: $(KERNEL_ELF)
 build/%.o: kernel/%.c | build
 	$(CC) $(CFLAGS) -c $< -o $@
 
+# ── Assemble NASM sources ────────────────────────────────────────
+build/%.o: kernel/%.asm | build
+	$(NASM) $(NASMFLAGS) $< -o $@
+
 # ── Link kernel ELF ──────────────────────────────────────────────
-$(KERNEL_ELF): $(KERNEL_OBJ) linker.ld | build
-	$(LD) $(LDFLAGS) $(KERNEL_OBJ) -o $@
+$(KERNEL_ELF): $(ALL_OBJ) linker.ld | build
+	$(LD) $(LDFLAGS) $(ALL_OBJ) -o $@
 
 # ── Build bootable ISO ───────────────────────────────────────────
 iso: $(KERNEL_ELF)

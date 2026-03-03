@@ -1,27 +1,10 @@
 /*
- * Anykernel OS v2.1 — Early IDT Implementation
+ * Anykernel OS v2.1 — IDT Setup + C Exception Handler
  *
- * Sets up a minimal IDT to catch the 5 most critical x86_64 exceptions:
- *
- *   Vector | Name                | Error Code | Why it matters
- *   -------|---------------------|------------|---------------------------
- *   0      | #DE Divide Error    | No         | Division by zero
- *   6      | #UD Invalid Opcode  | No         | SSE/wrong instruction
- *   8      | #DF Double Fault    | Yes (0)    | Exception during exception
- *   13     | #GP General Protect | Yes        | Segment/privilege violation
- *   14     | #PF Page Fault      | Yes        | Bad memory access (CR2!)
- *
- * Each handler pushes a uniform interrupt frame, reads CR2 (for #PF),
- * and calls the C panic handler with full diagnostics.
- *
- * IDT Entry format (16 bytes in Long Mode):
- *   Bytes 0-1:  offset[15:0]
- *   Bytes 2-3:  segment selector (CS)
- *   Byte  4:    IST (0 = no IST, or 1-7)
- *   Byte  5:    type_attr (0x8E = present, DPL=0, 64-bit interrupt gate)
- *   Bytes 6-7:  offset[31:16]
- *   Bytes 8-11: offset[63:32]
- *   Bytes 12-15: reserved (0)
+ * The ISR stubs live in interrupts.asm (pure NASM).
+ * This file handles:
+ *   1. IDT table setup and LIDT
+ *   2. C-level exception handler with register dump
  */
 
 #include "idt.h"
@@ -48,11 +31,11 @@ struct idt_pointer {
     uint64_t base;
 } __attribute__((packed));
 
-/* Interrupt frame pushed by our stubs */
+/* Interrupt frame — matches the push order in interrupts.asm */
 struct interrupt_frame {
     uint64_t r15, r14, r13, r12, r11, r10, r9, r8;
     uint64_t rbp, rdi, rsi, rdx, rcx, rbx, rax;
-    uint64_t vector;          /* pushed by our stub */
+    uint64_t vector;          /* pushed by stub */
     uint64_t error_code;      /* pushed by CPU or dummy 0 */
     uint64_t rip;             /* pushed by CPU */
     uint64_t cs;
@@ -61,10 +44,18 @@ struct interrupt_frame {
     uint64_t ss;
 };
 
-/* ── IDT table (256 entries, but we only populate a few) ──────── */
+/* ── IDT table ────────────────────────────────────────────────── */
 
 static struct idt_entry idt[256];
 static struct idt_pointer idtr;
+
+/* ── External: ISR stubs defined in interrupts.asm ────────────── */
+
+extern void isr_stub_0(void);
+extern void isr_stub_6(void);
+extern void isr_stub_8(void);
+extern void isr_stub_13(void);
+extern void isr_stub_14(void);
 
 /* ── Exception names ──────────────────────────────────────────── */
 
@@ -79,10 +70,9 @@ static const char *exception_name(uint64_t vector) {
     }
 }
 
-/* ── C exception handler (called from assembly stubs) ─────────── */
+/* ── C exception handler (called from interrupts.asm) ─────────── */
 
 void exception_handler_c(struct interrupt_frame *frame) {
-    /* Read CR2 (faulting address) — only meaningful for #PF */
     uint64_t cr2;
     asm volatile("movq %%cr2, %0" : "=r"(cr2));
 
@@ -105,101 +95,19 @@ void exception_handler_c(struct interrupt_frame *frame) {
     kprintf("    R15=%016lx\n", frame->r15);
 
     if (frame->vector == 14) {
-        /* Decode Page Fault error code */
         kprintf("\n  Page Fault details:\n");
         kprintf("    %s\n", (frame->error_code & 1) ? "Protection violation" : "Page not present");
         kprintf("    %s access\n", (frame->error_code & 2) ? "Write" : "Read");
         kprintf("    %s mode\n", (frame->error_code & 4) ? "User" : "Kernel");
-        if (frame->error_code & 8) kprintf("    Reserved bit set\n");
+        if (frame->error_code & 8)  kprintf("    Reserved bit set\n");
         if (frame->error_code & 16) kprintf("    Instruction fetch\n");
     }
 
-    /* Freeze */
     asm volatile("cli");
     for (;;) {
         asm volatile("hlt");
     }
 }
-
-/* ── Assembly stubs ───────────────────────────────────────────── */
-
-/*
- * We need tiny assembly stubs that:
- *   1. Push a dummy error code (0) if the CPU didn't push one
- *   2. Push the vector number
- *   3. Save all general-purpose registers
- *   4. Call exception_handler_c with pointer to the frame
- *
- * We define these as raw bytes using .byte/.quad in inline asm
- * because we can't write standalone .S files from here easily.
- */
-
-/* Common handler body: save regs → call C → (never returns) */
-#define ISR_STUB_NO_ERR(vec)                                        \
-    asm volatile(                                                    \
-        ".global isr_stub_" #vec "\n\t"                             \
-        "isr_stub_" #vec ":\n\t"                                    \
-        "pushq $0\n\t"              /* dummy error code */          \
-        "pushq $" #vec "\n\t"       /* vector number */             \
-        "jmp isr_common\n\t"                                        \
-    )
-
-#define ISR_STUB_ERR(vec)                                           \
-    asm volatile(                                                    \
-        ".global isr_stub_" #vec "\n\t"                             \
-        "isr_stub_" #vec ":\n\t"                                    \
-        /* CPU already pushed error code */                         \
-        "pushq $" #vec "\n\t"       /* vector number */             \
-        "jmp isr_common\n\t"                                        \
-    )
-
-/* Common ISR body */
-__attribute__((used))
-static void _isr_common_asm(void) {
-    asm volatile(
-        ".global isr_common\n\t"
-        "isr_common:\n\t"
-        /* Save all GPRs */
-        "pushq %rax\n\t"
-        "pushq %rbx\n\t"
-        "pushq %rcx\n\t"
-        "pushq %rdx\n\t"
-        "pushq %rsi\n\t"
-        "pushq %rdi\n\t"
-        "pushq %rbp\n\t"
-        "pushq %r8\n\t"
-        "pushq %r9\n\t"
-        "pushq %r10\n\t"
-        "pushq %r11\n\t"
-        "pushq %r12\n\t"
-        "pushq %r13\n\t"
-        "pushq %r14\n\t"
-        "pushq %r15\n\t"
-        /* Pass frame pointer (RSP points to struct interrupt_frame) */
-        "movq %rsp, %rdi\n\t"
-        "call exception_handler_c\n\t"
-        /* Should never return, but just in case... */
-        "cli\n\t"
-        "hlt\n\t"
-    );
-}
-
-/* Generate the stubs */
-__attribute__((used))
-static void _isr_stubs_gen(void) {
-    ISR_STUB_NO_ERR(0);   /* #DE — no error code */
-    ISR_STUB_NO_ERR(6);   /* #UD — no error code */
-    ISR_STUB_ERR(8);      /* #DF — error code (always 0) */
-    ISR_STUB_ERR(13);     /* #GP — error code */
-    ISR_STUB_ERR(14);     /* #PF — error code */
-}
-
-/* External symbols for the stubs */
-extern void isr_stub_0(void);
-extern void isr_stub_6(void);
-extern void isr_stub_8(void);
-extern void isr_stub_13(void);
-extern void isr_stub_14(void);
 
 /* ── IDT setup ────────────────────────────────────────────────── */
 
@@ -216,17 +124,15 @@ static void idt_set_gate(int vector, void (*handler)(void), uint8_t ist) {
 }
 
 void idt_init(void) {
-    /* Zero the entire IDT */
     memset(idt, 0, sizeof(idt));
 
-    /* Install exception handlers */
-    idt_set_gate(0,  isr_stub_0,  0);  /* #DE — Divide Error */
-    idt_set_gate(6,  isr_stub_6,  0);  /* #UD — Invalid Opcode */
-    idt_set_gate(8,  isr_stub_8,  1);  /* #DF — Double Fault (uses IST1!) */
-    idt_set_gate(13, isr_stub_13, 0);  /* #GP — General Protection */
-    idt_set_gate(14, isr_stub_14, 0);  /* #PF — Page Fault */
+    /* Install exception handlers (stubs from interrupts.asm) */
+    idt_set_gate(0,  isr_stub_0,  0);  /* #DE */
+    idt_set_gate(6,  isr_stub_6,  0);  /* #UD */
+    idt_set_gate(8,  isr_stub_8,  1);  /* #DF — uses IST1 */
+    idt_set_gate(13, isr_stub_13, 0);  /* #GP */
+    idt_set_gate(14, isr_stub_14, 0);  /* #PF */
 
-    /* Load the IDT */
     idtr.limit = sizeof(idt) - 1;
     idtr.base  = (uint64_t)&idt;
 
