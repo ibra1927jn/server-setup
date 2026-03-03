@@ -19,6 +19,7 @@
 #include "spinlock.h"
 #include "pmm.h"
 #include "kmalloc.h"
+#include "vmm.h"
 
 /* Limine protocol */
 #include "../limine/limine.h"
@@ -174,6 +175,44 @@ static bool test_pmm_watermark(void) {
     return pct >= 10;
 }
 
+/* VMM tests */
+static bool test_vmm_map_write_read(void) {
+    /* Allocate a physical page, map it at a known virtual address, write, read */
+    uint64_t phys = pmm_alloc_pages_zero(0);
+    if (phys == 0) return false;
+
+    /* Use a virtual address in the "scratch" region above HHDM */
+    uint64_t test_virt = 0xFFFFFF0000000000UL;
+    vmm_map_page(test_virt, phys, PTE_PRESENT | PTE_WRITE | PTE_NX);
+
+    /* Write via the mapped address */
+    volatile uint64_t *ptr = (volatile uint64_t *)test_virt;
+    *ptr = 0xCAFEBABE12345678UL;
+
+    /* Read back */
+    bool ok = (*ptr == 0xCAFEBABE12345678UL);
+
+    vmm_unmap_page(test_virt);
+    pmm_free_pages(phys, 0);
+    return ok;
+}
+
+static bool test_vmm_virt_to_phys(void) {
+    /* Walk kernel's own mapping — should resolve */
+    uint64_t kernel_addr = (uint64_t)&test_vmm_virt_to_phys;
+    uint64_t phys = vmm_virt_to_phys(kernel_addr);
+    return phys != 0;
+}
+
+static bool test_vmm_hhdm_integrity(void) {
+    /* The HHDM should still work after CR3 switch */
+    extern uint64_t hhdm_offset;
+    /* Access physical 0x1000 via HHDM — should not fault */
+    volatile uint8_t *p = (volatile uint8_t *)(hhdm_offset + 0x1000);
+    (void)*p;  /* Just read — if HHDM is broken this triple-faults */
+    return true;
+}
+
 static void register_selftests(void) {
     selftest_register("Spinlock trylock/unlock",        test_spinlock);
     selftest_register("memset/memcpy/memcmp",           test_memops);
@@ -186,6 +225,9 @@ static void register_selftests(void) {
     selftest_register("krealloc data preservation",     test_krealloc);
     selftest_register("Slab reclamation to PMM",        test_slab_reclamation);
     selftest_register("PMM watermark >= 10%",           test_pmm_watermark);
+    selftest_register("VMM map/write/read",             test_vmm_map_write_read);
+    selftest_register("VMM virt_to_phys walk",          test_vmm_virt_to_phys);
+    selftest_register("VMM HHDM integrity post-CR3",    test_vmm_hhdm_integrity);
 }
 
 /* ── Kernel main ──────────────────────────────────────────────── */
@@ -252,7 +294,12 @@ void _start(void) {
     pmm_dump_stats();
 
     /* ─────────────────────────────────────────────────────────────
-     * 12. Self-tests (registered via selftest framework)
+     * 12. VMM — Virtual Memory Manager (Paging)
+     * ───────────────────────────────────────────────────────────── */
+    vmm_init();
+
+    /* ─────────────────────────────────────────────────────────────
+     * 13. Self-tests (registered via selftest framework)
      * ───────────────────────────────────────────────────────────── */
     register_selftests();
     int failures = run_all_selftests();
@@ -280,8 +327,8 @@ void _start(void) {
 
     /* 14. Banner */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.2.4\n");
-    kprintf("  %d tests, %d failures\n", 11 - failures + failures, failures);
+    kprintf("  Anykernel OS v0.3.0\n");
+    kprintf("  %d tests, %d failures\n", 14 - failures + failures, failures);
     kprintf("==============================\n");
 
     kprintf("\n");

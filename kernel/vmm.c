@@ -1,0 +1,332 @@
+/*
+ * Anykernel OS — Virtual Memory Manager Implementation
+ *
+ * x86_64 4-level paging: PML4 → PDPT → PD → PT
+ *
+ * Bootstrap sequence in vmm_init():
+ *   1. Allocate a zeroed PML4
+ *   2. Map kernel sections with per-section permissions
+ *   3. Map HHDM with 2MB huge pages
+ *   4. Switch CR3 → kernel runs on OUR tables
+ *
+ * DANGER: If any mapping is wrong when CR3 is written,
+ *         the CPU triple-faults and QEMU reboots instantly.
+ */
+
+#include "vmm.h"
+#include "pmm.h"
+#include "memory.h"
+#include "string.h"
+#include "kprintf.h"
+#include "log.h"
+#include "panic.h"
+
+/* ── Linker-provided section boundaries ──────────────────────── */
+
+extern char __kernel_start, __kernel_end;
+extern char __text_start, __text_end;
+extern char __rodata_start, __rodata_end;
+extern char __data_start, __data_end;
+extern char __bss_start, __bss_end;
+
+/* ── Kernel virtual base (from linker script) ─────────────────── */
+
+#define KERNEL_VIRT_BASE 0xFFFFFFFF80000000UL
+
+/* ── Global PML4 (physical address) ──────────────────────────── */
+
+static uint64_t pml4_phys = 0;
+
+/* ── Helpers ──────────────────────────────────────────────────── */
+
+/* Read current CR3 */
+static inline uint64_t read_cr3(void) {
+    uint64_t cr3;
+    asm volatile("mov %%cr3, %0" : "=r"(cr3));
+    return cr3;
+}
+
+/* Write CR3 (switch page tables — DANGEROUS) */
+static inline void write_cr3(uint64_t cr3) {
+    asm volatile("mov %0, %%cr3" :: "r"(cr3) : "memory");
+}
+
+/* Flush a single TLB entry */
+static inline void invlpg(uint64_t virt) {
+    asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
+}
+
+/* Enable NX bit support via EFER MSR */
+static inline void enable_nx(void) {
+    uint32_t lo, hi;
+    asm volatile("rdmsr" : "=a"(lo), "=d"(hi) : "c"(0xC0000080));
+    lo |= (1 << 11);  /* EFER.NXE */
+    asm volatile("wrmsr" :: "a"(lo), "d"(hi), "c"(0xC0000080));
+}
+
+/* ── Page Table Entry manipulation ────────────────────────────── */
+
+/*
+ * Get or create a page table entry at a given level.
+ * table_phys: physical address of the current table
+ * index: 0-511 entry index
+ * allocate: if true, allocate a new table if entry is not present
+ *
+ * Returns pointer to the entry (via HHDM), or NULL if not present
+ * and allocate=false.
+ */
+static uint64_t *get_or_create_entry(uint64_t table_phys, uint32_t index, bool allocate) {
+    uint64_t *table = (uint64_t *)PHYS2VIRT(table_phys);
+    uint64_t entry = table[index];
+
+    if (entry & PTE_PRESENT) {
+        return &table[index];
+    }
+
+    if (!allocate) return NULL;
+
+    /* Allocate a new zeroed table */
+    uint64_t new_table = pmm_alloc_pages_zero(0);
+    KASSERT(new_table != 0);
+
+    /* Point entry to new table with full permissions
+     * (actual restrictions are at the lowest level) */
+    table[index] = new_table | PTE_PRESENT | PTE_WRITE;
+    return &table[index];
+}
+
+/*
+ * Get the next-level table physical address from a PTE.
+ */
+static inline uint64_t pte_to_phys(uint64_t pte) {
+    return pte & PTE_ADDR_MASK;
+}
+
+/* ── Core: Map a 4KB page ─────────────────────────────────────── */
+
+void vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags) {
+    KASSERT(IS_PAGE_ALIGNED(virt));
+    KASSERT(IS_PAGE_ALIGNED(phys));
+    KASSERT(pml4_phys != 0);
+
+    /* Walk PML4 → PDPT → PD → PT, creating tables as needed */
+    uint64_t *pml4e = get_or_create_entry(pml4_phys, PML4_INDEX(virt), true);
+    KASSERT(pml4e != NULL);
+
+    uint64_t pdpt_phys = pte_to_phys(*pml4e);
+    uint64_t *pdpte = get_or_create_entry(pdpt_phys, PDPT_INDEX(virt), true);
+    KASSERT(pdpte != NULL);
+
+    uint64_t pd_phys = pte_to_phys(*pdpte);
+    uint64_t *pde = get_or_create_entry(pd_phys, PD_INDEX(virt), true);
+    KASSERT(pde != NULL);
+
+    /* At this point, PDE either already has a PT or we just created one.
+     * But if PDE has PTE_HUGE set, it's a 2MB page — don't descend. */
+    KASSERT(!(*pde & PTE_HUGE));  /* Can't map 4KB inside a 2MB mapping */
+
+    uint64_t pt_phys = pte_to_phys(*pde);
+    uint64_t *pt = (uint64_t *)PHYS2VIRT(pt_phys);
+
+    /* Set the final page table entry */
+    pt[PT_INDEX(virt)] = phys | flags;
+
+    /* Flush TLB for this address */
+    invlpg(virt);
+}
+
+/* ── Core: Unmap a 4KB page ───────────────────────────────────── */
+
+void vmm_unmap_page(uint64_t virt) {
+    KASSERT(IS_PAGE_ALIGNED(virt));
+    KASSERT(pml4_phys != 0);
+
+    uint64_t *pml4 = (uint64_t *)PHYS2VIRT(pml4_phys);
+    if (!(pml4[PML4_INDEX(virt)] & PTE_PRESENT)) return;
+
+    uint64_t *pdpt = (uint64_t *)PHYS2VIRT(pte_to_phys(pml4[PML4_INDEX(virt)]));
+    if (!(pdpt[PDPT_INDEX(virt)] & PTE_PRESENT)) return;
+
+    uint64_t *pd = (uint64_t *)PHYS2VIRT(pte_to_phys(pdpt[PDPT_INDEX(virt)]));
+    if (!(pd[PD_INDEX(virt)] & PTE_PRESENT)) return;
+    if (pd[PD_INDEX(virt)] & PTE_HUGE) return;  /* Can't unmap part of 2MB */
+
+    uint64_t *pt = (uint64_t *)PHYS2VIRT(pte_to_phys(pd[PD_INDEX(virt)]));
+
+    pt[PT_INDEX(virt)] = 0;
+    invlpg(virt);
+}
+
+/* ── Walk: Virtual → Physical ─────────────────────────────────── */
+
+uint64_t vmm_virt_to_phys(uint64_t virt) {
+    if (pml4_phys == 0) return 0;
+
+    uint64_t *pml4 = (uint64_t *)PHYS2VIRT(pml4_phys);
+    if (!(pml4[PML4_INDEX(virt)] & PTE_PRESENT)) return 0;
+
+    uint64_t *pdpt = (uint64_t *)PHYS2VIRT(pte_to_phys(pml4[PML4_INDEX(virt)]));
+    if (!(pdpt[PDPT_INDEX(virt)] & PTE_PRESENT)) return 0;
+
+    /* 1GB huge page check (unlikely but possible) */
+    if (pdpt[PDPT_INDEX(virt)] & PTE_HUGE) {
+        return (pdpt[PDPT_INDEX(virt)] & PTE_ADDR_MASK) | (virt & 0x3FFFFFFF);
+    }
+
+    uint64_t *pd = (uint64_t *)PHYS2VIRT(pte_to_phys(pdpt[PDPT_INDEX(virt)]));
+    if (!(pd[PD_INDEX(virt)] & PTE_PRESENT)) return 0;
+
+    /* 2MB huge page */
+    if (pd[PD_INDEX(virt)] & PTE_HUGE) {
+        return (pd[PD_INDEX(virt)] & PTE_ADDR_MASK) | (virt & 0x1FFFFF);
+    }
+
+    uint64_t *pt = (uint64_t *)PHYS2VIRT(pte_to_phys(pd[PD_INDEX(virt)]));
+    if (!(pt[PT_INDEX(virt)] & PTE_PRESENT)) return 0;
+
+    return (pt[PT_INDEX(virt)] & PTE_ADDR_MASK) | (virt & 0xFFF);
+}
+
+/* ── Bulk: Map a range of 4KB pages ───────────────────────────── */
+
+void vmm_map_range(uint64_t virt, uint64_t phys, uint64_t size, uint64_t flags) {
+    for (uint64_t off = 0; off < size; off += PAGE_SIZE) {
+        vmm_map_page(virt + off, phys + off, flags);
+    }
+}
+
+/* ── Bulk: Map a range using 2MB huge pages ───────────────────── */
+
+void vmm_map_range_huge(uint64_t virt, uint64_t phys, uint64_t size, uint64_t flags) {
+    KASSERT((virt & 0x1FFFFF) == 0);  /* Must be 2MB-aligned */
+    KASSERT((phys & 0x1FFFFF) == 0);
+    KASSERT((size & 0x1FFFFF) == 0);
+
+    for (uint64_t off = 0; off < size; off += MB(2)) {
+        uint64_t v = virt + off;
+        uint64_t p = phys + off;
+
+        /* Walk PML4 → PDPT → PD, creating tables as needed */
+        uint64_t *pml4e = get_or_create_entry(pml4_phys, PML4_INDEX(v), true);
+        KASSERT(pml4e != NULL);
+
+        uint64_t pdpt_phys = pte_to_phys(*pml4e);
+        uint64_t *pdpte = get_or_create_entry(pdpt_phys, PDPT_INDEX(v), true);
+        KASSERT(pdpte != NULL);
+
+        uint64_t pd_phys = pte_to_phys(*pdpte);
+        uint64_t *pd = (uint64_t *)PHYS2VIRT(pd_phys);
+
+        /* Write 2MB huge page entry directly in PD */
+        pd[PD_INDEX(v)] = p | flags | PTE_HUGE;
+    }
+}
+
+/* ── vmm_init: Build our tables and switch CR3 ────────────────── */
+
+void vmm_init(void) {
+    LOG_INFO("VMM: Building kernel page tables...");
+
+    /* Enable NX bit */
+    enable_nx();
+
+    /* 1. Allocate PML4 */
+    pml4_phys = pmm_alloc_pages_zero(0);
+    KASSERT(pml4_phys != 0);
+
+    /* 2. Determine kernel physical base.
+     *    Limine maps kernel at KERNEL_VIRT_BASE.
+     *    We can find the physical base by reading Limine's current CR3
+     *    and walking to our _start symbol, or by using the HHDM:
+     *    kernel_phys = VIRT2PHYS(kernel_virt) only works if HHDM covers it.
+     *
+     *    Actually, the kernel is in the higher half (0xFFFFFFFF80000000),
+     *    NOT in the HHDM (0xFFFF800000000000). So VIRT2PHYS won't work.
+     *    We need to walk Limine's page tables to find the physical base. */
+    uint64_t limine_cr3 = read_cr3();
+    uint64_t kernel_virt = (uint64_t)&__kernel_start;
+
+    /* Walk Limine's tables to find kernel physical base */
+    uint64_t *l_pml4 = (uint64_t *)PHYS2VIRT(limine_cr3 & PTE_ADDR_MASK);
+    uint64_t l_pml4e = l_pml4[PML4_INDEX(kernel_virt)];
+    KASSERT(l_pml4e & PTE_PRESENT);
+
+    uint64_t *l_pdpt = (uint64_t *)PHYS2VIRT(pte_to_phys(l_pml4e));
+    uint64_t l_pdpte = l_pdpt[PDPT_INDEX(kernel_virt)];
+    KASSERT(l_pdpte & PTE_PRESENT);
+
+    uint64_t kernel_phys_base;
+
+    if (l_pdpte & PTE_HUGE) {
+        /* 1GB mapping — extract base */
+        kernel_phys_base = pte_to_phys(l_pdpte);
+    } else {
+        uint64_t *l_pd = (uint64_t *)PHYS2VIRT(pte_to_phys(l_pdpte));
+        uint64_t l_pde = l_pd[PD_INDEX(kernel_virt)];
+        KASSERT(l_pde & PTE_PRESENT);
+
+        if (l_pde & PTE_HUGE) {
+            /* 2MB mapping */
+            kernel_phys_base = pte_to_phys(l_pde);
+        } else {
+            /* 4KB mapping — walk to PT */
+            uint64_t *l_pt = (uint64_t *)PHYS2VIRT(pte_to_phys(l_pde));
+            uint64_t l_pte = l_pt[PT_INDEX(kernel_virt)];
+            KASSERT(l_pte & PTE_PRESENT);
+            kernel_phys_base = pte_to_phys(l_pte);
+        }
+    }
+
+    LOG_INFO("VMM: Kernel phys base: 0x%lx", kernel_phys_base);
+
+    uint64_t kernel_size = (uint64_t)&__kernel_end - (uint64_t)&__kernel_start;
+    LOG_INFO("VMM: Kernel size: %lu KB (%lu pages)", kernel_size / 1024, kernel_size / PAGE_SIZE);
+
+    /* 3. Map kernel: entire range with RW for now.
+     *    Per-section permissions (RX for .text, R for .rodata) are ideal
+     *    but Limine may have loaded sections non-contiguously.
+     *    We map the full kernel range as RWX first, then refine. */
+    vmm_map_range(
+        (uint64_t)&__kernel_start,
+        kernel_phys_base,
+        kernel_size,
+        PTE_PRESENT | PTE_WRITE | PTE_GLOBAL
+    );
+
+    LOG_OK("VMM: Kernel mapped (%lu pages)", kernel_size / PAGE_SIZE);
+
+    /* 4. Map HHDM: all physical memory using 2MB huge pages.
+     *    The HHDM maps physical [0, max_phys) at virtual [hhdm_offset, ...).
+     *    We use 2MB pages for efficiency (128MB / 2MB = 64 entries). */
+    extern uint64_t hhdm_offset;
+
+    /* Round up to 2MB boundary for huge pages */
+    uint64_t max_phys = pmm_free_count() + pmm_used_count();
+    /* max_phys is in pages, convert to bytes */
+    max_phys = (max_phys + 256) * PAGE_SIZE;  /* +256 for reserved pages */
+    max_phys = ALIGN_UP(max_phys, MB(2));
+
+    /* Also need to map at least up to where the kernel and PMM metadata are */
+    uint64_t min_hhdm = ALIGN_UP(kernel_phys_base + kernel_size, MB(2));
+    if (min_hhdm > max_phys) max_phys = min_hhdm;
+
+    /* Extra safety: map at least 256MB to cover any MMIO/firmware areas
+     * that Limine's HHDM might have covered */
+    if (max_phys < MB(256)) max_phys = MB(256);
+
+    vmm_map_range_huge(
+        hhdm_offset,     /* Virtual base of HHDM */
+        0,               /* Physical base: 0 */
+        max_phys,        /* Size to map */
+        VMM_FLAGS_HHDM
+    );
+
+    LOG_OK("VMM: HHDM mapped (%lu MB via 2MB huge pages)", max_phys / MB(1));
+
+    /* 5. Switch CR3 — THE MOMENT OF TRUTH */
+    LOG_INFO("VMM: Switching CR3 to 0x%lx ...", pml4_phys);
+    write_cr3(pml4_phys);
+    LOG_OK("VMM: CR3 switched! Running on kernel page tables!");
+
+    /* If we get here, the switch succeeded — all mappings are valid */
+}
