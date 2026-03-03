@@ -47,7 +47,7 @@ LDFLAGS := -flavor gnu                 \
 NASMFLAGS := -f elf64 -g -F dwarf
 
 # ── Sources and objects ──────────────────────────────────────────
-KERNEL_SRC := kernel/main.c kernel/uart.c kernel/gdt.c kernel/panic.c kernel/kprintf.c kernel/ssp.c kernel/string.c kernel/idt.c kernel/pmm.c kernel/kmalloc.c
+KERNEL_SRC := kernel/main.c kernel/uart.c kernel/gdt.c kernel/panic.c kernel/kprintf.c kernel/ssp.c kernel/string.c kernel/idt.c kernel/pmm.c kernel/kmalloc.c kernel/selftest.c
 KERNEL_OBJ := $(patsubst kernel/%.c,build/%.o,$(KERNEL_SRC))
 
 ASM_SRC    := kernel/interrupts.asm
@@ -73,7 +73,7 @@ QEMU_FLAGS := -serial stdio          \
 # Targets
 # ==============================================================================
 
-.PHONY: all iso run clean
+.PHONY: all iso run clean test test-userspace
 
 all: $(KERNEL_ELF)
 
@@ -118,3 +118,28 @@ build:
 # ── Clean ────────────────────────────────────────────────────────
 clean:
 	rm -rf build
+
+# ── Automated test: build, run QEMU, check for failures ─────────
+test: iso
+	@echo "=== Running kernel self-tests in QEMU ==="
+	@rm -f build/serial.log
+	$(QEMU) -serial file:build/serial.log -display none \
+	        -cdrom $(ISO_FILE) -no-reboot -m 128M &
+	@sleep 8 && kill %1 2>/dev/null || true
+	@echo ""
+	@echo "=== Serial output ==="
+	@cat build/serial.log
+	@echo ""
+	@if grep -q '\[FAIL\]' build/serial.log; then \
+	    echo "❌ TESTS FAILED"; exit 1; \
+	elif grep -q '0 failures' build/serial.log; then \
+	    echo "✅ ALL TESTS PASSED"; \
+	else \
+	    echo "⚠️  Could not determine test result"; exit 1; \
+	fi
+
+# ── Userspace PMM tests ──────────────────────────────────────────
+test-userspace: | build
+	gcc -DPMM_USERSPACE_TEST -O2 -Wall -Wno-format \
+	    -o build/test_pmm tests/test_pmm.c kernel/pmm.c
+	./build/test_pmm

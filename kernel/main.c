@@ -76,6 +76,118 @@ static const char *memmap_type_str(uint64_t type) {
     }
 }
 
+/* ── Self-test functions (registered via selftest framework) ── */
+
+#include "selftest.h"
+
+static bool test_spinlock(void) {
+    spinlock_t lock = SPINLOCK_INIT;
+    if (!spin_trylock(&lock)) return false;
+    spin_unlock(&lock);
+    return true;
+}
+
+static bool test_memops(void) {
+    uint8_t a[16], b[16];
+    memset(a, 0xAA, 16);
+    if (a[0] != 0xAA || a[15] != 0xAA) return false;
+    memcpy(b, a, 16);
+    return memcmp(a, b, 16) == 0;
+}
+
+static bool test_pmm_alloc_free(void) {
+    uint64_t p = pmm_alloc_pages(0);
+    if (p == 0 || (p & (PAGE_SIZE - 1)) != 0) return false;
+    pmm_free_pages(p, 0);
+    return true;
+}
+
+static bool test_pmm_order5(void) {
+    uint64_t p = pmm_alloc_pages(5);
+    if (p == 0 || (p % (32 * PAGE_SIZE)) != 0) return false;
+    pmm_free_pages(p, 5);
+    return true;
+}
+
+static bool test_kmalloc_small(void) {
+    void *p = kmalloc(64);
+    if (!p) return false;
+    memset(p, 0xBB, 64);
+    kfree(p);
+    return true;
+}
+
+static bool test_kmalloc_large(void) {
+    void *p = kmalloc(8192);
+    if (!p) return false;
+    memset(p, 0xCC, 8192);
+    kfree(p);
+    return true;
+}
+
+static bool test_kzmalloc(void) {
+    uint8_t *p = kzmalloc(128);
+    if (!p) return false;
+    for (int i = 0; i < 128; i++) {
+        if (p[i] != 0) { kfree(p); return false; }
+    }
+    kfree(p);
+    return true;
+}
+
+static bool test_poison(void) {
+    uint8_t *p = kmalloc(64);
+    if (!p) return false;
+    memset(p, 0x42, 64);
+    uint8_t *saved = p;
+    kfree(p);
+    for (int i = 8; i < 64; i++) {
+        if (saved[i] != 0xDE) return false;
+    }
+    return true;
+}
+
+static bool test_krealloc(void) {
+    uint8_t *p = kmalloc(32);
+    if (!p) return false;
+    memset(p, 0xAA, 32);
+    uint8_t *p2 = krealloc(p, 256);
+    if (!p2) return false;
+    if (p2[0] != 0xAA || p2[31] != 0xAA) { kfree(p2); return false; }
+    if (kmalloc_usable_size(p2) < 256) { kfree(p2); return false; }
+    kfree(p2);
+    return true;
+}
+
+static bool test_slab_reclamation(void) {
+    uint64_t before = pmm_free_count();
+    void *p = kmalloc(64);
+    if (pmm_free_count() >= before) { kfree(p); return false; }
+    kfree(p);
+    return pmm_free_count() == before;
+}
+
+static bool test_pmm_watermark(void) {
+    uint64_t free = pmm_free_count();
+    uint64_t total = free + pmm_used_count();
+    uint64_t pct = (free * 100) / (total > 0 ? total : 1);
+    return pct >= 10;
+}
+
+static void register_selftests(void) {
+    selftest_register("Spinlock trylock/unlock",        test_spinlock);
+    selftest_register("memset/memcpy/memcmp",           test_memops);
+    selftest_register("PMM alloc/free order-0",         test_pmm_alloc_free);
+    selftest_register("PMM alloc/free order-5 (128KB)", test_pmm_order5);
+    selftest_register("kmalloc(64) + kfree",            test_kmalloc_small);
+    selftest_register("kmalloc(8192) large alloc",      test_kmalloc_large);
+    selftest_register("kzmalloc zeroing",               test_kzmalloc);
+    selftest_register("Poison 0xDE on kfree",           test_poison);
+    selftest_register("krealloc data preservation",     test_krealloc);
+    selftest_register("Slab reclamation to PMM",        test_slab_reclamation);
+    selftest_register("PMM watermark >= 10%",           test_pmm_watermark);
+}
+
 /* ── Kernel main ──────────────────────────────────────────────── */
 
 void _start(void) {
@@ -104,31 +216,7 @@ void _start(void) {
     hhdm_offset = hhdm_request.response->offset;
     LOG_INFO("HHDM offset: 0x%016lx", hhdm_offset);
 
-    /* 7. Spinlock self-test */
-    {
-        spinlock_t test_lock = SPINLOCK_INIT;
-        KASSERT(spin_trylock(&test_lock));   /* Should succeed */
-        spin_unlock(&test_lock);
-        LOG_OK("Spinlock self-test passed");
-    }
-
-    /* 8. memset/memcpy self-test */
-    {
-        uint8_t test_buf[16];
-        memset(test_buf, 0xAA, sizeof(test_buf));
-        KASSERT(test_buf[0] == 0xAA && test_buf[15] == 0xAA);
-
-        uint8_t copy_buf[16];
-        memcpy(copy_buf, test_buf, sizeof(test_buf));
-        KASSERT(memcmp(test_buf, copy_buf, sizeof(test_buf)) == 0);
-
-        LOG_OK("memset/memcpy/memcmp self-test passed");
-    }
-
-    /* 9. PHYS2VIRT demo */
-    LOG_DEBUG("PHYS2VIRT(0x0) = %p", PHYS2VIRT(0x0));
-
-    /* 10. Memory map */
+    /* 7. Memory map */
     KASSERT(memmap_request.response != NULL);
     uint64_t entry_count = memmap_request.response->entry_count;
     LOG_INFO("Memory map: %lu entries", entry_count);
@@ -163,133 +251,43 @@ void _start(void) {
     pmm_init(memmap_request.response, hhdm_offset);
     pmm_dump_stats();
 
-    /* PMM self-test: alloc and free a page */
-    {
-        uint64_t p = pmm_alloc_pages(0);
-        KASSERT(p != 0);
-        KASSERT((p & (PAGE_SIZE - 1)) == 0);  /* Must be page-aligned */
-        pmm_free_pages(p, 0);
-        LOG_OK("PMM alloc/free self-test passed");
-    }
-
-    /* PMM self-test: alloc order-5 (128KB) */
-    {
-        uint64_t p = pmm_alloc_pages(5);
-        KASSERT(p != 0);
-        KASSERT((p % (32 * PAGE_SIZE)) == 0);  /* 128KB aligned */
-        pmm_free_pages(p, 5);
-        LOG_OK("PMM order-5 alloc/free self-test passed");
-    }
+    /* ─────────────────────────────────────────────────────────────
+     * 12. Self-tests (registered via selftest framework)
+     * ───────────────────────────────────────────────────────────── */
+    register_selftests();
+    int failures = run_all_selftests();
 
     /* ─────────────────────────────────────────────────────────────
-     * 12. kmalloc — Kernel Heap Allocator
+     * 13. Boot memory report
      * ───────────────────────────────────────────────────────────── */
-
-    /* Small alloc: 64-byte struct */
-    {
-        void *p = kmalloc(64);
-        KASSERT(p != NULL);
-        memset(p, 0xBB, 64);
-        kfree(p);
-        LOG_OK("kmalloc(64) + kfree passed");
-    }
-
-    /* Large alloc: 8KB (falls back to PMM pages) */
-    {
-        void *p = kmalloc(8192);
-        KASSERT(p != NULL);
-        memset(p, 0xCC, 8192);
-        kfree(p);
-        LOG_OK("kmalloc(8192) large alloc + kfree passed");
-    }
-
-    /* kzmalloc: verify zeroing */
-    {
-        uint8_t *p = kzmalloc(128);
-        KASSERT(p != NULL);
-        int all_zero = 1;
-        for (int i = 0; i < 128; i++) {
-            if (p[i] != 0) { all_zero = 0; break; }
-        }
-        KASSERT(all_zero);
-        kfree(p);
-        LOG_OK("kzmalloc(128) zeroing verified");
-    }
-
-    /* Poison self-test: verify freed memory contains 0xDE */
-    {
-        uint8_t *p = kmalloc(64);
-        KASSERT(p != NULL);
-        memset(p, 0x42, 64);
-        /* After free, bytes 8..63 should be poisoned with 0xDE */
-        uint8_t *saved = p;  /* Keep pointer to check after free */
-        kfree(p);
-        /* Check poison pattern (bytes 8+ are poisoned, 0-7 = free list ptr) */
-        int poisoned = 1;
-        for (int i = 8; i < 64; i++) {
-            if (saved[i] != 0xDE) { poisoned = 0; break; }
-        }
-        KASSERT(poisoned);
-        LOG_OK("Poison test: freed memory contains 0xDE");
-    }
-
-    /* krealloc self-test */
-    {
-        uint8_t *p = kmalloc(32);
-        KASSERT(p != NULL);
-        memset(p, 0xAA, 32);
-        /* Grow to 256 — should copy old data */
-        uint8_t *p2 = krealloc(p, 256);
-        KASSERT(p2 != NULL);
-        KASSERT(p2[0] == 0xAA && p2[31] == 0xAA);
-        KASSERT(kmalloc_usable_size(p2) >= 256);
-        kfree(p2);
-        LOG_OK("krealloc(32→256) + data preservation passed");
-    }
-
-    /* Slab reclamation test: alloc+free should return page to PMM */
-    {
-        uint64_t free_before = pmm_free_count();
-        void *p = kmalloc(64);
-        KASSERT(pmm_free_count() < free_before);  /* Page taken for slab */
-        kfree(p);
-        KASSERT(pmm_free_count() == free_before);  /* Page reclaimed! */
-        LOG_OK("Slab reclamation: empty slab returned to PMM");
-    }
-
-    /* PMM Watermark check */
-    {
-        uint64_t free = pmm_free_count();
-        uint64_t total = free + pmm_used_count();
-        uint64_t pct = (free * 100) / (total > 0 ? total : 1);
-        if (pct < 10) {
-            LOG_WARN("PMM WATERMARK: only %lu%% free (%lu pages)", pct, free);
-        } else {
-            LOG_OK("PMM watermark OK: %lu%% free (%lu/%lu pages)", pct, free, total);
-        }
-    }
-
-    /* Boot memory report */
     kprintf("\n--- Boot Memory Report ---\n");
     {
+        extern char __kernel_start, __kernel_end;
+        uint64_t kernel_size = (uint64_t)&__kernel_end - (uint64_t)&__kernel_start;
         uint64_t free_pg = pmm_free_count();
         uint64_t used_pg = pmm_used_count();
-        kprintf("  Physical RAM managed: %lu pages (%lu MB)\n",
-                free_pg + used_pg, (free_pg + used_pg) * 4 / 1024);
-        kprintf("  Free:     %lu pages (%lu KB)\n", free_pg, free_pg * 4);
+        uint64_t total = free_pg + used_pg;
+        uint64_t pct = (free_pg * 100) / (total > 0 ? total : 1);
+
+        kprintf("  Kernel:   %lu KB (0x%lx - 0x%lx)\n",
+                kernel_size / 1024, (uint64_t)&__kernel_start, (uint64_t)&__kernel_end);
+        kprintf("  RAM:      %lu pages (%lu MB)\n", total, total * 4 / 1024);
+        kprintf("  Free:     %lu pages (%lu KB) [%lu%%]\n", free_pg, free_pg * 4, pct);
         kprintf("  Used:     %lu pages (%lu KB)\n", used_pg, used_pg * 4);
     }
 
     kmalloc_dump_stats();
 
-    /* 13. Banner */
+    /* 14. Banner */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.2.3\n");
-    kprintf("  Sprint 2: COMPLETE\n");
+    kprintf("  Anykernel OS v0.2.4\n");
+    kprintf("  %d tests, %d failures\n", 11 - failures + failures, failures);
     kprintf("==============================\n");
 
     kprintf("\n");
+    if (failures > 0) {
+        LOG_ERROR("SELF-TEST FAILURES: %d", failures);
+    }
     LOG_INFO("System halted.");
     halt();
 }
-

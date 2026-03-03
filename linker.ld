@@ -13,6 +13,8 @@ SECTIONS {
     /* Higher Half base address */
     . = 0xffffffff80000000;
 
+    __kernel_start = .;
+
     /* Limine request markers — must be in their own section */
     .limine_requests : {
         KEEP(*(.limine_requests_start))
@@ -40,6 +42,9 @@ SECTIONS {
         *(.bss .bss.*)
         *(COMMON)
     } :data
+
+    . = ALIGN(4096);
+    __kernel_end = .;
 
     /DISCARD/ : {
         *(.eh_frame*)

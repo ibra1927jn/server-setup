@@ -44,4 +44,7 @@
 #define LOG_OK(fmt, ...)    \
     kprintf(ANSI_GREEN   "[OK]"    ANSI_RESET "    " fmt "\n", ##__VA_ARGS__)
 
+#define LOG_FAIL(fmt, ...)  \
+    kprintf(ANSI_RED     "[FAIL]"  ANSI_RESET "  " fmt "\n", ##__VA_ARGS__)
+
 #endif /* LOG_H */
