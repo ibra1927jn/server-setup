@@ -12,6 +12,7 @@
 #include "panic.h"
 #include "gdt.h"
 #include "string.h"
+#include "pic.h"
 #include <stdint.h>
 
 /* ── IDT structures ───────────────────────────────────────────── */
@@ -56,6 +57,8 @@ extern void isr_stub_6(void);
 extern void isr_stub_8(void);
 extern void isr_stub_13(void);
 extern void isr_stub_14(void);
+extern void isr_stub_32(void);  /* IRQ0: Timer */
+extern void isr_stub_33(void);  /* IRQ1: Keyboard */
 
 /* ── Exception names ──────────────────────────────────────────── */
 
@@ -109,6 +112,26 @@ void exception_handler_c(struct interrupt_frame *frame) {
     }
 }
 
+/* ── IRQ handler (called from irq_common in interrupts.asm) ──── */
+
+void irq_handler_c(struct interrupt_frame *frame) {
+    uint8_t irq = (uint8_t)(frame->vector - PIC_IRQ_BASE_MASTER);
+
+    switch (irq) {
+        case IRQ_TIMER:
+            pit_tick();
+            break;
+        case IRQ_KEYBOARD:
+            /* Read scancode to acknowledge */
+            asm volatile("inb $0x60, %%al" ::: "al");
+            break;
+        default:
+            break;
+    }
+
+    pic_eoi(irq);
+}
+
 /* ── IDT setup ────────────────────────────────────────────────── */
 
 static void idt_set_gate(int vector, void (*handler)(void), uint8_t ist) {
@@ -132,6 +155,10 @@ void idt_init(void) {
     idt_set_gate(8,  isr_stub_8,  1);  /* #DF — uses IST1 */
     idt_set_gate(13, isr_stub_13, 0);  /* #GP */
     idt_set_gate(14, isr_stub_14, 0);  /* #PF */
+
+    /* Hardware IRQs (remapped by PIC to 0x20+) */
+    idt_set_gate(32, isr_stub_32, 0);  /* IRQ0: Timer */
+    idt_set_gate(33, isr_stub_33, 0);  /* IRQ1: Keyboard */
 
     idtr.limit = sizeof(idt) - 1;
     idtr.base  = (uint64_t)&idt;

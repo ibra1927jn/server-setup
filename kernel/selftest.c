@@ -35,3 +35,7 @@ int run_all_selftests(void) {
     kprintf("=== Results: %d passed, %d failed ===\n\n", passed, failed);
     return failed;
 }
+
+int selftest_count(void) {
+    return test_count;
+}

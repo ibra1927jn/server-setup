@@ -54,14 +54,32 @@ isr_stub_%1:
     jmp     isr_common
 %endmacro
 
-;; ── Generate the 5 critical stubs ───────────────────────────────
+;; ── Generate the 5 critical exception stubs ──────────────────────
 ISR_NOERRCODE 0              ; #DE — Divide Error
 ISR_NOERRCODE 6              ; #UD — Invalid Opcode
 ISR_ERRCODE   8              ; #DF — Double Fault (error = always 0)
 ISR_ERRCODE   13             ; #GP — General Protection Fault
 ISR_ERRCODE   14             ; #PF — Page Fault
 
-;; ── Common handler: save state → call C → halt ──────────────────
+;; ── IRQ handler stubs (hardware interrupts) ──────────────────────
+;; Unlike exceptions, IRQ handlers RETURN via iretq.
+
+extern irq_handler_c
+
+%macro IRQ_STUB 1
+global isr_stub_%1
+isr_stub_%1:
+    push    qword 0          ; dummy error code
+    push    qword %1         ; vector number
+    jmp     irq_common
+%endmacro
+
+; IRQ 0 (Timer)    → Vector 0x20 (32)
+; IRQ 1 (Keyboard) → Vector 0x21 (33)
+IRQ_STUB 32
+IRQ_STUB 33
+
+;; ── Common handler for exceptions: save state → call C → halt ────
 global isr_common
 isr_common:
     ;; Save all general-purpose registers
@@ -91,3 +109,47 @@ isr_common:
     cli
     hlt
     jmp     $
+
+;; ── Common handler for IRQs: save state → call C → restore → iretq ──
+irq_common:
+    push    rax
+    push    rbx
+    push    rcx
+    push    rdx
+    push    rsi
+    push    rdi
+    push    rbp
+    push    r8
+    push    r9
+    push    r10
+    push    r11
+    push    r12
+    push    r13
+    push    r14
+    push    r15
+
+    mov     rdi, rsp
+    call    irq_handler_c
+
+    ;; Restore all registers
+    pop     r15
+    pop     r14
+    pop     r13
+    pop     r12
+    pop     r11
+    pop     r10
+    pop     r9
+    pop     r8
+    pop     rbp
+    pop     rdi
+    pop     rsi
+    pop     rdx
+    pop     rcx
+    pop     rbx
+    pop     rax
+
+    ;; Remove vector and error code from stack
+    add     rsp, 16
+
+    iretq
+

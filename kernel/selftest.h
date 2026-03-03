@@ -32,4 +32,9 @@ void selftest_register(const char *name, selftest_fn func);
  */
 int run_all_selftests(void);
 
+/*
+ * Return the number of registered tests.
+ */
+int selftest_count(void);
+
 #endif /* SELFTEST_H */
