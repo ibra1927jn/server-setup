@@ -297,6 +297,7 @@ void _start(void) {
      * 12. VMM — Virtual Memory Manager (Paging)
      * ───────────────────────────────────────────────────────────── */
     vmm_init();
+    vmm_dump_tables();
 
     /* ─────────────────────────────────────────────────────────────
      * 13. Self-tests (registered via selftest framework)

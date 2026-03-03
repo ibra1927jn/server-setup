@@ -80,4 +80,14 @@ void vmm_map_range(uint64_t virt, uint64_t phys, uint64_t size, uint64_t flags);
  */
 void vmm_map_range_huge(uint64_t virt, uint64_t phys, uint64_t size, uint64_t flags);
 
+/*
+ * Diagnostic: print summary of all mapped regions.
+ */
+void vmm_dump_tables(void);
+
+/*
+ * Return number of page table pages allocated by VMM.
+ */
+uint64_t vmm_tables_count(void);
+
 #endif /* VMM_H */

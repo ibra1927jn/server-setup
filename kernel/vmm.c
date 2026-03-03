@@ -20,6 +20,7 @@
 #include "kprintf.h"
 #include "log.h"
 #include "panic.h"
+#include "spinlock.h"
 
 /* ── Linker-provided section boundaries ──────────────────────── */
 
@@ -36,6 +37,8 @@ extern char __bss_start, __bss_end;
 /* ── Global PML4 (physical address) ──────────────────────────── */
 
 static uint64_t pml4_phys = 0;
+static spinlock_t vmm_lock = SPINLOCK_INIT;
+static uint64_t vmm_tables_allocated = 0;  /* Count of page tables we've allocated */
 
 /* ── Helpers ──────────────────────────────────────────────────── */
 
@@ -88,6 +91,7 @@ static uint64_t *get_or_create_entry(uint64_t table_phys, uint32_t index, bool a
     /* Allocate a new zeroed table */
     uint64_t new_table = pmm_alloc_pages_zero(0);
     KASSERT(new_table != 0);
+    vmm_tables_allocated++;
 
     /* Point entry to new table with full permissions
      * (actual restrictions are at the lowest level) */
@@ -109,6 +113,9 @@ void vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags) {
     KASSERT(IS_PAGE_ALIGNED(phys));
     KASSERT(pml4_phys != 0);
 
+    uint64_t irq_flags;
+    spin_lock_irqsave(&vmm_lock, &irq_flags);
+
     /* Walk PML4 → PDPT → PD → PT, creating tables as needed */
     uint64_t *pml4e = get_or_create_entry(pml4_phys, PML4_INDEX(virt), true);
     KASSERT(pml4e != NULL);
@@ -121,17 +128,15 @@ void vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags) {
     uint64_t *pde = get_or_create_entry(pd_phys, PD_INDEX(virt), true);
     KASSERT(pde != NULL);
 
-    /* At this point, PDE either already has a PT or we just created one.
-     * But if PDE has PTE_HUGE set, it's a 2MB page — don't descend. */
-    KASSERT(!(*pde & PTE_HUGE));  /* Can't map 4KB inside a 2MB mapping */
+    KASSERT(!(*pde & PTE_HUGE));
 
     uint64_t pt_phys = pte_to_phys(*pde);
     uint64_t *pt = (uint64_t *)PHYS2VIRT(pt_phys);
 
-    /* Set the final page table entry */
     pt[PT_INDEX(virt)] = phys | flags;
 
-    /* Flush TLB for this address */
+    spin_unlock_irqrestore(&vmm_lock, irq_flags);
+
     invlpg(virt);
 }
 
@@ -328,5 +333,112 @@ void vmm_init(void) {
     write_cr3(pml4_phys);
     LOG_OK("VMM: CR3 switched! Running on kernel page tables!");
 
-    /* If we get here, the switch succeeded — all mappings are valid */
+    /* 6. Per-section permissions (now that we're on our tables).
+     *    Re-map each section with correct permissions.
+     *    We do this AFTER the switch because changing permissions
+     *    on Limine's tables would be rude. */
+    {
+        uint64_t text_virt  = (uint64_t)&__text_start;
+        uint64_t text_phys  = kernel_phys_base + (text_virt - (uint64_t)&__kernel_start);
+        uint64_t text_size  = (uint64_t)&__text_end - text_virt;
+
+        uint64_t ro_virt    = (uint64_t)&__rodata_start;
+        uint64_t ro_phys    = kernel_phys_base + (ro_virt - (uint64_t)&__kernel_start);
+        uint64_t ro_size    = (uint64_t)&__rodata_end - ro_virt;
+
+        uint64_t data_virt  = (uint64_t)&__data_start;
+        uint64_t data_phys  = kernel_phys_base + (data_virt - (uint64_t)&__kernel_start);
+        uint64_t data_size  = (uint64_t)&__data_end - data_virt;
+
+        uint64_t bss_virt   = (uint64_t)&__bss_start;
+        uint64_t bss_phys   = kernel_phys_base + (bss_virt - (uint64_t)&__kernel_start);
+        uint64_t bss_size   = (uint64_t)&__bss_end - bss_virt;
+
+        /* .text → Read+Execute (no write, no NX) */
+        if (text_size > 0)
+            vmm_map_range(text_virt, text_phys, text_size, VMM_FLAGS_KERNEL_RX);
+
+        /* .rodata → Read-only (no write, NX) */
+        if (ro_size > 0)
+            vmm_map_range(ro_virt, ro_phys, ro_size, VMM_FLAGS_KERNEL_RO);
+
+        /* .data → Read+Write (NX) */
+        if (data_size > 0)
+            vmm_map_range(data_virt, data_phys, data_size, VMM_FLAGS_KERNEL_RW);
+
+        /* .bss → Read+Write (NX) */
+        if (bss_size > 0)
+            vmm_map_range(bss_virt, bss_phys, bss_size, VMM_FLAGS_KERNEL_RW);
+
+        LOG_OK("VMM: Per-section permissions applied");
+        LOG_INFO("  .text:   %lu KB (RX)", text_size / 1024);
+        LOG_INFO("  .rodata: %lu KB (RO)", ro_size / 1024);
+        LOG_INFO("  .data:   %lu KB (RW+NX)", data_size / 1024);
+        LOG_INFO("  .bss:    %lu KB (RW+NX)", bss_size / 1024);
+    }
+
+    /* 7. Stack guard page: unmap the page below current RSP.
+     *    If kernel stack overflows, we get a clean #PF instead of
+     *    silent memory corruption. */
+    {
+        uint64_t rsp;
+        asm volatile("mov %%rsp, %0" : "=r"(rsp));
+        /* The stack grows downward. The guard page is the page
+         * below the bottom of the stack. We go 2 pages below current
+         * RSP to be safe (stack may be nearly full). */
+        uint64_t guard_page = PAGE_ALIGN_DOWN(rsp) - PAGE_SIZE;
+        vmm_unmap_page(guard_page);
+        LOG_OK("VMM: Stack guard page at 0x%lx", guard_page);
+    }
+
+    LOG_INFO("VMM: %lu page tables allocated (%lu KB overhead)",
+             vmm_tables_allocated, vmm_tables_allocated * 4);
+}
+
+/* ── Diagnostics: dump VMM state ──────────────────────────────────── */
+
+void vmm_dump_tables(void) {
+    if (pml4_phys == 0) {
+        LOG_WARN("VMM: No page tables (not initialized)");
+        return;
+    }
+
+    LOG_INFO("VMM Page Table Summary:");
+    kprintf("  PML4: 0x%lx, %lu tables allocated (%lu KB)\n",
+            pml4_phys, vmm_tables_allocated, vmm_tables_allocated * 4);
+
+    uint64_t *pml4 = (uint64_t *)PHYS2VIRT(pml4_phys);
+    uint32_t mapped_4k = 0, mapped_2m = 0;
+
+    for (int i = 0; i < 512; i++) {
+        if (!(pml4[i] & PTE_PRESENT)) continue;
+        uint64_t *pdpt = (uint64_t *)PHYS2VIRT(pte_to_phys(pml4[i]));
+
+        for (int j = 0; j < 512; j++) {
+            if (!(pdpt[j] & PTE_PRESENT)) continue;
+            if (pdpt[j] & PTE_HUGE) continue;  /* 1GB page */
+
+            uint64_t *pd = (uint64_t *)PHYS2VIRT(pte_to_phys(pdpt[j]));
+            for (int k = 0; k < 512; k++) {
+                if (!(pd[k] & PTE_PRESENT)) continue;
+                if (pd[k] & PTE_HUGE) {
+                    mapped_2m++;
+                } else {
+                    uint64_t *pt = (uint64_t *)PHYS2VIRT(pte_to_phys(pd[k]));
+                    for (int l = 0; l < 512; l++) {
+                        if (pt[l] & PTE_PRESENT) mapped_4k++;
+                    }
+                }
+            }
+        }
+    }
+
+    kprintf("  Mapped: %u x 4KB pages + %u x 2MB huge pages\n", mapped_4k, mapped_2m);
+    kprintf("  Total mapped: %lu KB + %lu MB = %lu MB\n",
+            (uint64_t)mapped_4k * 4, (uint64_t)mapped_2m * 2,
+            ((uint64_t)mapped_4k * 4) / 1024 + (uint64_t)mapped_2m * 2);
+}
+
+uint64_t vmm_tables_count(void) {
+    return vmm_tables_allocated;
 }
