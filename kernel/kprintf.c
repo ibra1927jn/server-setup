@@ -26,11 +26,14 @@
 
 /* ── Internal helpers ─────────────────────────────────────────── */
 
+#include "console.h"
+
 static void kprint_char(char c) {
     if (c == '\n') {
         uart_putc('\r');
     }
     uart_putc(c);
+    console_putchar(c);  /* Also render to framebuffer (no-op if not init'd) */
 }
 
 static void kprint_string_padded(const char *s, int width, bool left_align) {

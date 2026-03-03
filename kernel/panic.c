@@ -1,45 +1,34 @@
 /*
- * Anykernel OS v2.1 — Kernel Panic Implementation
+ * Anykernel OS — Kernel Panic (improved)
+ *
+ * Uses kprintf for colored output on both serial and framebuffer.
+ * Dumps CR2 on page faults for immediate diagnosis.
  */
 
 #include "panic.h"
-#include "uart.h"
+#include "kprintf.h"
+#include "log.h"
+#include <stdint.h>
 
 __attribute__((noreturn))
 void kernel_panic(const char *msg, const char *file, int line) {
-    /* Print panic banner */
-    uart_puts("\n\n");
-    uart_puts("!!! KERNEL PANIC !!!\n");
-    uart_puts("  Message: ");
-    uart_puts(msg);
-    uart_puts("\n  File:    ");
-    uart_puts(file);
-    uart_puts("\n  Line:    ");
-
-    /* Print line number as decimal (no kprintf dependency) */
-    char buf[12];
-    int i = 0;
-    int n = line;
-    if (n == 0) {
-        buf[i++] = '0';
-    } else {
-        char tmp[12];
-        int j = 0;
-        while (n > 0) {
-            tmp[j++] = '0' + (n % 10);
-            n /= 10;
-        }
-        while (j > 0) {
-            buf[i++] = tmp[--j];
-        }
-    }
-    buf[i] = '\0';
-    uart_puts(buf);
-
-    uart_puts("\n\n  System halted. Check serial log for details.\n");
-
-    /* Freeze: disable interrupts and halt forever */
+    /* Disable interrupts immediately */
     asm volatile("cli");
+
+    /* Read CR2 (faulting address for page faults) */
+    uint64_t cr2;
+    asm volatile("mov %%cr2, %0" : "=r"(cr2));
+
+    /* Print panic banner with colors */
+    kprintf("\n\n");
+    kprintf(ANSI_RED "!!! KERNEL PANIC !!!" ANSI_RESET "\n");
+    kprintf(ANSI_RED "  Message: " ANSI_RESET "%s\n", msg);
+    kprintf(ANSI_RED "  File:    " ANSI_RESET "%s\n", file);
+    kprintf(ANSI_RED "  Line:    " ANSI_RESET "%d\n", line);
+    kprintf(ANSI_YELLOW "  CR2:     " ANSI_RESET "0x%016lx\n", cr2);
+    kprintf("\n  System halted.\n");
+
+    /* Halt forever */
     for (;;) {
         asm volatile("hlt");
     }

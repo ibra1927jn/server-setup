@@ -22,6 +22,7 @@
 #include "vmm.h"
 #include "kb.h"
 #include "console.h"
+#include "cpuid.h"
 
 /* Limine protocol */
 #include "../limine/limine.h"
@@ -97,6 +98,9 @@ void _start(void) {
     /* 2. SSP — randomize stack canary */
     ssp_init();
     LOG_OK("Stack canary randomized (RDTSC)");
+
+    /* 3. CPU identification */
+    cpuid_detect();
 
     /* 3. Verify Limine protocol */
     KASSERT(LIMINE_BASE_REVISION_SUPPORTED);
@@ -223,10 +227,18 @@ void _start(void) {
     if (failures > 0) {
         LOG_ERROR("SELF-TEST FAILURES: %d", failures);
     }
-    LOG_INFO("System halted (interrupts active).");
+    LOG_INFO("System ready. Type on keyboard.");
 
-    /* Efficient idle: hlt suspends CPU until next interrupt */
+    /* Efficient idle: hlt suspends CPU until next interrupt.
+     * On wakeup, check for keyboard input and echo to console. */
     for (;;) {
         asm volatile("hlt");
+        /* After wakeup: drain keyboard buffer */
+        char c;
+        while ((c = kb_getchar()) != 0) {
+            if (console_available()) {
+                console_putchar(c);
+            }
+        }
     }
 }

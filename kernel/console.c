@@ -24,8 +24,18 @@ static uint32_t rows = 0;      /* max rows */
 
 #define FONT_W 8
 #define FONT_H 16
-#define FG_COLOR 0x00E0E0E0    /* Light gray text */
 #define BG_COLOR 0x00101010    /* Near-black background */
+
+/* Current foreground color (changeable via ANSI codes) */
+static uint32_t fg_color = 0x00E0E0E0;  /* Default: light gray */
+
+/* ANSI escape sequence state machine */
+#define ANSI_STATE_NORMAL  0
+#define ANSI_STATE_ESC     1  /* Got ESC */
+#define ANSI_STATE_BRACKET 2  /* Got ESC[ */
+
+static int  ansi_state = ANSI_STATE_NORMAL;
+static int  ansi_param = 0;
 
 /* ── Built-in 8x16 font (printable ASCII 32-126) ────────────── */
 /*    Each glyph = 16 bytes (one byte per row, MSB = leftmost) */
@@ -141,7 +151,7 @@ static inline void draw_glyph(uint32_t px, uint32_t py, char c) {
         uint8_t row = glyph[y];
         uint32_t *line = fb + (py + y) * ppitch + px;
         for (int x = 0; x < FONT_W; x++) {
-            line[x] = (row & (0x80 >> x)) ? FG_COLOR : BG_COLOR;
+            line[x] = (row & (0x80 >> x)) ? fg_color : BG_COLOR;
         }
     }
 }
@@ -192,8 +202,51 @@ void console_clear(void) {
     cursor_y = 0;
 }
 
+static void ansi_set_color(int code) {
+    switch (code) {
+        case 0:  fg_color = 0x00E0E0E0; break;  /* Reset */
+        case 31: fg_color = 0x00FF4444; break;  /* Red */
+        case 32: fg_color = 0x0044FF44; break;  /* Green */
+        case 33: fg_color = 0x00FFFF44; break;  /* Yellow */
+        case 34: fg_color = 0x006666FF; break;  /* Blue */
+        case 35: fg_color = 0x00FF44FF; break;  /* Magenta */
+        case 36: fg_color = 0x0044FFFF; break;  /* Cyan */
+        case 37: fg_color = 0x00E0E0E0; break;  /* White */
+        default: break;
+    }
+}
+
 void console_putchar(char c) {
     if (!fb_ready) return;
+
+    /* ANSI escape sequence parser */
+    if (ansi_state == ANSI_STATE_ESC) {
+        if (c == '[') {
+            ansi_state = ANSI_STATE_BRACKET;
+            ansi_param = 0;
+            return;
+        }
+        ansi_state = ANSI_STATE_NORMAL;
+        /* Fall through to print the char */
+    } else if (ansi_state == ANSI_STATE_BRACKET) {
+        if (c >= '0' && c <= '9') {
+            ansi_param = ansi_param * 10 + (c - '0');
+            return;
+        }
+        if (c == 'm') {
+            ansi_set_color(ansi_param);
+            ansi_state = ANSI_STATE_NORMAL;
+            return;
+        }
+        /* Unknown sequence end — ignore */
+        ansi_state = ANSI_STATE_NORMAL;
+        return;
+    }
+
+    if (c == 0x1B) {  /* ESC */
+        ansi_state = ANSI_STATE_ESC;
+        return;
+    }
 
     if (c == '\n') {
         cursor_x = 0;
