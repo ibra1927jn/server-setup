@@ -43,6 +43,9 @@ enum task_priority {
 /* Forward decl for join wait queue */
 struct wait_queue;
 
+/* Forward decl for per-task fd table */
+struct file;
+
 /* ── Task Control Block ──────────────────────────────────────── */
 
 struct task {
@@ -70,6 +73,12 @@ struct task {
 
     /* Deadline scheduling (EDF) */
     uint64_t           deadline;      /* Absolute tick deadline (0 = none) */
+
+    /* Watchdog: consecutive ticks without yielding */
+    uint32_t           watchdog_ticks; /* Reset on schedule/yield */
+
+    /* Per-task file descriptors */
+    struct file        *fd_table;     /* Points to FD_TABLE_SIZE entries */
 };
 
 /* ── API ─────────────────────────────────────────────────────── */
@@ -104,5 +113,12 @@ void task_sleep(uint64_t ms);
  * Returns 0 on success, -1 if tid not found.
  */
 int task_join(uint32_t tid);
+
+/*
+ * Set an absolute deadline (PIT tick) for EDF scheduling.
+ * Tasks with deadlines are always preferred over non-deadline tasks.
+ * Set to 0 to clear the deadline.
+ */
+void task_set_deadline(uint64_t deadline_tick);
 
 #endif /* TASK_H */

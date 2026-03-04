@@ -27,6 +27,8 @@
 #include "task.h"
 #include "vfs.h"
 #include "vma.h"
+#include "mempressure.h"
+#include "watchdog.h"
 
 /* Limine protocol */
 #include "../limine/limine.h"
@@ -261,6 +263,12 @@ void _start(void) {
     devfs_init();
 
     /* ─────────────────────────────────────────────────────────────
+     * 13c. Memory Pressure + Watchdog
+     * ───────────────────────────────────────────────────────────── */
+    mempressure_init();
+    watchdog_init();
+
+    /* ─────────────────────────────────────────────────────────────
      * 14. Self-tests
      * ───────────────────────────────────────────────────────────── */
     register_selftests();
@@ -291,7 +299,7 @@ void _start(void) {
     /* Banner */
     uint64_t uptime_ms = pit_get_ticks() * 10;  /* 100 Hz = 10ms per tick */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.5.1\n");
+    kprintf("  Anykernel OS v0.5.2\n");
     kprintf("  %d tests, %d failures\n", selftest_count(), failures);
     kprintf("  Boot time: %lu ms\n", uptime_ms);
     kprintf("==============================\n");

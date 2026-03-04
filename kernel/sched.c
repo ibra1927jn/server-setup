@@ -89,6 +89,25 @@ static inline uint32_t task_quantum(struct task *t) {
     return task_qos_quantum(t);
 }
 
+/* EDF: scan all ready queues for task with nearest deadline */
+static struct task *edf_pick(void) {
+    struct task *best = 0;
+    uint64_t best_deadline = UINT64_MAX;
+
+    for (int p = 0; p < TASK_PRIO_LEVELS; p++) {
+        if (!(prio_bitmap & (1ULL << p))) continue;
+        struct list_node *pos;
+        list_for_each(pos, &prio_queues[p]) {
+            struct task *t = container_of(pos, struct task, run_node);
+            if (t->deadline > 0 && t->deadline < best_deadline) {
+                best = t;
+                best_deadline = t->deadline;
+            }
+        }
+    }
+    return best;
+}
+
 /* ── Allocate a TCB — recycles dead slots first ──────────────── */
 
 static struct task *alloc_tcb(void) {
@@ -180,6 +199,9 @@ int task_create(const char *name, task_entry_fn entry) {
     t->state = TASK_READY;
     t->priority = TASK_PRIO_NORMAL;
     t->qos = QOS_DEFAULT;
+    t->deadline = 0;
+    t->watchdog_ticks = 0;
+    t->fd_table = 0;  /* Tasks inherit no fds by default */
     t->entry = entry;
     t->ticks_used = 0;
     t->sleep_until = 0;
@@ -317,8 +339,16 @@ __hot void schedule(void) {
     stack_canary_check(current_task);
 
     /* O(1) pick: BSF on bitmap finds highest priority in 1 cycle */
+    /* But EDF tasks with deadlines get absolute priority */
     struct task *next;
-    if (likely(prio_bitmap != 0)) {
+    struct task *edf = edf_pick();
+    if (edf) {
+        /* EDF winner: remove from its priority queue */
+        list_remove_node(&edf->run_node);
+        if (list_empty(&prio_queues[edf->priority]))
+            prio_bitmap &= ~(1ULL << edf->priority);
+        next = edf;
+    } else if (likely(prio_bitmap != 0)) {
         next = bitmap_dequeue();
     } else {
         next = idle_task;
@@ -337,6 +367,7 @@ __hot void schedule(void) {
 
     next->state = TASK_RUNNING;
     current_task = next;
+    next->watchdog_ticks = 0;  /* Reset watchdog on schedule */
 
     /* Prefetch new task's stack into L1 cache before switching */
     if (next->stack_phys) {
@@ -363,6 +394,7 @@ __hot void sched_tick(void) {
 
     /* CPU accounting */
     current_task->ticks_used++;
+    current_task->watchdog_ticks++;  /* Watchdog: counts uninterrupted ticks */
 
     /* Per-QoS quantum: only reschedule when quantum expires */
     if (current_task->ticks_used % task_quantum(current_task) == 0)
@@ -380,6 +412,16 @@ void sched_add_ready(struct task *t) {
     uint64_t irq_flags;
     spin_lock_irqsave(&sched_lock, &irq_flags);
     bitmap_enqueue(t);
+    spin_unlock_irqrestore(&sched_lock, irq_flags);
+}
+
+/* ── task_set_deadline — EDF API ─────────────────────────────── */
+
+void task_set_deadline(uint64_t deadline_tick) {
+    uint64_t irq_flags;
+    spin_lock_irqsave(&sched_lock, &irq_flags);
+    if (current_task)
+        current_task->deadline = deadline_tick;
     spin_unlock_irqrestore(&sched_lock, irq_flags);
 }
 
@@ -429,6 +471,10 @@ void sched_init(void) {
     init_task->entry = 0;
     init_task->ticks_used = 0;
     init_task->finished = false;
+    init_task->deadline = 0;
+    init_task->watchdog_ticks = 0;
+    init_task->fd_table = 0;
+    init_task->qos = QOS_DEFAULT;
     strncpy(init_task->name, "init", sizeof(init_task->name));
     current_task = init_task;
 
