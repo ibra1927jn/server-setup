@@ -30,6 +30,7 @@
 #include "waitqueue.h"
 #include "compiler.h"
 #include "qos.h"
+#include "vmm.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -227,8 +228,12 @@ int task_create(const char *name, task_entry_fn entry) {
     /* Set stack canary at bottom of stack */
     stack_canary_set(t);
 
-    /* Build initial context_switch frame */
+    /* Guard page: unmap bottom page of stack to catch overflow via #PF.
+     * Linux, macOS, and Windows all use this technique. */
     uint64_t stack_virt = (uint64_t)PHYS2VIRT(stack_phys);
+    vmm_unmap_page(stack_virt);  /* Unmap page 0 of 4 (the bottom) */
+
+    /* Build initial context_switch frame */
     uint64_t stack_top = stack_virt + TASK_STACK_SIZE;
 
     uint64_t *sp = (uint64_t *)stack_top;
