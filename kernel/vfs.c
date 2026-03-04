@@ -11,6 +11,7 @@
 #include "log.h"
 #include "compiler.h"
 #include "spinlock.h"
+#include "bitmap_alloc.h"
 
 /* ── Device registry ─────────────────────────────────────────── */
 
@@ -21,6 +22,7 @@ static spinlock_t  vfs_lock = SPINLOCK_INIT;
 /* ── Global fd table (future: per-task) ──────────────────────── */
 
 static struct file fd_table[VFS_MAX_FDS];
+static struct id_pool fd_pool;  /* O(1) fd allocation via bitmap */
 
 /* ── Init ────────────────────────────────────────────────────── */
 
@@ -28,6 +30,7 @@ void vfs_init(void) {
     memset(devices, 0, sizeof(devices));
     memset(fd_table, 0, sizeof(fd_table));
     device_count = 0;
+    id_pool_init(&fd_pool);  /* All fd slots free */
     LOG_OK("VFS initialized (%d fd slots, %d device slots)",
            VFS_MAX_FDS, VFS_MAX_DEVICES);
 }
@@ -75,28 +78,27 @@ int vfs_open(const char *path, int flags) {
     struct vnode *vn = vfs_lookup(path);
     if (!vn) return -1;
 
-    /* Find a free fd slot */
-    for (int fd = 0; fd < VFS_MAX_FDS; fd++) {
-        if (!fd_table[fd].in_use) {
-            fd_table[fd].vnode = vn;
-            fd_table[fd].flags = flags;
-            fd_table[fd].offset = 0;
-            fd_table[fd].in_use = true;
-            vn->refcount++;
+    /* O(1) fd allocation via bitmap BSF */
+    int fd = id_alloc(&fd_pool);
+    if (fd < 0 || fd >= VFS_MAX_FDS) return -1;
 
-            /* Call device open if provided */
-            if (vn->ops && vn->ops->open) {
-                int ret = vn->ops->open(vn, flags);
-                if (ret < 0) {
-                    fd_table[fd].in_use = false;
-                    vn->refcount--;
-                    return -1;
-                }
-            }
-            return fd;
+    fd_table[fd].vnode = vn;
+    fd_table[fd].flags = flags;
+    fd_table[fd].offset = 0;
+    fd_table[fd].in_use = true;
+    vn->refcount++;
+
+    /* Call device open if provided */
+    if (vn->ops && vn->ops->open) {
+        int ret = vn->ops->open(vn, flags);
+        if (ret < 0) {
+            fd_table[fd].in_use = false;
+            vn->refcount--;
+            id_free(&fd_pool, fd);
+            return -1;
         }
     }
-    return -1;  /* No free fds */
+    return fd;
 }
 
 /* ── Close ───────────────────────────────────────────────────── */
@@ -113,6 +115,7 @@ int vfs_close(int fd) {
     vn->refcount--;
     fd_table[fd].in_use = false;
     fd_table[fd].vnode = 0;
+    id_free(&fd_pool, fd);  /* O(1) return fd to bitmap */
     return 0;
 }
 
