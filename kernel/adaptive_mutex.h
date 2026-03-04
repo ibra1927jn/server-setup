@@ -61,7 +61,7 @@ static inline void adaptive_lock(struct adaptive_mutex *m) {
             m->owner->priority = cur->priority;
         }
         spin_unlock_irqrestore(&m->guard, flags);
-        wait_event(&m->waiters);
+        wq_wait(&m->waiters);
         spin_lock_irqsave(&m->guard, &flags);
     }
 
@@ -81,7 +81,7 @@ static inline void adaptive_unlock(struct adaptive_mutex *m) {
 
     m->owner = 0;
     __sync_lock_release(&m->locked);
-    wake_one(&m->waiters);
+    wq_wake_one(&m->waiters);
 
     spin_unlock_irqrestore(&m->guard, flags);
 }

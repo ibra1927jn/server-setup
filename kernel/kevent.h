@@ -50,9 +50,9 @@ static inline void kevent_signal(struct kevent *e) {
     spin_lock_irqsave(&e->lock, &flags);
     e->signaled = 1;
     if (e->type == KEVENT_AUTO_RESET)
-        wake_one(&e->waiters);    /* Wake one, auto-clear below */
+        wq_wake_one(&e->waiters);
     else
-        wake_all(&e->waiters);    /* Wake all for manual reset */
+        wq_wake_all(&e->waiters);
     spin_unlock_irqrestore(&e->lock, flags);
 }
 
@@ -61,7 +61,7 @@ static inline void kevent_wait(struct kevent *e) {
     spin_lock_irqsave(&e->lock, &flags);
     while (!e->signaled) {
         spin_unlock_irqrestore(&e->lock, flags);
-        wait_event(&e->waiters);
+        wq_wait(&e->waiters);
         spin_lock_irqsave(&e->lock, &flags);
     }
     if (e->type == KEVENT_AUTO_RESET)

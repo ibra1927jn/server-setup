@@ -20,6 +20,13 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+/* New primitives (v0.5.7) */
+#include "ringbuf.h"
+#include "bitmap_alloc.h"
+#include "kref.h"
+#include "kevent.h"
+#include "vfs.h"
+
 /* ── Spinlock & Memory tests ─────────────────────────────────── */
 
 static bool test_spinlock(void) {
@@ -485,6 +492,121 @@ static bool test_ksnprintf(void) {
     return true;
 }
 
+/* ── New primitive tests (v0.5.7) ─────────────────────────────── */
+
+static bool test_ringbuf(void) {
+    uint8_t storage[64];
+    struct ring_buf rb;
+    ring_init(&rb, storage, 64);
+
+    /* Write and read back */
+    const char *msg = "hello";
+    uint32_t written = ring_write(&rb, msg, 5);
+    if (written != 5) return false;
+    if (ring_used(&rb) != 5) return false;
+
+    char out[8] = {0};
+    uint32_t got = ring_read(&rb, out, 5);
+    if (got != 5) return false;
+    if (memcmp(out, "hello", 5) != 0) return false;
+    if (!ring_empty(&rb)) return false;
+
+    /* Overflow: write more than capacity → clamped */
+    char big[128];
+    memset(big, 'X', sizeof(big));
+    written = ring_write(&rb, big, 128);
+    if (written != 64) return false;  /* Clamped to size */
+    if (!ring_full(&rb)) return false;
+    return true;
+}
+
+static bool test_bitmap_alloc(void) {
+    struct id_pool pool = ID_POOL_INIT;
+
+    /* Alloc first 3 IDs */
+    int id0 = id_alloc(&pool);
+    int id1 = id_alloc(&pool);
+    int id2 = id_alloc(&pool);
+    if (id0 < 0 || id1 < 0 || id2 < 0) return false;
+    if (id0 == id1 || id1 == id2) return false;  /* Must be unique */
+    if (!id_is_used(&pool, id0)) return false;
+
+    /* Free and re-alloc — should reuse */
+    id_free(&pool, id1);
+    if (id_is_used(&pool, id1)) return false;
+    int id3 = id_alloc(&pool);
+    if (id3 != id1) return false;  /* BSF should find freed bit first */
+
+    /* Exhaust all 64 IDs */
+    id_free(&pool, id0); id_free(&pool, id2); id_free(&pool, id3);
+    for (int i = 0; i < 64; i++) id_alloc(&pool);
+    int overflow = id_alloc(&pool);
+    if (overflow != -1) return false;  /* Pool full */
+    return true;
+}
+
+static int kref_release_count = 0;
+static void kref_test_release(struct kref *r) {
+    (void)r;
+    kref_release_count++;
+}
+
+static bool test_kref(void) {
+    struct kref r;
+    kref_init(&r);
+    if (kref_read(&r) != 1) return false;
+
+    kref_get(&r);
+    if (kref_read(&r) != 2) return false;
+
+    kref_release_count = 0;
+    kref_put(&r, kref_test_release);
+    if (kref_read(&r) != 1) return false;
+    if (kref_release_count != 0) return false;  /* Not released yet */
+
+    kref_put(&r, kref_test_release);
+    if (kref_release_count != 1) return false;  /* Released! */
+    return true;
+}
+
+static bool test_kevent(void) {
+    struct kevent evt;
+    kevent_init(&evt, KEVENT_MANUAL_RESET);
+
+    if (kevent_is_signaled(&evt)) return false;  /* Starts unsignaled */
+    kevent_signal(&evt);
+    if (!kevent_is_signaled(&evt)) return false;  /* Now signaled */
+    kevent_reset(&evt);
+    if (kevent_is_signaled(&evt)) return false;  /* Reset works */
+
+    /* Auto-reset mode */
+    kevent_init(&evt, KEVENT_AUTO_RESET);
+    kevent_signal(&evt);
+    if (!kevent_is_signaled(&evt)) return false;
+    /* In real use, kevent_wait would auto-clear. We test the flag directly. */
+    return true;
+}
+
+static bool test_vfs_lifecycle(void) {
+    /* Open /dev/null (always available) */
+    int fd = vfs_open("null", VFS_O_RDWR);
+    if (fd < 0) return false;
+
+    /* Write to /dev/null — should succeed and discard */
+    int64_t w = vfs_write(fd, "test", 4);
+    if (w != 4) return false;
+
+    /* Read from /dev/null — should return 0 (EOF) */
+    char buf[4];
+    int64_t r = vfs_read(fd, buf, 4);
+    if (r != 0) return false;
+
+    /* Close */
+    int c = vfs_close(fd);
+    if (c != 0) return false;
+    return true;
+}
+
 /* ── Registration ──────────────────────────────────────────────── */
 
 void register_selftests(void) {
@@ -542,4 +664,11 @@ void register_selftests(void) {
     selftest_register("PMM peak usage tracking",        test_pmm_peak);
     selftest_register("memcmp edge cases",              test_memcmp_edges);
     selftest_register("ksnprintf formatting",           test_ksnprintf);
+
+    /* New primitive tests (v0.5.7) */
+    selftest_register("Ring buffer SPSC",               test_ringbuf);
+    selftest_register("Bitmap ID allocator",            test_bitmap_alloc);
+    selftest_register("kref lifecycle",                 test_kref);
+    selftest_register("KEVENT signal/wait",             test_kevent);
+    selftest_register("VFS open/write/close",           test_vfs_lifecycle);
 }

@@ -31,7 +31,7 @@ static inline void kref_get(struct kref *r) {
 
 /* Returns 1 if the object was released, 0 otherwise */
 static inline int kref_put(struct kref *r, void (*release)(struct kref *)) {
-    if (atomic_dec_and_test(&r->refcount)) {
+    if (atomic_dec(&r->refcount) == 0) {
         release(r);
         return 1;
     }
