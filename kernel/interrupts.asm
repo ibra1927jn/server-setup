@@ -54,12 +54,14 @@ isr_stub_%1:
     jmp     isr_common
 %endmacro
 
-;; ── Generate the 5 critical exception stubs ──────────────────────
+;; ── Generate exception stubs ─────────────────────────────────────
 ISR_NOERRCODE 0              ; #DE — Divide Error
 ISR_NOERRCODE 6              ; #UD — Invalid Opcode
+ISR_NOERRCODE 7              ; #NM — Device Not Available (FPU/SSE)
 ISR_ERRCODE   8              ; #DF — Double Fault (error = always 0)
 ISR_ERRCODE   13             ; #GP — General Protection Fault
 ISR_ERRCODE   14             ; #PF — Page Fault
+ISR_NOERRCODE 16             ; #MF — x87 Floating-Point Error
 
 ;; ── IRQ handler stubs (hardware interrupts) ──────────────────────
 ;; Unlike exceptions, IRQ handlers RETURN via iretq.

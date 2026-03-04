@@ -55,9 +55,11 @@ static struct idt_pointer idtr;
 
 extern void isr_stub_0(void);
 extern void isr_stub_6(void);
+extern void isr_stub_7(void);
 extern void isr_stub_8(void);
 extern void isr_stub_13(void);
 extern void isr_stub_14(void);
+extern void isr_stub_16(void);
 extern void isr_stub_32(void);  /* IRQ0: Timer */
 extern void isr_stub_33(void);  /* IRQ1: Keyboard */
 
@@ -67,9 +69,11 @@ static const char *exception_name(uint64_t vector) {
     switch (vector) {
         case 0:  return "Divide Error (#DE)";
         case 6:  return "Invalid Opcode (#UD)";
+        case 7:  return "Device Not Available (#NM) — FPU/SSE used without CR0.TS clear";
         case 8:  return "Double Fault (#DF)";
         case 13: return "General Protection (#GP)";
         case 14: return "Page Fault (#PF)";
+        case 16: return "x87 Floating-Point Error (#MF)";
         default: return "Unknown Exception";
     }
 }
@@ -176,9 +180,11 @@ void idt_init(void) {
     /* Install exception handlers (stubs from interrupts.asm) */
     idt_set_gate(0,  isr_stub_0,  0);  /* #DE */
     idt_set_gate(6,  isr_stub_6,  0);  /* #UD */
+    idt_set_gate(7,  isr_stub_7,  0);  /* #NM — FPU/SSE */
     idt_set_gate(8,  isr_stub_8,  1);  /* #DF — uses IST1 */
     idt_set_gate(13, isr_stub_13, 0);  /* #GP */
     idt_set_gate(14, isr_stub_14, 0);  /* #PF */
+    idt_set_gate(16, isr_stub_16, 0);  /* #MF — x87 FP error */
 
     /* Hardware IRQs (remapped by PIC to 0x20+) */
     idt_set_gate(32, isr_stub_32, 0);  /* IRQ0: Timer */

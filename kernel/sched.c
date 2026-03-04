@@ -38,7 +38,7 @@ extern void context_switch(struct task *old, struct task *new_task);
 
 #define TASK_STACK_PAGES  4
 #define TASK_STACK_SIZE   (TASK_STACK_PAGES * PAGE_SIZE)
-#define MAX_TASKS         32
+#define MAX_TASKS         64
 
 /* ── Scheduler state ─────────────────────────────────────────── */
 

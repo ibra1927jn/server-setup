@@ -204,3 +204,118 @@ void kprintf(const char *fmt, ...) {
 
     va_end(args);
 }
+
+/* ── ksnprintf — format into a buffer ────────────────────────── */
+
+struct snprintf_ctx {
+    char   *buf;
+    size_t  size;
+    size_t  pos;
+};
+
+static void snprint_char(struct snprintf_ctx *ctx, char c) {
+    if (ctx->pos + 1 < ctx->size) {
+        ctx->buf[ctx->pos] = c;
+    }
+    ctx->pos++;
+}
+
+static void snprint_string(struct snprintf_ctx *ctx, const char *s) {
+    if (!s) s = "(null)";
+    while (*s) snprint_char(ctx, *s++);
+}
+
+static void snprint_unsigned(struct snprintf_ctx *ctx, uint64_t val,
+                              int base, int width, char pad, bool uppercase) {
+    static const char lo[] = "0123456789abcdef";
+    static const char up[] = "0123456789ABCDEF";
+    const char *digits = uppercase ? up : lo;
+    char tmp[20];
+    int i = 0;
+
+    if (val == 0) {
+        tmp[i++] = '0';
+    } else {
+        while (val > 0) { tmp[i++] = digits[val % base]; val /= base; }
+    }
+    while (i < width) { snprint_char(ctx, pad); width--; }
+    while (i > 0) snprint_char(ctx, tmp[--i]);
+}
+
+static void snprint_signed(struct snprintf_ctx *ctx, int64_t val,
+                            int width, char pad) {
+    if (val < 0) {
+        snprint_char(ctx, '-');
+        if (width > 0) width--;
+        snprint_unsigned(ctx, (uint64_t)(-val), 10, width, pad, false);
+    } else {
+        snprint_unsigned(ctx, (uint64_t)val, 10, width, pad, false);
+    }
+}
+
+int kvsnprintf(char *buf, size_t size, const char *fmt, va_list args) {
+    struct snprintf_ctx ctx = { .buf = buf, .size = size, .pos = 0 };
+
+    while (*fmt) {
+        if (*fmt != '%') {
+            snprint_char(&ctx, *fmt++);
+            continue;
+        }
+        fmt++;
+
+        char pad = ' ';
+        if (*fmt == '0') { pad = '0'; fmt++; }
+        else if (*fmt == '-') { fmt++; } /* skip left-align for now */
+
+        int width = 0;
+        while (*fmt >= '0' && *fmt <= '9') {
+            width = width * 10 + (*fmt - '0');
+            fmt++;
+        }
+
+        bool is_long = false;
+        if (*fmt == 'l') { is_long = true; fmt++; if (*fmt == 'l') fmt++; }
+
+        switch (*fmt) {
+        case 's': snprint_string(&ctx, va_arg(args, const char *)); break;
+        case 'd':
+            if (is_long) snprint_signed(&ctx, va_arg(args, int64_t), width, pad);
+            else snprint_signed(&ctx, va_arg(args, int), width, pad);
+            break;
+        case 'u':
+            if (is_long) snprint_unsigned(&ctx, va_arg(args, uint64_t), 10, width, pad, false);
+            else snprint_unsigned(&ctx, va_arg(args, unsigned int), 10, width, pad, false);
+            break;
+        case 'x':
+            if (is_long) snprint_unsigned(&ctx, va_arg(args, uint64_t), 16, width, pad, false);
+            else snprint_unsigned(&ctx, va_arg(args, unsigned int), 16, width, pad, false);
+            break;
+        case 'X':
+            if (is_long) snprint_unsigned(&ctx, va_arg(args, uint64_t), 16, width, pad, true);
+            else snprint_unsigned(&ctx, va_arg(args, unsigned int), 16, width, pad, true);
+            break;
+        case 'p':
+            snprint_string(&ctx, "0x");
+            snprint_unsigned(&ctx, (uint64_t)va_arg(args, void *), 16, 16, '0', false);
+            break;
+        case 'c': snprint_char(&ctx, (char)va_arg(args, int)); break;
+        case '%': snprint_char(&ctx, '%'); break;
+        default: snprint_char(&ctx, '%'); snprint_char(&ctx, *fmt); break;
+        }
+        fmt++;
+    }
+
+    /* NUL-terminate */
+    if (size > 0) {
+        buf[ctx.pos < size ? ctx.pos : size - 1] = '\0';
+    }
+    return (int)ctx.pos;
+}
+
+int ksnprintf(char *buf, size_t size, const char *fmt, ...) {
+    va_list args;
+    va_start(args, fmt);
+    int ret = kvsnprintf(buf, size, fmt, args);
+    va_end(args);
+    return ret;
+}

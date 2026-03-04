@@ -16,6 +16,7 @@
 #include "pic.h"
 #include "console.h"
 #include "kb.h"
+#include "kprintf.h"
 #include <stdint.h>
 #include <stdbool.h>
 
@@ -460,7 +461,31 @@ static bool test_memcmp_edges(void) {
     return true;
 }
 
-/* ── Registration ────────────────────────────────────────────── */
+static bool test_ksnprintf(void) {
+    char buf[64];
+
+    /* Basic string formatting */
+    int n = ksnprintf(buf, sizeof(buf), "hello %s", "world");
+    if (n != 11) return false;
+    if (memcmp(buf, "hello world", 11) != 0) return false;
+
+    /* Integer formatting */
+    ksnprintf(buf, sizeof(buf), "%d", -42);
+    if (buf[0] != '-' || buf[1] != '4' || buf[2] != '2') return false;
+
+    /* Hex formatting */
+    ksnprintf(buf, sizeof(buf), "0x%x", 0xFF);
+    if (memcmp(buf, "0xff", 4) != 0) return false;
+
+    /* Truncation: buffer too small */
+    ksnprintf(buf, 4, "abcdefgh");
+    if (buf[3] != '\0') return false;  /* Must be NUL-terminated */
+    if (memcmp(buf, "abc", 3) != 0) return false;
+
+    return true;
+}
+
+/* ── Registration ──────────────────────────────────────────────── */
 
 void register_selftests(void) {
     /* Spinlock & memory */
@@ -516,4 +541,5 @@ void register_selftests(void) {
     selftest_register("strncpy + truncation",           test_strncpy);
     selftest_register("PMM peak usage tracking",        test_pmm_peak);
     selftest_register("memcmp edge cases",              test_memcmp_edges);
+    selftest_register("ksnprintf formatting",           test_ksnprintf);
 }
