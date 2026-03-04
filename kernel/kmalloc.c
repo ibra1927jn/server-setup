@@ -60,12 +60,13 @@ _Static_assert(sizeof(struct slab_header) == 32, "slab_header must be 32B");
 struct slab_class {
     uint32_t            obj_size;    /* Slot size for this class */
     struct slab_header *slabs;       /* Linked list of slab pages */
+    spinlock_t          lock;        /* Per-class lock (no contention across sizes) */
     uint64_t            total_allocs;
     uint64_t            total_frees;
 };
 
 static struct slab_class classes[SLAB_NUM_CLASSES];
-static spinlock_t heap_lock = SPINLOCK_INIT;
+static spinlock_t large_lock = SPINLOCK_INIT;  /* Only for > 2048B allocs */
 static uint64_t large_allocs = 0;
 static uint64_t large_frees  = 0;
 
@@ -140,6 +141,7 @@ static void kmalloc_init(void) {
     for (int i = 0; i < SLAB_NUM_CLASSES; i++) {
         classes[i].obj_size = size;
         classes[i].slabs = NULL;
+        classes[i].lock = (spinlock_t)SPINLOCK_INIT;
         classes[i].total_allocs = 0;
         classes[i].total_frees = 0;
         size *= 2;
@@ -152,62 +154,60 @@ static void kmalloc_init(void) {
 void *kmalloc(uint64_t size) {
     if (size == 0) return NULL;
 
-    uint64_t irq_flags;
-    spin_lock_irqsave(&heap_lock, &irq_flags);
-
     if (!initialized) kmalloc_init();
 
     int cls_idx = size_to_class(size);
 
     if (cls_idx < 0) {
-        /* Large allocation: use full pages from PMM */
+        /* Large allocation: use large_lock */
+        uint64_t irq_flags;
+        spin_lock_irqsave(&large_lock, &irq_flags);
+
         uint32_t order = 0;
-        uint64_t needed = size + 8;  /* +8 for size header */
+        uint64_t needed = size + 8;
         while ((1UL << order) * PAGE_SIZE < needed && order <= PMM_MAX_ORDER) {
             order++;
         }
 
         uint64_t phys = pmm_alloc_pages_zero(order);
         if (phys == 0) {
-            spin_unlock_irqrestore(&heap_lock, irq_flags);
+            spin_unlock_irqrestore(&large_lock, irq_flags);
             return NULL;
         }
 
         void *virt = phys_to_virt(phys);
-        /* Store order in first 8 bytes */
         *(uint64_t *)virt = order;
         large_allocs++;
-        spin_unlock_irqrestore(&heap_lock, irq_flags);
+        spin_unlock_irqrestore(&large_lock, irq_flags);
         return (void *)((uint64_t)virt + 8);
     }
 
+    /* Slab allocation: use per-class lock */
     struct slab_class *cls = &classes[cls_idx];
+    uint64_t irq_flags;
+    spin_lock_irqsave(&cls->lock, &irq_flags);
 
-    /* Find a slab with free slots */
     struct slab_header *slab = cls->slabs;
     while (slab && slab->free == NULL) {
         slab = slab->next;
     }
 
-    /* No slab available — create a new one */
     if (slab == NULL) {
         slab = slab_new(cls);
         if (slab == NULL) {
-            spin_unlock_irqrestore(&heap_lock, irq_flags);
+            spin_unlock_irqrestore(&cls->lock, irq_flags);
             return NULL;
         }
-        /* Prepend to class list */
         slab->next = cls->slabs;
         cls->slabs = slab;
     }
 
-    /* Pop from free list */
     void *slot = slab->free;
     slab->free = *(void **)slot;
     slab->used++;
     cls->total_allocs++;
 
-    spin_unlock_irqrestore(&heap_lock, irq_flags);
+    spin_unlock_irqrestore(&cls->lock, irq_flags);
     return slot;
 }
 
@@ -216,29 +216,30 @@ void *kmalloc(uint64_t size) {
 void kfree(void *ptr) {
     if (ptr == NULL) return;
 
-    uint64_t irq_flags;
-    spin_lock_irqsave(&heap_lock, &irq_flags);
-
     /* Check if this is a large allocation (page-aligned - 8 bytes) */
     uint64_t addr = (uint64_t)ptr;
 
-    /* If ptr-8 is page-aligned, it's a large alloc */
     if (((addr - 8) & (PAGE_SIZE - 1)) == 0) {
+        /* Large free: use large_lock */
+        uint64_t irq_flags;
+        spin_lock_irqsave(&large_lock, &irq_flags);
         void *base = (void *)(addr - 8);
         uint32_t order = (uint32_t)(*(uint64_t *)base);
-        /* Poison the entire allocation before freeing */
         memset(base, POISON_BYTE, (1UL << order) * PAGE_SIZE);
         uint64_t phys = virt_to_phys(base);
         pmm_free_pages(phys, order);
         large_frees++;
-        spin_unlock_irqrestore(&heap_lock, irq_flags);
+        spin_unlock_irqrestore(&large_lock, irq_flags);
         return;
     }
 
-    /* Slab allocation — find the slab header */
+    /* Slab free: use per-class lock */
     struct slab_header *slab = slab_from_ptr(ptr);
     int cls_idx = size_to_class(slab->obj_size);
     KASSERT(slab->used > 0);
+
+    uint64_t irq_flags;
+    spin_lock_irqsave(&classes[cls_idx].lock, &irq_flags);
 
     /* Poison the slot (except first 8 bytes — used for free list link) */
     if (slab->obj_size > 8) {
@@ -252,31 +253,24 @@ void kfree(void *ptr) {
 
     /* Slab reclamation: if all slots are free, return page to PMM */
     if (slab->used == 0) {
-        /* Update stats before destroying slab header */
-        if (cls_idx >= 0) {
-            classes[cls_idx].total_frees++;
-        }
+        classes[cls_idx].total_frees++;
         /* Unlink from class list */
-        if (cls_idx >= 0) {
-            struct slab_header **pp = &classes[cls_idx].slabs;
-            while (*pp && *pp != slab) {
-                pp = &(*pp)->next;
-            }
-            if (*pp == slab) {
-                *pp = slab->next;
-            }
+        struct slab_header **pp = &classes[cls_idx].slabs;
+        while (*pp && *pp != slab) {
+            pp = &(*pp)->next;
+        }
+        if (*pp == slab) {
+            *pp = slab->next;
         }
         /* Poison entire page and return to PMM */
         memset(slab, POISON_BYTE, PAGE_SIZE);
         uint64_t phys = virt_to_phys((void *)slab);
         pmm_free_pages(phys, 0);
     } else {
-        if (cls_idx >= 0) {
-            classes[cls_idx].total_frees++;
-        }
+        classes[cls_idx].total_frees++;
     }
 
-    spin_unlock_irqrestore(&heap_lock, irq_flags);
+    spin_unlock_irqrestore(&classes[cls_idx].lock, irq_flags);
 }
 
 /* ── kzmalloc ─────────────────────────────────────────────────── */
