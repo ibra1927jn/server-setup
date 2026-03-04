@@ -3,7 +3,7 @@
  *
  * Registers kernel devices as file-like objects in the VFS:
  *
- *   /dev/serial   — UART COM1 (write-only: sends to serial port)
+ *   /dev/serial   — UART COM1 (read/write: serial port I/O)
  *   /dev/console  — Framebuffer console (write-only: renders text)
  *   /dev/keyboard — PS/2 keyboard (read-only: returns ASCII chars)
  *   /dev/null     — Discard all writes, reads return 0
@@ -32,10 +32,23 @@ static int64_t serial_write(struct vnode *vn, const void *buf, uint64_t count) {
     return (int64_t)count;
 }
 
+static int64_t serial_read(struct vnode *vn, void *buf, uint64_t count) {
+    (void)vn;
+    char *p = (char *)buf;
+    uint64_t read = 0;
+    for (uint64_t i = 0; i < count; i++) {
+        char c = uart_getc();
+        if (c == 0) break;
+        p[i] = c;
+        read++;
+    }
+    return (int64_t)read;
+}
+
 static struct file_ops serial_ops = {
     .open  = 0,
     .close = 0,
-    .read  = 0,    /* TODO: UART receive */
+    .read  = serial_read,
     .write = serial_write,
     .ioctl = 0,
 };

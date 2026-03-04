@@ -20,4 +20,10 @@ void uart_puts(const char *s);
 /* Print a 64-bit value as hexadecimal */
 void uart_put_hex(uint64_t val);
 
+/* Check if data is available in the receive buffer */
+int uart_data_ready(void);
+
+/* Read a single character (returns 0 if no data available) */
+char uart_getc(void);
+
 #endif /* UART_H */

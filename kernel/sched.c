@@ -51,6 +51,7 @@ static spinlock_t sched_lock __cacheline_aligned = SPINLOCK_INIT;
 static struct list_head prio_queues[TASK_PRIO_LEVELS];
 static volatile uint64_t prio_bitmap __cacheline_aligned = 0;
 static struct list_head sleep_queue = LIST_HEAD_INIT(sleep_queue);
+static struct list_head deadline_queue = LIST_HEAD_INIT(deadline_queue);  /* EDF: sorted by deadline, O(1) dequeue */
 
 /* O(1) helpers: BSF finds lowest set bit = highest priority */
 static inline int bitmap_find_first(uint64_t bm) {
@@ -59,9 +60,16 @@ static inline int bitmap_find_first(uint64_t bm) {
     return (int)result;
 }
 
+/* Forward decl for EDF deadline queue (defined below) */
+static void deadline_enqueue(struct task *t);
+
 static inline void bitmap_enqueue(struct task *t) {
-    list_push_back(&prio_queues[t->priority], &t->run_node);
-    prio_bitmap |= (1ULL << t->priority);
+    if (t->deadline > 0) {
+        deadline_enqueue(t);  /* EDF: separate sorted queue */
+    } else {
+        list_push_back(&prio_queues[t->priority], &t->run_node);
+        prio_bitmap |= (1ULL << t->priority);
+    }
 }
 
 static inline struct task *bitmap_dequeue(void) {
@@ -89,23 +97,30 @@ static inline uint32_t task_quantum(struct task *t) {
     return task_qos_quantum(t);
 }
 
-/* EDF: scan all ready queues for task with nearest deadline */
-static struct task *edf_pick(void) {
-    struct task *best = 0;
-    uint64_t best_deadline = UINT64_MAX;
-
-    for (int p = 0; p < TASK_PRIO_LEVELS; p++) {
-        if (!(prio_bitmap & (1ULL << p))) continue;
-        struct list_node *pos;
-        list_for_each(pos, &prio_queues[p]) {
-            struct task *t = container_of(pos, struct task, run_node);
-            if (t->deadline > 0 && t->deadline < best_deadline) {
-                best = t;
-                best_deadline = t->deadline;
-            }
+/* EDF O(1): deadline tasks are kept in a separate queue sorted by deadline.
+ * Insertion is O(N) worst case but N = deadline tasks only (typically 0-3).
+ * Dequeue is O(1) — just take the head. */
+static void deadline_enqueue(struct task *t) {
+    struct list_node *pos;
+    list_for_each(pos, &deadline_queue) {
+        struct task *q = container_of(pos, struct task, run_node);
+        if (t->deadline < q->deadline) {
+            /* Insert before q */
+            t->run_node.next = pos;
+            t->run_node.prev = pos->prev;
+            pos->prev->next = &t->run_node;
+            pos->prev = &t->run_node;
+            return;
         }
     }
-    return best;
+    list_push_back(&deadline_queue, &t->run_node);
+}
+
+static struct task *edf_pick(void) {
+    if (list_empty(&deadline_queue)) return 0;
+    struct task *t = container_of(deadline_queue.sentinel.next, struct task, run_node);
+    list_remove_node(&t->run_node);
+    return t;
 }
 
 /* ── Allocate a TCB — recycles dead slots first ──────────────── */
@@ -343,11 +358,7 @@ __hot void schedule(void) {
     struct task *next;
     struct task *edf = edf_pick();
     if (edf) {
-        /* EDF winner: remove from its priority queue */
-        list_remove_node(&edf->run_node);
-        if (list_empty(&prio_queues[edf->priority]))
-            prio_bitmap &= ~(1ULL << edf->priority);
-        next = edf;
+        next = edf;  /* Already removed from deadline_queue by edf_pick */
     } else if (likely(prio_bitmap != 0)) {
         next = bitmap_dequeue();
     } else {

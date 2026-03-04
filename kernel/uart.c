@@ -125,3 +125,17 @@ void uart_put_hex(uint64_t val) {
         }
     }
 }
+
+/* ── UART Receive (polling) ──────────────────────────────────── */
+
+#define LSR_DR 0x01  /* Bit 0: Data Ready in RBR */
+
+int uart_data_ready(void) {
+    return inb(REG_LSR) & LSR_DR;
+}
+
+char uart_getc(void) {
+    if (!uart_data_ready()) return 0;
+    return (char)inb(COM1_BASE);  /* Read from RBR (same port as THR) */
+}
+
