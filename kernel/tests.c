@@ -441,6 +441,25 @@ static bool test_pmm_peak(void) {
     return new_peak >= peak;
 }
 
+/* ── memcmp edge-case test ────────────────────────────────────── */
+
+static bool test_memcmp_edges(void) {
+    /* Zero-length compare = always equal */
+    if (memcmp("abc", "xyz", 0) != 0) return false;
+    /* Single byte */
+    if (memcmp("a", "a", 1) != 0) return false;
+    if (memcmp("a", "b", 1) >= 0) return false;
+    /* Identical buffers */
+    uint8_t a[16], b[16];
+    memset(a, 0x42, 16);
+    memset(b, 0x42, 16);
+    if (memcmp(a, b, 16) != 0) return false;
+    /* Differ at last byte */
+    b[15] = 0x43;
+    if (memcmp(a, b, 16) >= 0) return false;
+    return true;
+}
+
 /* ── Registration ────────────────────────────────────────────── */
 
 void register_selftests(void) {
@@ -496,4 +515,5 @@ void register_selftests(void) {
     selftest_register("strncmp comparisons",            test_strncmp);
     selftest_register("strncpy + truncation",           test_strncpy);
     selftest_register("PMM peak usage tracking",        test_pmm_peak);
+    selftest_register("memcmp edge cases",              test_memcmp_edges);
 }

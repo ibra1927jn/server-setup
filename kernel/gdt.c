@@ -36,11 +36,13 @@ struct gdt_pointer {
 
 /* ── TSS instance ─────────────────────────────────────────────── */
 
-/* Kernel stack for Ring 3 → Ring 0 transitions */
-static uint8_t kernel_stack[8192] __attribute__((aligned(16)));
-
-/* IST1 stack for Double Fault handler */
-static uint8_t ist1_stack[4096] __attribute__((aligned(16)));
+/*
+ * Temporary stacks for TSS init — VMM replaces both RSP0 and IST1
+ * with larger, guard-page-protected stacks during vmm_init().
+ * These are just placeholders to satisfy the CPU until then.
+ */
+static uint8_t temp_rsp0_stack[64] __attribute__((aligned(16)));
+static uint8_t temp_ist1_stack[64] __attribute__((aligned(16)));
 
 static struct tss tss_instance;
 
@@ -105,10 +107,10 @@ void gdt_init(void) {
     }
 
     /* RSP0: top of kernel stack (stack grows down) */
-    tss_instance.rsp0 = (uint64_t)(kernel_stack + sizeof(kernel_stack));
+    tss_instance.rsp0 = (uint64_t)(temp_rsp0_stack + sizeof(temp_rsp0_stack));
 
     /* IST1: separate stack for #DF (Double Fault) */
-    tss_instance.ist[0] = (uint64_t)(ist1_stack + sizeof(ist1_stack));
+    tss_instance.ist[0] = (uint64_t)(temp_ist1_stack + sizeof(temp_ist1_stack));
 
     /* IOPB offset points past the TSS (no I/O bitmap) */
     tss_instance.iopb_offset = sizeof(struct tss);

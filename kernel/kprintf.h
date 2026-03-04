@@ -2,7 +2,8 @@
  * Anykernel OS v2.1 — Freestanding kprintf
  *
  * Lightweight kernel printf using <stdarg.h> (compiler-provided).
- * Outputs to UART COM1. No heap allocation, no floating point.
+ * Triple output: UART serial + framebuffer console + klog ring buffer.
+ * No heap allocation, no floating point.
  *
  * Supported format specifiers:
  *   %s   — string
