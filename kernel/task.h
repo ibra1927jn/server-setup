@@ -63,6 +63,7 @@ struct task {
 
     /* Join support — wait queue that task_join sleeps on */
     volatile bool      finished;      /* Set when task exits */
+    struct wait_queue  *join_wq;      /* Joiners sleep here, woken on exit */
 };
 
 /* ── API ─────────────────────────────────────────────────────── */

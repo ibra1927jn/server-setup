@@ -27,6 +27,7 @@
 #include "kprintf.h"
 #include "log.h"
 #include "pic.h"
+#include "waitqueue.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -81,9 +82,18 @@ static struct task *idle_task    = 0;
 
 static volatile int need_resched = 0;
 
-/* ── Allocate a TCB from the pool ────────────────────────────── */
+/* ── Allocate a TCB — recycles dead slots first ──────────────── */
 
 static struct task *alloc_tcb(void) {
+    /* First pass: recycle a DEAD slot */
+    for (uint32_t i = 0; i < task_pool_used; i++) {
+        if (task_pool[i].state == TASK_DEAD && task_pool[i].stack_phys == 0) {
+            struct task *t = &task_pool[i];
+            memset(t, 0, sizeof(*t));
+            return t;
+        }
+    }
+    /* Second pass: extend pool */
     if (task_pool_used >= MAX_TASKS) return 0;
     struct task *t = &task_pool[task_pool_used++];
     memset(t, 0, sizeof(*t));
@@ -202,7 +212,13 @@ void task_exit(void) {
     asm volatile("cli");
 
     current_task->state = TASK_DEAD;
-    current_task->finished = true;  /* Signal joiners */
+    current_task->finished = true;
+
+    /* Wake ALL threads waiting to join us — instant, no polling */
+    if (current_task->join_wq) {
+        wq_wake_all(current_task->join_wq);
+    }
+
     list_push_back(&dead_queue, &current_task->run_node);
 
     LOG_INFO("Task '%s' (TID %u) exiting, used %lu ticks",
@@ -243,9 +259,20 @@ int task_join(uint32_t tid) {
     struct task *target = find_task(tid);
     if (!target) return -1;
 
-    /* Sleep-wait until target finishes (check every 10ms) */
+    /* Already finished? Return immediately */
+    if (target->finished) return 0;
+
+    /* Allocate a wait queue on-demand for joiners */
+    struct wait_queue join_wq;
+    wq_init(&join_wq);
+
+    if (!target->join_wq) {
+        target->join_wq = &join_wq;
+    }
+
+    /* Sleep until target calls task_exit → wq_wake_all */
     while (!target->finished) {
-        task_sleep(10);
+        wq_wait(target->join_wq);
     }
     return 0;
 }

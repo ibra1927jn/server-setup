@@ -1,18 +1,18 @@
 /*
- * Anykernel OS v2.1 — Spinlock (Ticket-less, Test-and-Set)
+ * Anykernel OS — Ticket Spinlock
  *
- * The simplest correct spinlock for x86_64 using GCC atomics.
- * Used to protect shared kernel structures (PMM free lists, etc.)
- * from concurrent access when interrupts or multi-core are enabled.
+ * Fair FIFO spinlock using tickets. Unlike test-and-set spinlocks,
+ * ticket locks guarantee that waiters are served in arrival order.
+ * This prevents starvation under high contention (critical for SMP).
  *
- * While we currently run single-core with interrupts disabled,
- * building the PMM with locking from day 1 means we won't have to
- * retrofit it later — a common source of subtle corruption bugs.
+ * How it works:
+ *   - Each locker takes a "ticket" (atomic increment of next_ticket)
+ *   - Spins until serving_ticket matches their ticket
+ *   - Unlock increments serving_ticket to serve next waiter
  *
- * Uses:
- *   __atomic_test_and_set — single atomic read-modify-write (XCHG on x86)
- *   __atomic_clear        — atomic store with release semantics
- *   pause                 — reduces power + avoids memory order violations
+ * Memory ordering:
+ *   - Lock:   ACQUIRE (no loads/stores before this point)
+ *   - Unlock: RELEASE (all stores visible before unlock)
  */
 
 #ifndef SPINLOCK_H
@@ -22,72 +22,71 @@
 #include <stdint.h>
 
 typedef struct {
-    volatile bool locked;
+    volatile uint16_t next_ticket;
+    volatile uint16_t serving_ticket;
 } spinlock_t;
 
-#define SPINLOCK_INIT { .locked = false }
+#define SPINLOCK_INIT { .next_ticket = 0, .serving_ticket = 0 }
 
 /*
- * Acquire the lock. Spins until successful.
- * ACQUIRE semantics: no loads/stores can be reordered before this point.
+ * Acquire the lock — takes a ticket and waits for your turn.
+ * FIFO fair: first to arrive = first to enter critical section.
  */
 static inline void spin_lock(spinlock_t *lock) {
-    while (__atomic_test_and_set(&lock->locked, __ATOMIC_ACQUIRE)) {
-        /* Busy-wait hint: reduces power consumption and allows
-         * the memory subsystem to handle the pending store from
-         * the other core faster. Essential on real hardware. */
+    uint16_t my_ticket = __atomic_fetch_add(&lock->next_ticket, 1, __ATOMIC_RELAXED);
+    while (__atomic_load_n(&lock->serving_ticket, __ATOMIC_ACQUIRE) != my_ticket) {
         asm volatile("pause");
     }
 }
 
 /*
- * Release the lock.
- * RELEASE semantics: all prior stores become visible before the unlock.
+ * Release the lock — serves the next waiter in line.
  */
 static inline void spin_unlock(spinlock_t *lock) {
-    __atomic_clear(&lock->locked, __ATOMIC_RELEASE);
+    __atomic_fetch_add(&lock->serving_ticket, 1, __ATOMIC_RELEASE);
 }
 
 /*
  * Try to acquire without spinning. Returns true if acquired.
+ * Only succeeds if no one else is waiting.
  */
 static inline bool spin_trylock(spinlock_t *lock) {
-    return !__atomic_test_and_set(&lock->locked, __ATOMIC_ACQUIRE);
+    uint16_t expected = __atomic_load_n(&lock->serving_ticket, __ATOMIC_RELAXED);
+    return __atomic_compare_exchange_n(
+        &lock->next_ticket, &expected, expected + 1,
+        false, __ATOMIC_ACQUIRE, __ATOMIC_RELAXED);
+}
+
+/*
+ * Check if lock is held (for assertions only).
+ */
+static inline bool spin_is_locked(spinlock_t *lock) {
+    return __atomic_load_n(&lock->next_ticket, __ATOMIC_RELAXED) !=
+           __atomic_load_n(&lock->serving_ticket, __ATOMIC_RELAXED);
 }
 
 /*
  * IRQ-safe lock: save RFLAGS, disable interrupts, THEN acquire.
  *
  * WHY: If an IRQ fires while we hold a spinlock, and the IRQ handler
- * tries to acquire the SAME lock (e.g., timer IRQ calls kmalloc while
- * pmm_alloc_pages holds the PMM lock), we deadlock on a single core.
- *
+ * tries to acquire the SAME lock, we deadlock on a single core.
  * Solution: disable IRQs first, so no handler can preempt us.
- * The saved flags let us restore the previous interrupt state
- * (which might already have been disabled by a caller above us).
- *
- * Usage:
- *   uint64_t flags;
- *   spin_lock_irqsave(&my_lock, &flags);
- *   // ... critical section ...
- *   spin_unlock_irqrestore(&my_lock, flags);
  */
 static inline void spin_lock_irqsave(spinlock_t *lock, uint64_t *flags) {
     uint64_t rflags;
-    asm volatile("pushfq; pop %0" : "=r"(rflags));  /* Save RFLAGS */
-    asm volatile("cli");                              /* Disable IRQs */
+    asm volatile("pushfq; pop %0" : "=r"(rflags));
+    asm volatile("cli");
     *flags = rflags;
     spin_lock(lock);
 }
 
 /*
- * IRQ-safe unlock: release lock, THEN restore RFLAGS (re-enabling
- * interrupts only if they were enabled before the lock was taken).
+ * IRQ-safe unlock: release lock, THEN restore RFLAGS.
  */
 static inline void spin_unlock_irqrestore(spinlock_t *lock, uint64_t flags) {
     spin_unlock(lock);
     if (flags & (1UL << 9)) {   /* Bit 9 = IF (Interrupt Flag) */
-        asm volatile("sti");     /* Re-enable only if was enabled before */
+        asm volatile("sti");
     }
 }
 
