@@ -28,6 +28,7 @@
 #include "log.h"
 #include "pic.h"
 #include "waitqueue.h"
+#include "compiler.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -43,11 +44,11 @@ extern void context_switch(struct task *old, struct task *new_task);
 
 /* ── Scheduler state ─────────────────────────────────────────── */
 
-static spinlock_t sched_lock = SPINLOCK_INIT;
+static spinlock_t sched_lock __cacheline_aligned = SPINLOCK_INIT;
 
 /* O(1) bitmap scheduler: 64 priority queues + bitmap */
 static struct list_head prio_queues[TASK_PRIO_LEVELS];
-static volatile uint64_t prio_bitmap = 0;  /* bit N set = queue N non-empty */
+static volatile uint64_t prio_bitmap __cacheline_aligned = 0;
 static struct list_head sleep_queue = LIST_HEAD_INIT(sleep_queue);
 
 /* O(1) helpers: BSF finds lowest set bit = highest priority */
@@ -77,10 +78,17 @@ static struct task  task_pool[MAX_TASKS];
 static uint32_t     task_pool_used = 0;
 static uint32_t     next_tid = 0;
 
-static struct task *current_task = 0;
+static struct task *current_task __cacheline_aligned = 0;
 static struct task *idle_task    = 0;
 
 static volatile int need_resched = 0;
+
+/* Per-priority quantum: higher priority = longer timeslice */
+static inline uint32_t priority_quantum(enum task_priority p) {
+    if (p <= TASK_PRIO_HIGH)   return 4;  /* 40ms */
+    if (p <= TASK_PRIO_NORMAL) return 2;  /* 20ms */
+    return 1;                              /* 10ms */
+}
 
 /* ── Allocate a TCB — recycles dead slots first ──────────────── */
 
@@ -296,7 +304,7 @@ static void wake_sleepers(void) {
 
 /* ── Schedule ────────────────────────────────────────────────── */
 
-void schedule(void) {
+__hot void schedule(void) {
     uint64_t irq_flags;
     spin_lock_irqsave(&sched_lock, &irq_flags);
 
@@ -310,13 +318,13 @@ void schedule(void) {
 
     /* O(1) pick: BSF on bitmap finds highest priority in 1 cycle */
     struct task *next;
-    if (prio_bitmap != 0) {
+    if (likely(prio_bitmap != 0)) {
         next = bitmap_dequeue();
     } else {
         next = idle_task;
     }
 
-    if (next == current_task) {
+    if (likely(next == current_task)) {
         spin_unlock_irqrestore(&sched_lock, irq_flags);
         return;
     }
@@ -329,6 +337,11 @@ void schedule(void) {
 
     next->state = TASK_RUNNING;
     current_task = next;
+
+    /* Prefetch new task's stack into L1 cache before switching */
+    if (next->stack_phys) {
+        prefetch((void *)PHYS2VIRT(next->stack_phys + TASK_STACK_SIZE - 64));
+    }
 
     context_switch(old, next);
 
@@ -344,14 +357,16 @@ void sched_yield(void) {
 
 /* ── sched_tick — called from PIT handler ────────────────────── */
 
-void sched_tick(void) {
+__hot void sched_tick(void) {
     /* Guard: PIT fires before sched_init sets current_task */
-    if (!current_task) return;
-
-    need_resched = 1;
+    if (unlikely(!current_task)) return;
 
     /* CPU accounting */
     current_task->ticks_used++;
+
+    /* Per-priority quantum: only reschedule when quantum expires */
+    if (current_task->ticks_used % priority_quantum(current_task->priority) == 0)
+        need_resched = 1;
 }
 
 int sched_need_resched(void) {
