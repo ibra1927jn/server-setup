@@ -23,6 +23,8 @@
 #include "kb.h"
 #include "console.h"
 #include "cpuid.h"
+#include "sched.h"
+#include "task.h"
 
 /* Limine protocol */
 #include "../limine/limine.h"
@@ -87,6 +89,31 @@ extern void register_selftests(void);
 
 /* Saved for VMM to determine HHDM size from actual memory map */
 struct limine_memmap_response *memmap_resp_saved = 0;
+
+/* ── Demo kernel threads ─────────────────────────────────────── */
+
+static void thread_a_fn(void) {
+    for (int i = 0; i < 5; i++) {
+        LOG_INFO("[Thread-A] iteration %d (TID=%u)", i, task_current()->tid);
+        /* Busy-wait ~50ms to show time-slicing */
+        uint64_t start = pit_get_ticks();
+        while (pit_get_ticks() - start < 5) {
+            asm volatile("pause");
+        }
+    }
+    LOG_OK("[Thread-A] done!");
+}
+
+static void thread_b_fn(void) {
+    for (int i = 0; i < 5; i++) {
+        LOG_INFO("[Thread-B] iteration %d (TID=%u)", i, task_current()->tid);
+        uint64_t start = pit_get_ticks();
+        while (pit_get_ticks() - start < 5) {
+            asm volatile("pause");
+        }
+    }
+    LOG_OK("[Thread-B] done!");
+}
 
 /* ── Kernel main ──────────────────────────────────────────────── */
 
@@ -214,7 +241,7 @@ void _start(void) {
     /* Banner */
     uint64_t uptime_ms = pit_get_ticks() * 10;  /* 100 Hz = 10ms per tick */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.3.11\n");
+    kprintf("  Anykernel OS v0.4.0\n");
     kprintf("  %d tests, %d failures\n", selftest_count(), failures);
     kprintf("  Boot time: %lu ms\n", uptime_ms);
     kprintf("==============================\n");
@@ -223,13 +250,20 @@ void _start(void) {
     if (failures > 0) {
         LOG_ERROR("SELF-TEST FAILURES: %d", failures);
     }
-    LOG_INFO("System ready. Type on keyboard.");
 
-    /* Efficient idle: hlt suspends CPU until next interrupt.
-     * On wakeup, check for keyboard input and echo to console. */
+    /* ── Step 16: Scheduler ──────────────────────────────────── */
+    sched_init();
+    LOG_OK("Scheduler initialized");
+
+    /* Spawn demo threads */
+    task_create("thread-A", thread_a_fn);
+    task_create("thread-B", thread_b_fn);
+
+    LOG_INFO("System ready. Init task handling keyboard.");
+
+    /* Init task becomes keyboard handler loop */
     for (;;) {
         asm volatile("hlt");
-        /* After wakeup: drain keyboard buffer */
         char c;
         while ((c = kb_getchar()) != 0) {
             if (console_available()) {

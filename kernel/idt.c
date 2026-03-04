@@ -119,6 +119,7 @@ void exception_handler_c(struct interrupt_frame *frame) {
 /* ── IRQ handler (called from irq_common in interrupts.asm) ──── */
 
 #include "kb.h"
+#include "sched.h"
 
 /* Forward decl from pic.c */
 extern void irq_dispatch(uint8_t irq);
@@ -129,12 +130,26 @@ void irq_handler_c(struct interrupt_frame *frame) {
     switch (irq) {
         case IRQ_TIMER:
             pit_tick();
-            break;
+            sched_tick();  /* Set need_resched flag */
+
+            /*
+             * TRAP 1: EOI MUST be sent BEFORE schedule().
+             * If context_switch jumps to another thread, the
+             * pic_eoi(irq) at the bottom never executes, and
+             * the PIC stops delivering timer interrupts forever.
+             */
+            pic_eoi(irq);
+
+            if (sched_need_resched()) {
+                schedule();
+            }
+            return;  /* EOI already sent */
+
         case IRQ_KEYBOARD:
             kb_irq_handler();
             break;
         default:
-            irq_dispatch(irq);  /* Dynamic handler table */
+            irq_dispatch(irq);
             break;
     }
 
