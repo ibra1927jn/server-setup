@@ -64,6 +64,12 @@ struct task {
     /* Join support — wait queue that task_join sleeps on */
     volatile bool      finished;      /* Set when task exits */
     struct wait_queue  *join_wq;      /* Joiners sleep here, woken on exit */
+
+    /* QoS class (macOS-inspired) */
+    uint8_t            qos;           /* enum qos_class */
+
+    /* Deadline scheduling (EDF) */
+    uint64_t           deadline;      /* Absolute tick deadline (0 = none) */
 };
 
 /* ── API ─────────────────────────────────────────────────────── */

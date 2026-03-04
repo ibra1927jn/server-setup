@@ -29,6 +29,7 @@
 #include "pic.h"
 #include "waitqueue.h"
 #include "compiler.h"
+#include "qos.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -83,11 +84,9 @@ static struct task *idle_task    = 0;
 
 static volatile int need_resched = 0;
 
-/* Per-priority quantum: higher priority = longer timeslice */
-static inline uint32_t priority_quantum(enum task_priority p) {
-    if (p <= TASK_PRIO_HIGH)   return 4;  /* 40ms */
-    if (p <= TASK_PRIO_NORMAL) return 2;  /* 20ms */
-    return 1;                              /* 10ms */
+/* Per-task quantum from QoS class (macOS-inspired) */
+static inline uint32_t task_quantum(struct task *t) {
+    return task_qos_quantum(t);
 }
 
 /* ── Allocate a TCB — recycles dead slots first ──────────────── */
@@ -180,6 +179,7 @@ int task_create(const char *name, task_entry_fn entry) {
     t->tid = next_tid++;
     t->state = TASK_READY;
     t->priority = TASK_PRIO_NORMAL;
+    t->qos = QOS_DEFAULT;
     t->entry = entry;
     t->ticks_used = 0;
     t->sleep_until = 0;
@@ -364,8 +364,8 @@ __hot void sched_tick(void) {
     /* CPU accounting */
     current_task->ticks_used++;
 
-    /* Per-priority quantum: only reschedule when quantum expires */
-    if (current_task->ticks_used % priority_quantum(current_task->priority) == 0)
+    /* Per-QoS quantum: only reschedule when quantum expires */
+    if (current_task->ticks_used % task_quantum(current_task) == 0)
         need_resched = 1;
 }
 
