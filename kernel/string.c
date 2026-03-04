@@ -64,15 +64,36 @@ void *memcpy(void *dest, const void *src, size_t n) {
     const uint8_t *s = (const uint8_t *)src;
 
     /*
-     * rep movsb: copy RCX bytes from [RSI] to [RDI].
-     * Requires direction flag = 0 (forward), which is the default in SysV ABI.
+     * Optimization: use rep movsq (8 bytes/cycle) for bulk,
+     * then rep movsb for the remaining 0-7 bytes.
      */
-    asm volatile(
-        "rep movsb"
-        : "+D"(d), "+S"(s), "+c"(n)
-        :
-        : "memory"
-    );
+    if (n >= 8) {
+        size_t qwords = n / 8;
+        size_t remain = n % 8;
+
+        asm volatile(
+            "rep movsq"
+            : "+D"(d), "+S"(s), "+c"(qwords)
+            :
+            : "memory"
+        );
+
+        if (remain) {
+            asm volatile(
+                "rep movsb"
+                : "+D"(d), "+S"(s), "+c"(remain)
+                :
+                : "memory"
+            );
+        }
+    } else {
+        asm volatile(
+            "rep movsb"
+            : "+D"(d), "+S"(s), "+c"(n)
+            :
+            : "memory"
+        );
+    }
 
     return dest;
 }

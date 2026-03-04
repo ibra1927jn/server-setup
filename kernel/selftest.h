@@ -12,7 +12,7 @@
 #include <stdbool.h>
 
 /* Max number of self-tests that can be registered */
-#define SELFTEST_MAX 32
+#define SELFTEST_MAX 64
 
 /* Test function signature: returns true on pass */
 typedef bool (*selftest_fn)(void);

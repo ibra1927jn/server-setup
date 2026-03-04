@@ -13,6 +13,7 @@
 #include "gdt.h"
 #include "string.h"
 #include "pic.h"
+#include "log.h"
 #include <stdint.h>
 
 /* ── IDT structures ───────────────────────────────────────────── */
@@ -79,15 +80,18 @@ void exception_handler_c(struct interrupt_frame *frame) {
     uint64_t cr2;
     asm volatile("movq %%cr2, %0" : "=r"(cr2));
 
-    kprintf("\n\n!!! CPU EXCEPTION !!!\n");
-    kprintf("  Vector:     %lu — %s\n", frame->vector, exception_name(frame->vector));
-    kprintf("  Error Code: 0x%lx\n", frame->error_code);
-    kprintf("  RIP:        0x%016lx\n", frame->rip);
-    kprintf("  CS:         0x%lx\n", frame->cs);
-    kprintf("  RFLAGS:     0x%016lx\n", frame->rflags);
-    kprintf("  RSP:        0x%016lx\n", frame->rsp);
-    kprintf("  CR2:        0x%016lx\n", cr2);
-    kprintf("\n  Registers:\n");
+    kprintf("\n\n");
+    kprintf(ANSI_RED "╔══════════════════════════════════════╗" ANSI_RESET "\n");
+    kprintf(ANSI_RED "║        !!! CPU EXCEPTION !!!         ║" ANSI_RESET "\n");
+    kprintf(ANSI_RED "╚══════════════════════════════════════╝" ANSI_RESET "\n");
+    kprintf(ANSI_RED "  Vector:     " ANSI_RESET "%lu — %s\n", frame->vector, exception_name(frame->vector));
+    kprintf(ANSI_RED "  Error Code: " ANSI_RESET "0x%lx\n", frame->error_code);
+    kprintf(ANSI_YELLOW "  RIP:        " ANSI_RESET "0x%016lx\n", frame->rip);
+    kprintf(ANSI_YELLOW "  CS:         " ANSI_RESET "0x%lx\n", frame->cs);
+    kprintf(ANSI_YELLOW "  RFLAGS:     " ANSI_RESET "0x%016lx\n", frame->rflags);
+    kprintf(ANSI_YELLOW "  RSP:        " ANSI_RESET "0x%016lx\n", frame->rsp);
+    kprintf(ANSI_YELLOW "  CR2:        " ANSI_RESET "0x%016lx\n", cr2);
+    kprintf("\n" ANSI_CYAN "  Registers:" ANSI_RESET "\n");
     kprintf("    RAX=%016lx  RBX=%016lx\n", frame->rax, frame->rbx);
     kprintf("    RCX=%016lx  RDX=%016lx\n", frame->rcx, frame->rdx);
     kprintf("    RSI=%016lx  RDI=%016lx\n", frame->rsi, frame->rdi);
@@ -98,7 +102,7 @@ void exception_handler_c(struct interrupt_frame *frame) {
     kprintf("    R15=%016lx\n", frame->r15);
 
     if (frame->vector == 14) {
-        kprintf("\n  Page Fault details:\n");
+        kprintf("\n" ANSI_RED "  Page Fault details:" ANSI_RESET "\n");
         kprintf("    %s\n", (frame->error_code & 1) ? "Protection violation" : "Page not present");
         kprintf("    %s access\n", (frame->error_code & 2) ? "Write" : "Read");
         kprintf("    %s mode\n", (frame->error_code & 4) ? "User" : "Kernel");

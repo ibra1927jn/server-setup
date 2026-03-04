@@ -61,6 +61,7 @@ struct pmm_state {
     uint64_t         free_pages;    /* Total free pages */
     uint64_t         used_pages;    /* Total allocated pages */
     uint64_t         reserved_pages;/* Pages in holes/MMIO */
+    uint64_t         peak_used;     /* High water mark for used pages */
 };
 
 /* ── API ──────────────────────────────────────────────────────── */
@@ -98,6 +99,7 @@ void pmm_free_pages(uint64_t phys_addr, uint32_t order);
 /* Diagnostics */
 uint64_t pmm_free_count(void);
 uint64_t pmm_used_count(void);
+uint64_t pmm_peak_used(void);
 void     pmm_dump_stats(void);
 
 /* ── Userspace test interface ─────────────────────────────────── */

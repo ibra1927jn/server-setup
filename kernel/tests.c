@@ -398,6 +398,49 @@ static bool test_timer_callback(void) {
     return timer_test_fired >= 3;  /* Should have fired at least 3 times */
 }
 
+/* ── String function tests ───────────────────────────────────── */
+
+static bool test_strncmp(void) {
+    if (strncmp("hello", "hello", 5) != 0) return false;
+    if (strncmp("hello", "hellx", 5) == 0) return false;
+    if (strncmp("hello", "hellx", 4) != 0) return false; /* only compare first 4 */
+    if (strncmp("abc", "abd", 3) >= 0) return false; /* 'c' < 'd' */
+    return true;
+}
+
+static bool test_strncpy(void) {
+    char buf[16];
+    memset(buf, 'X', sizeof(buf));
+    strncpy(buf, "hello", 16);
+    if (strncmp(buf, "hello", 5) != 0) return false;
+    if (buf[5] != '\0') return false;  /* null padded */
+    /* Test truncation */
+    strncpy(buf, "this is long", 4);
+    if (strncmp(buf, "this", 4) != 0) return false;
+    return true;
+}
+
+/* ── PMM peak tracking test ──────────────────────────────────── */
+
+static bool test_pmm_peak(void) {
+    /* Peak should be non-zero (VMM + stress test have allocated pages) */
+    uint64_t peak = pmm_peak_used();
+    if (peak == 0) return false;
+
+    /* Peak should always be >= currently used */
+    uint64_t used = pmm_used_count();
+    if (peak < used) return false;
+
+    /* Allocate and verify peak doesn't go backwards */
+    uint64_t p1 = pmm_alloc_pages_zero(0);
+    if (p1 == 0) return false;
+    uint64_t new_peak = pmm_peak_used();
+    pmm_free_pages(p1, 0);
+
+    /* Peak should be >= what it was before (monotonically increasing) */
+    return new_peak >= peak;
+}
+
 /* ── Registration ────────────────────────────────────────────── */
 
 void register_selftests(void) {
@@ -448,4 +491,9 @@ void register_selftests(void) {
     selftest_register("Intrusive list operations",      test_list_operations);
     selftest_register("memset stosq large+small",       test_memset_large);
     selftest_register("Timer callback fires",           test_timer_callback);
+
+    /* String & diagnostics */
+    selftest_register("strncmp comparisons",            test_strncmp);
+    selftest_register("strncpy + truncation",           test_strncpy);
+    selftest_register("PMM peak usage tracking",        test_pmm_peak);
 }

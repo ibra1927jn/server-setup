@@ -1,4 +1,4 @@
-# Anykernel OS
+# Anykernel OS v0.3.10
 
 A minimal x86_64 kernel built from scratch — UEFI boot via Limine, higher-half design, freestanding C with clang.
 
@@ -107,6 +107,8 @@ make clean
 | v0.3.6 | Framebuffer console (8x16 font), PS/2 keyboard, HHDM optimized |
 | v0.3.7 | Dual kprintf output, ANSI colors, CPUID, improved panic, KB echo |
 | v0.3.8 | Boot numbering fix, uptime display, console/KB tests (26 total) |
+| v0.3.9 | stosq memset, movsq memcpy, shift/caps, list.h, klog ring buffer, IRQ table, timer callbacks (30 tests) |
+| v0.3.10 | klog on panic, colored exceptions, SELFTEST_MAX=64, PMM peak tracking, strncmp/strncpy tests (33 tests) |
 
 ## Project Structure
 
@@ -120,12 +122,14 @@ kernel/
   idt.c/h      — IDT + exception/IRQ handlers
   gdt.c/h      — GDT + TSS (RSP0, IST1)
   selftest.c/h — Test registration framework
-  tests.c      — All 26 self-test functions
-  kprintf.c/h  — Kernel printf (dual: serial + framebuffer)
+  tests.c      — All 33 self-test functions
+  kprintf.c/h  — Kernel printf (triple: serial + framebuffer + klog)
   console.c/h  — Framebuffer text console (8x16, ANSI colors)
-  kb.c/h       — PS/2 keyboard driver (scancode→ASCII)
+  kb.c/h       — PS/2 keyboard driver (scancode→ASCII, Shift+CapsLock)
   cpuid.c/h    — CPU identification (vendor, features)
-  string.c/h   — memset, memcpy, memmove, strlen, strncmp...
+  klog.c/h     — 4KB circular log ring buffer (post-mortem)
+  list.h       — Generic intrusive linked list (Linux-style)
+  string.c/h   — memset(stosq), memcpy(movsq), memmove, strlen, strncmp...
   io.h         — Port I/O primitives (outb/inb)
   memory.h     — Page constants, PHYS2VIRT
   spinlock.h   — IRQ-safe spinlocks

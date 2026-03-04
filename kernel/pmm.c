@@ -182,6 +182,7 @@ uint64_t pmm_alloc_pages(uint32_t order) {
     block->order = order;
     block->flags = PAGE_USED;
     pmm.used_pages += (1UL << order);
+    if (pmm.used_pages > pmm.peak_used) pmm.peak_used = pmm.used_pages;
 
 #ifndef PMM_USERSPACE_TEST
     spin_unlock_irqrestore(&pmm_lock, irq_flags);
@@ -273,6 +274,10 @@ uint64_t pmm_free_count(void) {
 
 uint64_t pmm_used_count(void) {
     return pmm.used_pages;
+}
+
+uint64_t pmm_peak_used(void) {
+    return pmm.peak_used;
 }
 
 void pmm_dump_stats(void) {

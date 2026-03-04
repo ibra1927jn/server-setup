@@ -206,6 +206,7 @@ void _start(void) {
         kprintf("  RAM:      %lu pages (%lu MB)\n", total, total * 4 / 1024);
         kprintf("  Free:     %lu pages (%lu KB) [%lu%%]\n", free_pg, free_pg * 4, pct);
         kprintf("  Used:     %lu pages (%lu KB)\n", used_pg, used_pg * 4);
+        kprintf("  Peak:     %lu pages (%lu KB)\n", pmm_peak_used(), pmm_peak_used() * 4);
     }
 
     kmalloc_dump_stats();
@@ -213,7 +214,7 @@ void _start(void) {
     /* Banner */
     uint64_t uptime_ms = pit_get_ticks() * 10;  /* 100 Hz = 10ms per tick */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.3.9\n");
+    kprintf("  Anykernel OS v0.3.10\n");
     kprintf("  %d tests, %d failures\n", selftest_count(), failures);
     kprintf("  Boot time: %lu ms\n", uptime_ms);
     kprintf("==============================\n");
