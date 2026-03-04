@@ -48,4 +48,10 @@ void sched_tick(void);
  */
 int sched_need_resched(void);
 
+/*
+ * Add a task to the appropriate priority ready queue.
+ * Used by wait queues and mutex to re-enqueue woken tasks.
+ */
+void sched_add_ready(struct task *t);
+
 #endif /* SCHED_H */

@@ -1,13 +1,14 @@
 /*
- * Anykernel OS — Preemptive Round-Robin Scheduler
+ * Anykernel OS — Preemptive Priority Scheduler
  *
- * Features (v0.4.1):
- *   - Round-robin ready queue with preemption via PIT
+ * Features (v0.4.2):
+ *   - 3-level priority queues (HIGH > NORMAL > LOW)
  *   - task_sleep(ms) with sleep queue and PIT-driven wakeup
- *   - task_join(tid) for blocking wait
+ *   - task_join(tid) with sleeping wait
  *   - CPU tick accounting per task
  *   - Stack canary verification on every schedule()
  *   - Idle task with dead-task reaper
+ *   - Wait queue integration via sched_add_ready()
  *
  * TRAP HANDLING:
  *   1. EOI before schedule (in idt.c)
@@ -43,7 +44,12 @@ extern void context_switch(struct task *old, struct task *new_task);
 
 static spinlock_t sched_lock = SPINLOCK_INIT;
 
-static struct list_head ready_queue = LIST_HEAD_INIT(ready_queue);
+/* 3-level priority ready queues */
+static struct list_head prio_queues[TASK_PRIO_COUNT] = {
+    LIST_HEAD_INIT(prio_queues[0]),  /* HIGH */
+    LIST_HEAD_INIT(prio_queues[1]),  /* NORMAL */
+    LIST_HEAD_INIT(prio_queues[2])   /* LOW */
+};
 static struct list_head sleep_queue = LIST_HEAD_INIT(sleep_queue);
 static struct list_head dead_queue  = LIST_HEAD_INIT(dead_queue);
 
@@ -136,6 +142,7 @@ int task_create(const char *name, task_entry_fn entry) {
     t->stack_phys = stack_phys;
     t->tid = next_tid++;
     t->state = TASK_READY;
+    t->priority = TASK_PRIO_NORMAL;
     t->entry = entry;
     t->ticks_used = 0;
     t->sleep_until = 0;
@@ -161,7 +168,7 @@ int task_create(const char *name, task_entry_fn entry) {
 
     t->rsp = (uint64_t)sp;
 
-    list_push_back(&ready_queue, &t->run_node);
+    list_push_back(&prio_queues[t->priority], &t->run_node);
 
     spin_unlock_irqrestore(&sched_lock, irq_flags);
 
@@ -217,9 +224,9 @@ int task_join(uint32_t tid) {
     struct task *target = find_task(tid);
     if (!target) return -1;
 
-    /* Busy-wait with yield until target finishes */
+    /* Sleep-wait until target finishes (check every 10ms) */
     while (!target->finished) {
-        sched_yield();
+        task_sleep(10);
     }
     return 0;
 }
@@ -236,7 +243,7 @@ static void wake_sleepers(void) {
         if (now >= t->sleep_until) {
             list_remove_node(pos);
             t->state = TASK_READY;
-            list_push_back(&ready_queue, &t->run_node);
+            list_push_back(&prio_queues[t->priority], &t->run_node);
         }
     }
 }
@@ -255,16 +262,17 @@ void schedule(void) {
     /* Check stack canary of current task */
     stack_canary_check(current_task);
 
-    /* Pick next from ready queue, or idle */
-    struct task *next;
-
-    if (list_empty(&ready_queue)) {
-        next = idle_task;
-    } else {
-        struct list_node *node = ready_queue.sentinel.next;
-        next = container_of(node, struct task, run_node);
-        list_remove_node(node);
+    /* Pick from highest priority queue with tasks */
+    struct task *next = 0;
+    for (int p = 0; p < TASK_PRIO_COUNT; p++) {
+        if (!list_empty(&prio_queues[p])) {
+            struct list_node *node = prio_queues[p].sentinel.next;
+            next = container_of(node, struct task, run_node);
+            list_remove_node(node);
+            break;
+        }
     }
+    if (!next) next = idle_task;
 
     if (next == current_task) {
         spin_unlock_irqrestore(&sched_lock, irq_flags);
@@ -274,7 +282,7 @@ void schedule(void) {
     struct task *old = current_task;
     if (old->state == TASK_RUNNING) {
         old->state = TASK_READY;
-        list_push_back(&ready_queue, &old->run_node);
+        list_push_back(&prio_queues[old->priority], &old->run_node);
     }
 
     next->state = TASK_RUNNING;
@@ -307,6 +315,15 @@ void sched_tick(void) {
 int sched_need_resched(void) {
     if (!current_task) return 0;
     return need_resched;
+}
+
+/* ── sched_add_ready — used by wait queues to re-enqueue ─────── */
+
+void sched_add_ready(struct task *t) {
+    uint64_t irq_flags;
+    spin_lock_irqsave(&sched_lock, &irq_flags);
+    list_push_back(&prio_queues[t->priority], &t->run_node);
+    spin_unlock_irqrestore(&sched_lock, irq_flags);
 }
 
 /* ── Reap dead tasks ─────────────────────────────────────────── */
@@ -346,6 +363,7 @@ void sched_init(void) {
     init_task->tid = next_tid++;
     init_task->state = TASK_RUNNING;
     init_task->stack_phys = 0;
+    init_task->priority = TASK_PRIO_HIGH;
     init_task->entry = 0;
     init_task->ticks_used = 0;
     init_task->finished = false;
@@ -359,7 +377,7 @@ void sched_init(void) {
     spin_lock_irqsave(&sched_lock, &irq_flags);
 
     struct list_node *pos;
-    list_for_each(pos, &ready_queue) {
+    list_for_each(pos, &prio_queues[TASK_PRIO_NORMAL]) {
         struct task *t = container_of(pos, struct task, run_node);
         if (t == &task_pool[1]) {
             idle_task = t;

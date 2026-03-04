@@ -25,29 +25,42 @@ enum task_state {
 
 typedef void (*task_entry_fn)(void);
 
+/* ── Priority levels ─────────────────────────────────────────── */
+
+enum task_priority {
+    TASK_PRIO_HIGH   = 0,   /* Runs first (kernel critical) */
+    TASK_PRIO_NORMAL = 1,   /* Default */
+    TASK_PRIO_LOW    = 2,   /* Background */
+    TASK_PRIO_COUNT  = 3
+};
+
 /* ── Stack canary ────────────────────────────────────────────── */
 
 #define TASK_STACK_CANARY 0xDEADC0DEDEADC0DEULL
 
+/* Forward decl for join wait queue */
+struct wait_queue;
+
 /* ── Task Control Block ──────────────────────────────────────── */
 
 struct task {
-    uint64_t         rsp;           /* Saved stack pointer (MUST be first field) */
-    uint64_t         stack_phys;    /* Physical address of stack allocation */
-    uint32_t         tid;           /* Unique thread ID */
-    enum task_state  state;
-    task_entry_fn    entry;         /* Entry function (for trampoline) */
-    char             name[16];
-    struct list_node run_node;      /* Linkage in ready/dead/sleep queue */
+    uint64_t           rsp;           /* Saved stack pointer (MUST be first) */
+    uint64_t           stack_phys;    /* Physical address of stack allocation */
+    uint32_t           tid;           /* Unique thread ID */
+    enum task_state    state;
+    enum task_priority priority;      /* Scheduling priority */
+    task_entry_fn      entry;         /* Entry function (for trampoline) */
+    char               name[16];
+    struct list_node   run_node;      /* Linkage in ready/dead/sleep queue */
 
     /* CPU accounting */
-    uint64_t         ticks_used;    /* Total PIT ticks this task has run */
+    uint64_t           ticks_used;    /* Total PIT ticks this task has run */
 
     /* Sleep support */
-    uint64_t         sleep_until;   /* PIT tick when task should wake */
+    uint64_t           sleep_until;   /* PIT tick when task should wake */
 
-    /* Join support */
-    volatile bool    finished;      /* Set when task exits */
+    /* Join support — wait queue that task_join sleeps on */
+    volatile bool      finished;      /* Set when task exits */
 };
 
 /* ── API ─────────────────────────────────────────────────────── */
