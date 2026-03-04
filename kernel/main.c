@@ -90,34 +90,35 @@ extern void register_selftests(void);
 /* Saved for VMM to determine HHDM size from actual memory map */
 struct limine_memmap_response *memmap_resp_saved = 0;
 
-/* ── Demo kernel threads ─────────────────────────────────────── */
+/* ── Concurrent counter test — the Turing test of scheduling ── */
 
-static void thread_a_fn(void) {
-    for (int i = 0; i < 5; i++) {
-        LOG_INFO("[Thread-A] iteration %d (TID=%u)", i, task_current()->tid);
-        /* Busy-wait ~50ms to show time-slicing */
-        uint64_t start = pit_get_ticks();
-        while (pit_get_ticks() - start < 5) {
-            asm volatile("pause");
+static volatile uint64_t shared_counter = 0;
+static spinlock_t counter_lock = SPINLOCK_INIT;
+
+static void counter_thread_fn(void) {
+    for (int i = 0; i < 1000; i++) {
+        uint64_t flags;
+        spin_lock_irqsave(&counter_lock, &flags);
+        shared_counter++;
+        spin_unlock_irqrestore(&counter_lock, flags);
+
+        /* Yield periodically to force interleaving */
+        if (i % 100 == 0) {
+            sched_yield();
         }
     }
-    LOG_OK("[Thread-A] done!");
 }
 
-static void thread_b_fn(void) {
-    for (int i = 0; i < 5; i++) {
-        LOG_INFO("[Thread-B] iteration %d (TID=%u)", i, task_current()->tid);
-        uint64_t start = pit_get_ticks();
-        while (pit_get_ticks() - start < 5) {
-            asm volatile("pause");
-        }
-    }
-    LOG_OK("[Thread-B] done!");
+static void sleep_demo_fn(void) {
+    LOG_INFO("[sleeper] Going to sleep for 200ms...");
+    task_sleep(200);
+    LOG_OK("[sleeper] Woke up after 200ms!");
 }
 
 /* ── Kernel main ──────────────────────────────────────────────── */
 
 void _start(void) {
+
     /* 1. UART — must be first */
     uart_init();
     LOG_OK("UART COM1 initialized at 115200 baud");
@@ -241,7 +242,7 @@ void _start(void) {
     /* Banner */
     uint64_t uptime_ms = pit_get_ticks() * 10;  /* 100 Hz = 10ms per tick */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.4.0\n");
+    kprintf("  Anykernel OS v0.4.1\n");
     kprintf("  %d tests, %d failures\n", selftest_count(), failures);
     kprintf("  Boot time: %lu ms\n", uptime_ms);
     kprintf("==============================\n");
@@ -255,9 +256,25 @@ void _start(void) {
     sched_init();
     LOG_OK("Scheduler initialized");
 
-    /* Spawn demo threads */
-    task_create("thread-A", thread_a_fn);
-    task_create("thread-B", thread_b_fn);
+    /* Concurrent counter test: 2 threads × 1000 increments = 2000 */
+    shared_counter = 0;
+    int tid_a = task_create("counter-A", counter_thread_fn);
+    int tid_b = task_create("counter-B", counter_thread_fn);
+
+    /* Sleep demo thread */
+    int tid_s = task_create("sleeper", sleep_demo_fn);
+
+    /* Wait for all three to finish */
+    task_join((uint32_t)tid_a);
+    task_join((uint32_t)tid_b);
+    task_join((uint32_t)tid_s);
+
+    /* Verify concurrent counter */
+    if (shared_counter == 2000) {
+        LOG_OK("Concurrent counter test PASSED: %lu (expected 2000)", shared_counter);
+    } else {
+        LOG_ERROR("Concurrent counter test FAILED: %lu (expected 2000)", shared_counter);
+    }
 
     LOG_INFO("System ready. Init task handling keyboard.");
 

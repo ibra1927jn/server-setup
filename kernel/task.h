@@ -2,13 +2,14 @@
  * Anykernel OS — Task Control Block (TCB)
  *
  * Each kernel thread has a TCB that stores its saved state,
- * stack, identity, and queue linkage.
+ * stack, identity, queue linkage, and scheduling metadata.
  */
 
 #ifndef TASK_H
 #define TASK_H
 
 #include <stdint.h>
+#include <stdbool.h>
 #include "list.h"
 
 /* ── Task states ─────────────────────────────────────────────── */
@@ -16,12 +17,17 @@
 enum task_state {
     TASK_READY,       /* In the ready queue, waiting for CPU */
     TASK_RUNNING,     /* Currently executing on the CPU */
+    TASK_SLEEPING,    /* Sleeping, will be woken at sleep_until tick */
     TASK_DEAD         /* Finished, waiting for reap */
 };
 
 /* ── Thread entry point signature ────────────────────────────── */
 
 typedef void (*task_entry_fn)(void);
+
+/* ── Stack canary ────────────────────────────────────────────── */
+
+#define TASK_STACK_CANARY 0xDEADC0DEDEADC0DEULL
 
 /* ── Task Control Block ──────────────────────────────────────── */
 
@@ -32,14 +38,23 @@ struct task {
     enum task_state  state;
     task_entry_fn    entry;         /* Entry function (for trampoline) */
     char             name[16];
-    struct list_node run_node;      /* Linkage in ready/dead queue */
+    struct list_node run_node;      /* Linkage in ready/dead/sleep queue */
+
+    /* CPU accounting */
+    uint64_t         ticks_used;    /* Total PIT ticks this task has run */
+
+    /* Sleep support */
+    uint64_t         sleep_until;   /* PIT tick when task should wake */
+
+    /* Join support */
+    volatile bool    finished;      /* Set when task exits */
 };
 
 /* ── API ─────────────────────────────────────────────────────── */
 
 /*
  * Create a new kernel thread.
- * Allocates a 16KB stack via PMM, sets up initial context.
+ * Allocates a 16KB stack via PMM, sets up initial context + stack canary.
  * Returns TID, or -1 on failure.
  */
 int task_create(const char *name, task_entry_fn entry);
@@ -55,5 +70,17 @@ void task_exit(void);
  * Get the currently running task.
  */
 struct task *task_current(void);
+
+/*
+ * Sleep the current thread for approximately `ms` milliseconds.
+ * Thread is moved to sleep queue and woken by PIT handler.
+ */
+void task_sleep(uint64_t ms);
+
+/*
+ * Wait for thread `tid` to finish (blocking join).
+ * Returns 0 on success, -1 if tid not found.
+ */
+int task_join(uint32_t tid);
 
 #endif /* TASK_H */

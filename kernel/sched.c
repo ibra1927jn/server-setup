@@ -1,18 +1,19 @@
 /*
  * Anykernel OS — Preemptive Round-Robin Scheduler
  *
- * Manages kernel threads with cooperative context_switch() called
- * from PIT IRQ handler or sched_yield().
+ * Features (v0.4.1):
+ *   - Round-robin ready queue with preemption via PIT
+ *   - task_sleep(ms) with sleep queue and PIT-driven wakeup
+ *   - task_join(tid) for blocking wait
+ *   - CPU tick accounting per task
+ *   - Stack canary verification on every schedule()
+ *   - Idle task with dead-task reaper
  *
- * CRITICAL DESIGN NOTES (the 4 traps):
- *   1. EOI is sent BEFORE schedule() in pit_tick() — otherwise the
- *      PIC freezes after the first context switch.
- *   2. The sched_lock is released by the NEW thread after context_switch
- *      returns (or in task_entry_trampoline for first-run threads).
- *   3. New threads start with interrupts disabled (no iretq path).
- *      The trampoline executes sti explicitly.
- *   4. task_exit() does NOT free the stack — the reaper does that
- *      from a different execution context (idle task).
+ * TRAP HANDLING:
+ *   1. EOI before schedule (in idt.c)
+ *   2. sched_lock released in trampoline
+ *   3. sti in trampoline
+ *   4. Deferred stack free via reaper
  */
 
 #include "sched.h"
@@ -24,6 +25,7 @@
 #include "string.h"
 #include "kprintf.h"
 #include "log.h"
+#include "pic.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -33,7 +35,7 @@ extern void context_switch(struct task *old, struct task *new_task);
 
 /* ── Constants ────────────────────────────────────────────────── */
 
-#define TASK_STACK_PAGES  4          /* 16KB per thread stack */
+#define TASK_STACK_PAGES  4
 #define TASK_STACK_SIZE   (TASK_STACK_PAGES * PAGE_SIZE)
 #define MAX_TASKS         32
 
@@ -42,6 +44,7 @@ extern void context_switch(struct task *old, struct task *new_task);
 static spinlock_t sched_lock = SPINLOCK_INIT;
 
 static struct list_head ready_queue = LIST_HEAD_INIT(ready_queue);
+static struct list_head sleep_queue = LIST_HEAD_INIT(sleep_queue);
 static struct list_head dead_queue  = LIST_HEAD_INIT(dead_queue);
 
 static struct task  task_pool[MAX_TASKS];
@@ -50,8 +53,6 @@ static uint32_t     next_tid = 0;
 
 static struct task *current_task = 0;
 static struct task *idle_task    = 0;
-
-/* ── Need-reschedule flag ────────────────────────────────────── */
 
 static volatile int need_resched = 0;
 
@@ -64,24 +65,44 @@ static struct task *alloc_tcb(void) {
     return t;
 }
 
-/* ── Trampoline: first function run by a new thread ──────────── */
+/* ── Find task by TID ────────────────────────────────────────── */
 
-/*
- * All new threads enter here after their first context_switch.
- * entry_fn is read from the current task's TCB.
- */
+static struct task *find_task(uint32_t tid) {
+    for (uint32_t i = 0; i < task_pool_used; i++) {
+        if (task_pool[i].tid == tid) return &task_pool[i];
+    }
+    return 0;
+}
+
+/* ── Stack canary ────────────────────────────────────────────── */
+
+static void stack_canary_set(struct task *t) {
+    if (t->stack_phys == 0) return;  /* boot stack */
+    uint64_t *canary = (uint64_t *)PHYS2VIRT(t->stack_phys);
+    *canary = TASK_STACK_CANARY;
+}
+
+static void stack_canary_check(struct task *t) {
+    if (t->stack_phys == 0) return;  /* boot stack */
+    uint64_t *canary = (uint64_t *)PHYS2VIRT(t->stack_phys);
+    if (*canary != TASK_STACK_CANARY) {
+        kprintf(ANSI_RED "\n!!! STACK OVERFLOW DETECTED !!!\n" ANSI_RESET);
+        kprintf("  Task: '%s' (TID %u)\n", t->name, t->tid);
+        kprintf("  Expected canary: 0x%016lx\n", (uint64_t)TASK_STACK_CANARY);
+        kprintf("  Found:           0x%016lx\n", *canary);
+        for (;;) asm volatile("cli; hlt");
+    }
+}
+
+/* ── Trampoline ──────────────────────────────────────────────── */
+
 static void task_entry_trampoline(void) {
-    /* Trap 2: Release the scheduler lock that schedule() held */
-    spin_unlock(&sched_lock);
+    spin_unlock(&sched_lock);       /* Trap 2 */
+    asm volatile("sti");            /* Trap 3 */
 
-    /* Trap 3: Re-enable interrupts (we arrived via ret, not iretq) */
-    asm volatile("sti");
-
-    /* Run the actual thread function */
     task_entry_fn fn = current_task->entry;
     fn();
 
-    /* Trap 4: Don't free stack here — just mark dead */
     task_exit();
 }
 
@@ -106,7 +127,6 @@ int task_create(const char *name, task_entry_fn entry) {
         return -1;
     }
 
-    /* Allocate stack pages (order 2 = 4 pages = 16KB) */
     uint64_t stack_phys = pmm_alloc_pages_zero(2);
     if (stack_phys == 0) {
         spin_unlock_irqrestore(&sched_lock, irq_flags);
@@ -117,31 +137,20 @@ int task_create(const char *name, task_entry_fn entry) {
     t->tid = next_tid++;
     t->state = TASK_READY;
     t->entry = entry;
+    t->ticks_used = 0;
+    t->sleep_until = 0;
+    t->finished = false;
     strncpy(t->name, name, sizeof(t->name) - 1);
     t->name[sizeof(t->name) - 1] = '\0';
 
-    /*
-     * Set up initial stack frame for context_switch.
-     *
-     * context_switch pops: r15, r14, r13, r12, rbx, rbp, then ret.
-     * We fake this so when context_switch "restores" this task,
-     * it returns to task_entry_trampoline.
-     *
-     * Stack layout (grows down from top):
-     *   [task_entry_trampoline]  ← ret target
-     *   [0]                      ← rbp
-     *   [0]                      ← rbx
-     *   [0]                      ← r12
-     *   [0]                      ← r13
-     *   [0]                      ← r14
-     *   [0]                      ← r15
-     *   ↑ rsp saved here
-     */
+    /* Set stack canary at bottom of stack */
+    stack_canary_set(t);
+
+    /* Build initial context_switch frame */
     uint64_t stack_virt = (uint64_t)PHYS2VIRT(stack_phys);
     uint64_t stack_top = stack_virt + TASK_STACK_SIZE;
 
     uint64_t *sp = (uint64_t *)stack_top;
-
     *(--sp) = (uint64_t)task_entry_trampoline;  /* ret address */
     *(--sp) = 0;   /* rbp */
     *(--sp) = 0;   /* rbx */
@@ -152,7 +161,6 @@ int task_create(const char *name, task_entry_fn entry) {
 
     t->rsp = (uint64_t)sp;
 
-    /* Add to ready queue */
     list_push_back(&ready_queue, &t->run_node);
 
     spin_unlock_irqrestore(&sched_lock, irq_flags);
@@ -168,15 +176,15 @@ void task_exit(void) {
     asm volatile("cli");
 
     current_task->state = TASK_DEAD;
+    current_task->finished = true;  /* Signal joiners */
     list_push_back(&dead_queue, &current_task->run_node);
 
-    LOG_INFO("Task '%s' (TID %u) exiting", current_task->name, current_task->tid);
+    LOG_INFO("Task '%s' (TID %u) exiting, used %lu ticks",
+             current_task->name, current_task->tid, current_task->ticks_used);
 
-    /* Schedule will pick the next task — we won't return */
     asm volatile("sti");
     schedule();
 
-    /* Should never reach here */
     for (;;) asm volatile("hlt");
 }
 
@@ -186,6 +194,53 @@ struct task *task_current(void) {
     return current_task;
 }
 
+/* ── task_sleep ──────────────────────────────────────────────── */
+
+void task_sleep(uint64_t ms) {
+    uint64_t irq_flags;
+    spin_lock_irqsave(&sched_lock, &irq_flags);
+
+    uint64_t ticks = ms / 10;  /* 100 Hz PIT = 10ms/tick */
+    if (ticks == 0) ticks = 1;
+
+    current_task->sleep_until = pit_get_ticks() + ticks;
+    current_task->state = TASK_SLEEPING;
+    list_push_back(&sleep_queue, &current_task->run_node);
+
+    spin_unlock_irqrestore(&sched_lock, irq_flags);
+    schedule();
+}
+
+/* ── task_join ───────────────────────────────────────────────── */
+
+int task_join(uint32_t tid) {
+    struct task *target = find_task(tid);
+    if (!target) return -1;
+
+    /* Busy-wait with yield until target finishes */
+    while (!target->finished) {
+        sched_yield();
+    }
+    return 0;
+}
+
+/* ── Wake sleeping tasks ─────────────────────────────────────── */
+
+static void wake_sleepers(void) {
+    /* Called with sched_lock held */
+    uint64_t now = pit_get_ticks();
+    struct list_node *pos, *tmp;
+
+    list_for_each_safe(pos, tmp, &sleep_queue) {
+        struct task *t = container_of(pos, struct task, run_node);
+        if (now >= t->sleep_until) {
+            list_remove_node(pos);
+            t->state = TASK_READY;
+            list_push_back(&ready_queue, &t->run_node);
+        }
+    }
+}
+
 /* ── Schedule ────────────────────────────────────────────────── */
 
 void schedule(void) {
@@ -193,6 +248,12 @@ void schedule(void) {
     spin_lock_irqsave(&sched_lock, &irq_flags);
 
     need_resched = 0;
+
+    /* Wake any sleeping tasks whose time has come */
+    wake_sleepers();
+
+    /* Check stack canary of current task */
+    stack_canary_check(current_task);
 
     /* Pick next from ready queue, or idle */
     struct task *next;
@@ -205,13 +266,11 @@ void schedule(void) {
         list_remove_node(node);
     }
 
-    /* If same task, just return */
     if (next == current_task) {
         spin_unlock_irqrestore(&sched_lock, irq_flags);
         return;
     }
 
-    /* Put current back in ready queue if still runnable */
     struct task *old = current_task;
     if (old->state == TASK_RUNNING) {
         old->state = TASK_READY;
@@ -221,23 +280,9 @@ void schedule(void) {
     next->state = TASK_RUNNING;
     current_task = next;
 
-    /*
-     * CONTEXT SWITCH
-     *
-     * Critical locking protocol:
-     * - We hold sched_lock across the switch.
-     * - When context_switch "returns" on the NEW thread's stack:
-     *   - If it's resuming: it returns into this function (schedule),
-     *     and the spin_unlock_irqrestore below releases the lock.
-     *   - If it's a first-run: it returns into task_entry_trampoline,
-     *     which explicitly releases sched_lock.
-     */
     context_switch(old, next);
 
-    /*
-     * We resume here when someone switches BACK to this thread.
-     * Release the lock that the OTHER thread's schedule() acquired.
-     */
+    /* We resume here when switched back to this thread */
     spin_unlock_irqrestore(&sched_lock, irq_flags);
 }
 
@@ -247,13 +292,20 @@ void sched_yield(void) {
     schedule();
 }
 
-/* ── Set need-reschedule flag (called from PIT) ──────────────── */
+/* ── sched_tick — called from PIT handler ────────────────────── */
 
 void sched_tick(void) {
+    /* Guard: PIT fires before sched_init sets current_task */
+    if (!current_task) return;
+
     need_resched = 1;
+
+    /* CPU accounting */
+    current_task->ticks_used++;
 }
 
 int sched_need_resched(void) {
+    if (!current_task) return 0;
     return need_resched;
 }
 
@@ -280,9 +332,8 @@ void sched_reap_dead(void) {
 
         spin_unlock_irqrestore(&sched_lock, irq_flags);
 
-        /* Free the stack (safe — we're on a different stack) */
         if (stack_phys) {
-            pmm_free_pages(stack_phys, 2); /* order 2 = 4 pages */
+            pmm_free_pages(stack_phys, 2);
         }
         LOG_INFO("Reaped task '%s' (TID %u)", dead_name, dead_tid);
     }
@@ -291,21 +342,19 @@ void sched_reap_dead(void) {
 /* ── sched_init ──────────────────────────────────────────────── */
 
 void sched_init(void) {
-    /* Task 0: wrap the current execution context ("init") */
     struct task *init_task = alloc_tcb();
     init_task->tid = next_tid++;
     init_task->state = TASK_RUNNING;
-    init_task->stack_phys = 0;  /* boot stack, not PMM-allocated */
+    init_task->stack_phys = 0;
     init_task->entry = 0;
+    init_task->ticks_used = 0;
+    init_task->finished = false;
     strncpy(init_task->name, "init", sizeof(init_task->name));
     current_task = init_task;
 
-    /* Create idle task */
     int idle_tid = task_create("idle", idle_fn);
     (void)idle_tid;
 
-    /* Remove idle from ready queue — it's special, only runs
-     * when nothing else is READY */
     uint64_t irq_flags;
     spin_lock_irqsave(&sched_lock, &irq_flags);
 

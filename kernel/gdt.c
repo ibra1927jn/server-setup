@@ -39,10 +39,10 @@ struct gdt_pointer {
 /*
  * Temporary stacks for TSS init — VMM replaces both RSP0 and IST1
  * with larger, guard-page-protected stacks during vmm_init().
- * These are just placeholders to satisfy the CPU until then.
+ * These must be large enough for early exception handling.
  */
-static uint8_t temp_rsp0_stack[64] __attribute__((aligned(16)));
-static uint8_t temp_ist1_stack[64] __attribute__((aligned(16)));
+static uint8_t temp_rsp0_stack[4096] __attribute__((aligned(16)));
+static uint8_t temp_ist1_stack[2048] __attribute__((aligned(16)));
 
 static struct tss tss_instance;
 
