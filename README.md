@@ -1,146 +1,142 @@
-# Anykernel OS v0.3.10
+# Anykernel OS
 
-A minimal x86_64 kernel built from scratch — UEFI boot via Limine, higher-half design, freestanding C with clang.
+> A bare-metal x86_64 operating system kernel built from scratch in C and Assembly.
+
+## Stats
+
+| Metric | Value |
+|--------|-------|
+| Version | v0.4.4 |
+| Code | ~7,000 lines (C + NASM) |
+| Kernel size | 76 KB |
+| Boot time | 90 ms |
+| Tests | 35 kernel + 5 runtime |
+| Warnings | 0 (`-Werror`) |
 
 ## Architecture
 
 ```
-┌──────────────────────────────────────────────────────┐
-│                   Anykernel OS v0.3.8                │
-├──────────┬──────────┬──────────┬─────────────────────┤
-│ Console  │ Keyboard │  CPUID   │  kprintf dual-out   │
-│ 1280x800 │  PS/2    │ vendor,  │  UART + framebuffer │
-│ 8x16 fnt │ US-QWER  │ features │  ANSI colors        │
-├──────────┴──────────┴──────────┴─────────────────────┤
-│   kmalloc    │     VMM        │   PIC/PIT Timer      │
-│  Slab alloc  │  4-level page  │  8259A + 100 Hz      │
-│  krealloc    │  tables, NX,   │  IRQ dispatch        │
-│  poisoning   │  huge pages    │  sti enabled         │
-├──────────────┴───────┬────────┴──────────────────────┤
-│                     PMM                              │
-│          Buddy allocator (4KB-4MB)                   │
-│        IRQ-safe spinlocks, watermarks                │
-├──────────────────────────────────────────────────────┤
-│  GDT/TSS │ IDT │ UART │ SSP │ kprintf │ strings     │
-├──────────────────────────────────────────────────────┤
-│            Limine Bootloader (UEFI/BIOS)             │
-└──────────────────────────────────────────────────────┘
+Boot (Limine) → GDT/TSS → IDT (7 exceptions + 2 IRQs) → PIC/PIT
+     → PMM (buddy) → VMM (4-level paging) → kmalloc (slab)
+          → Scheduler (preemptive, 3-level priority)
+               → Sync (spinlock, mutex, semaphore, waitqueue)
+                    → IPC (message queue)
 ```
 
-## Quick Start
+## Subsystems
+
+### Boot & CPU (Sprint 0-1)
+
+- **UART** — COM1 at 115200 baud (first hardware initialized)
+- **GDT** — 7 entries + TSS with RSP0 and IST1 stacks
+- **IDT** — #DE, #UD, #NM, #DF, #GP, #PF, #MF + IRQ0 (timer) + IRQ1 (keyboard)
+- **SSP** — Stack Smashing Protector with RDTSC-randomized canary
+- **CPUID** — Feature detection (SSE, NX, Long Mode, etc.)
+
+### Memory (Sprint 2)
+
+- **PMM** — Buddy allocator (orders 0-9, max 2MB blocks), peak tracking
+- **VMM** — 4-level paging (PML4), per-section permissions (RX/R/RW+NX), guard pages
+- **kmalloc** — Slab allocator (32B/64B/128B/256B + large), poisoning on free
+
+### Hardware (Sprint 3)
+
+- **PIC 8259** — Remapped to vectors 0x20+
+- **PIT** — 100 Hz timer, tick counting, callbacks
+- **Framebuffer Console** — 80×25, ANSI colors, scroll
+- **PS/2 Keyboard** — Scancode set 1, shift, caps lock, ring buffer
+- **klog** — 4KB ring buffer for post-mortem diagnostics
+
+### Scheduler & Concurrency (Sprint 4)
+
+- **Scheduler** — Preemptive, 3-level priority (HIGH > NORMAL > LOW)
+- **Context Switch** — 12-instruction ASM routine (~20ns on hardware)
+- **Tasks** — TCB with stack canary, CPU tick accounting, 64-task pool
+- **Sleep/Join** — `task_sleep(ms)`, `task_join(tid)` with sleeping wait
+- **Spinlock** — IRQ-safe with save/restore
+- **Mutex** — Sleeping lock with owner tracking, trylock
+- **Semaphore** — Counting semaphore (sem_wait/post/trywait)
+- **Wait Queue** — Sleep/wake primitive (wq_wait/wake_one/wake_all)
+- **Message Queue** — 64B messages, 16 capacity, blocking send/recv
+- **ksnprintf** — Buffer-based printf formatting
+
+### Trap Handling (Critical Fixes)
+
+1. **EOI before schedule** — PIC never freezes
+2. **sched_lock released in trampoline** — No deadlocks on first run
+3. **sti in trampoline** — Interrupts always re-enabled for new tasks
+4. **Deferred stack free** — Idle reaper frees stacks safely
+
+## Test Results (v0.4.4)
+
+### Kernel Self-Tests (35)
+
+```
+Spinlock, memops, PMM alloc/free/buddy/exhaust, kmalloc slab/large,
+VMM map/unmap/guard, PIT ticks, keyboard buffer, console,
+strncmp, strncpy, PMM peak, memcmp, ksnprintf
+```
+
+### Runtime Tests (5)
+
+```
+[TEST 1] Stress:   10 threads × 10,000 = 100,000/100,000  ✅
+[TEST 2] Benchmark: context switch cycles measured          ✅
+[TEST 3] IPC:      500 messages sent/received               ✅
+[TEST 4] Timer:    sleep(200ms) = 200 ms (exact)            ✅
+[TEST 5] Memory:   0 pages leaked                           ✅
+```
+
+## Building
 
 ```bash
-# Inside MSYS2 MinGW64 shell
-make iso         # Build kernel + ISO
-make run         # Build + launch QEMU
-make test        # Build + run QEMU + check serial for failures
-make test-userspace  # Run PMM unit tests natively
-make clean
+# Requires: clang, nasm, xorriso, GNU make (MSYS2 recommended on Windows)
+make clean && make iso
 ```
 
-## Requirements
+## Running
 
-- **Toolchain**: clang (cross `x86_64-unknown-none`), nasm, ld.lld
-- **Emulator**: QEMU with `qemu-system-x86_64`
-- **Boot**: Limine 8.x (included in `limine/`)
-- **Build**: GNU Make, xorriso
+```bash
+qemu-system-x86_64 -cdrom build/os.iso -serial stdio -m 128M
+```
 
-## Memory Layout
-
-| Virtual Range | Maps To | Size | Notes |
-|---|---|---|---|
-| `0xFFFFFFFF80000000` | Kernel | ~64 KB | .text=RX, .rodata=RO, .data/.bss=RW+NX |
-| `0xFFFF800000000000` | HHDM | ~4 GB | 2MB huge pages, usable/kernel/FB regions only |
-| `0xFFFFFF0000101000` | RSP0 stack | 16 KB | TSS privilege transition stack + guard page |
-| `0xFFFFFF0000201000` | IST1 stack | 8 KB | Double Fault (#DF) stack + guard page |
-| Boot stack guard | Unmapped | 4 KB | #PF on stack overflow |
-
-## Boot Sequence (15 steps)
-
-1. UART serial (115200 baud)
-2. Stack canary (RDTSC)
-3. CPUID detection (vendor, features, brand)
-4. Limine protocol check
-5. GDT + TSS (RSP0 + IST1)
-6. IDT (exceptions + IRQs)
-7. PIC remap + PIT 100 Hz + `sti`
-8. HHDM offset
-9. Memory map parse
-10. PMM init (buddy allocator)
-11. VMM init (PML4, kernel map, HHDM, CR3 switch, perms, guard pages)
-12. Framebuffer console (1280x800, 8x16 font, ANSI colors)
-13. PS/2 keyboard (scancode→ASCII, ring buffer)
-14. Self-tests (26 registered)
-15. Boot report + banner
-
-## Self-Tests
-
-26 automated kernel tests + 29 userspace PMM tests = **55 total tests**:
-
-| # | Test | Subsystem |
-|---|------|-----------|
-| 1-2 | Spinlock, memops | Core |
-| 3-4 | PMM alloc/free order-0, order-5 | PMM |
-| 5-11 | kmalloc, kzmalloc, poison, krealloc, slab reclamation, watermark | kmalloc |
-| 12-15 | VMM map/write/read, virt_to_phys, HHDM integrity, map resolves | VMM |
-| 16 | PIT timer ticking | Timer |
-| 17 | strlen/strncmp/strncpy | String |
-| 18-24 | kfree(NULL), kmalloc(0), krealloc(NULL), PMM reuse, memmove overlap, spinlock irqsave, VMM unmap | Negative/edge |
-| 25-26 | Framebuffer console active, keyboard buffer empty | I/O |
-
-## Version History
-
-| Version | Changes |
-|---------|---------|
-| v0.1.0 | Boot + UART + GDT + IDT |
-| v0.2.0 | Buddy allocator PMM (29 userspace tests) |
-| v0.2.1 | Slab allocator (kmalloc/kfree) |
-| v0.2.2 | IRQ-safe spinlocks + memory poisoning |
-| v0.2.3 | krealloc, slab reclamation, watermarks |
-| v0.2.4 | Selftest framework, `make test` |
-| v0.3.0 | VMM — CR3 switch, own page tables |
-| v0.3.1 | Per-section perms, stack guard, VMM diagnostics |
-| v0.3.2 | PIC 8259A + PIT timer + `sti` + tests.c refactor |
-| v0.3.3 | io.h, string functions, boot numbering, README |
-| v0.3.4 | VMM collision detection, HHDM from memmap, TSS RSP0 |
-| v0.3.5 | IST1 VMM stack (8KB+guard), tss_set_ist1, 7 negative tests |
-| v0.3.6 | Framebuffer console (8x16 font), PS/2 keyboard, HHDM optimized |
-| v0.3.7 | Dual kprintf output, ANSI colors, CPUID, improved panic, KB echo |
-| v0.3.8 | Boot numbering fix, uptime display, console/KB tests (26 total) |
-| v0.3.9 | stosq memset, movsq memcpy, shift/caps, list.h, klog ring buffer, IRQ table, timer callbacks (30 tests) |
-| v0.3.10 | klog on panic, colored exceptions, SELFTEST_MAX=64, PMM peak tracking, strncmp/strncpy tests (33 tests) |
-
-## Project Structure
+## File Structure
 
 ```
 kernel/
-  main.c       — Boot sequence (15 steps) + init
-  pmm.c/h      — Physical memory manager (buddy)
-  kmalloc.c/h  — Slab allocator + krealloc
-  vmm.c/h      — Virtual memory manager (x86_64 paging)
-  pic.c/h      — PIC 8259A + PIT timer
-  idt.c/h      — IDT + exception/IRQ handlers
-  gdt.c/h      — GDT + TSS (RSP0, IST1)
-  selftest.c/h — Test registration framework
-  tests.c      — All 33 self-test functions
-  kprintf.c/h  — Kernel printf (triple: serial + framebuffer + klog)
-  console.c/h  — Framebuffer text console (8x16, ANSI colors)
-  kb.c/h       — PS/2 keyboard driver (scancode→ASCII, Shift+CapsLock)
-  cpuid.c/h    — CPU identification (vendor, features)
-  klog.c/h     — 4KB circular log ring buffer (post-mortem)
-  list.h       — Generic intrusive linked list (Linux-style)
-  string.c/h   — memset(stosq), memcpy(movsq), memmove, strlen, strncmp...
-  io.h         — Port I/O primitives (outb/inb)
-  memory.h     — Page constants, PHYS2VIRT
-  spinlock.h   — IRQ-safe spinlocks
-  uart.c/h     — Serial UART driver
-  panic.c/h    — KASSERT + kernel_panic (with CR2 dump)
-  ssp.c        — Stack smashing protection
-  log.h        — LOG_OK/INFO/WARN/ERROR/FAIL macros
-  interrupts.asm — ISR/IRQ stubs (NASM)
-tests/
-  test_pmm.c   — 29 userspace PMM tests
-linker.ld      — Higher-half linker script with section symbols
-limine.conf    — Bootloader config
-Makefile       — Build system
+├── main.c          Entry point + runtime tests
+├── uart.c/h        Serial output
+├── gdt.c/h         Global Descriptor Table + TSS
+├── idt.c/h         Interrupt Descriptor Table
+├── pmm.c/h         Physical Memory Manager (buddy)
+├── vmm.c/h         Virtual Memory Manager (paging)
+├── kmalloc.c/h     Kernel heap allocator (slab)
+├── sched.c/h       Priority scheduler
+├── task.h          TCB definition
+├── context_switch.asm  ASM context switch
+├── interrupts.asm  ISR/IRQ stubs
+├── spinlock.h      IRQ-safe spinlocks
+├── mutex.c/h       Sleeping locks
+├── semaphore.c/h   Counting semaphores
+├── waitqueue.c/h   Sleep/wake primitives
+├── msgqueue.c/h    IPC message queue
+├── pic.c/h         PIC + PIT driver
+├── kb.c/h          PS/2 keyboard
+├── console.c/h     Framebuffer console
+├── kprintf.c/h     Kernel printf + snprintf
+├── string.c/h      memset, memcpy, strcmp, etc.
+├── klog.c/h        Ring buffer logger
+├── cpuid.c/h       CPU feature detection
+├── tests.c         35 self-tests
+├── selftest.c/h    Test framework
+├── panic.c/h       PANIC + KASSERT
+├── ssp.c           Stack protector
+├── log.h           LOG_OK / LOG_INFO / LOG_ERROR macros
+├── memory.h        PAGE_SIZE, PHYS2VIRT macros
+├── io.h            inb/outb port I/O
+└── list.h          Intrusive linked list
 ```
+
+## License
+
+Educational / personal use.
