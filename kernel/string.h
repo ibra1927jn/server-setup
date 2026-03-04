@@ -25,6 +25,9 @@ int memcmp(const void *a, const void *b, size_t n);
 /* Return length of null-terminated string */
 size_t strlen(const char *s);
 
+/* Compare two null-terminated strings. Returns 0 if equal. */
+int strcmp(const char *a, const char *b);
+
 /* Compare at most n chars of a and b. Returns 0 if equal. */
 int strncmp(const char *a, const char *b, size_t n);
 

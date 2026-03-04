@@ -142,6 +142,14 @@ size_t strlen(const char *s) {
     return len;
 }
 
+int strcmp(const char *a, const char *b) {
+    while (*a && *a == *b) {
+        a++;
+        b++;
+    }
+    return (int)(unsigned char)*a - (int)(unsigned char)*b;
+}
+
 int strncmp(const char *a, const char *b, size_t n) {
     for (size_t i = 0; i < n; i++) {
         if (a[i] != b[i]) return (int)(unsigned char)a[i] - (int)(unsigned char)b[i];

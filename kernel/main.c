@@ -25,6 +25,7 @@
 #include "cpuid.h"
 #include "sched.h"
 #include "task.h"
+#include "vfs.h"
 
 /* Limine protocol */
 #include "../limine/limine.h"
@@ -241,6 +242,13 @@ void _start(void) {
     kb_init();
 
     /* ─────────────────────────────────────────────────────────────
+     * 13b. VFS — Virtual File System
+     * ───────────────────────────────────────────────────────────── */
+    vfs_init();
+    extern void devfs_init(void);
+    devfs_init();
+
+    /* ─────────────────────────────────────────────────────────────
      * 14. Self-tests
      * ───────────────────────────────────────────────────────────── */
     register_selftests();
@@ -271,7 +279,7 @@ void _start(void) {
     /* Banner */
     uint64_t uptime_ms = pit_get_ticks() * 10;  /* 100 Hz = 10ms per tick */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.4.9\n");
+    kprintf("  Anykernel OS v0.5.0\n");
     kprintf("  %d tests, %d failures\n", selftest_count(), failures);
     kprintf("  Boot time: %lu ms\n", uptime_ms);
     kprintf("==============================\n");
