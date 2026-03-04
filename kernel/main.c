@@ -26,6 +26,7 @@
 #include "sched.h"
 #include "task.h"
 #include "vfs.h"
+#include "vma.h"
 
 /* Limine protocol */
 #include "../limine/limine.h"
@@ -227,6 +228,17 @@ void _start(void) {
     vmm_dump_tables();
 
     /* ─────────────────────────────────────────────────────────────
+     * 11b. VMA — Virtual Memory Areas
+     * ───────────────────────────────────────────────────────────── */
+    vma_init_kernel();
+
+    /* ─────────────────────────────────────────────────────────────
+     * 11c. HAL — Hardware Abstraction Layer
+     * ───────────────────────────────────────────────────────────── */
+    extern void hal_init(void);
+    hal_init();
+
+    /* ─────────────────────────────────────────────────────────────
      * 12. Framebuffer Console
      * ───────────────────────────────────────────────────────────── */
     if (fb_request.response && fb_request.response->framebuffer_count > 0) {
@@ -279,7 +291,7 @@ void _start(void) {
     /* Banner */
     uint64_t uptime_ms = pit_get_ticks() * 10;  /* 100 Hz = 10ms per tick */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.5.0\n");
+    kprintf("  Anykernel OS v0.5.1\n");
     kprintf("  %d tests, %d failures\n", selftest_count(), failures);
     kprintf("  Boot time: %lu ms\n", uptime_ms);
     kprintf("==============================\n");
