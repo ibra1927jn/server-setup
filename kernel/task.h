@@ -25,13 +25,15 @@ enum task_state {
 
 typedef void (*task_entry_fn)(void);
 
-/* ── Priority levels ─────────────────────────────────────────── */
+/* ── Priority levels (64 total, 0 = highest) ────────────────── */
+
+#define TASK_PRIO_LEVELS  64
 
 enum task_priority {
-    TASK_PRIO_HIGH   = 0,   /* Runs first (kernel critical) */
-    TASK_PRIO_NORMAL = 1,   /* Default */
-    TASK_PRIO_LOW    = 2,   /* Background */
-    TASK_PRIO_COUNT  = 3
+    TASK_PRIO_HIGH   = 0,    /* Kernel critical */
+    TASK_PRIO_NORMAL = 32,   /* Default */
+    TASK_PRIO_LOW    = 48,   /* Background */
+    TASK_PRIO_IDLE   = 63    /* Idle only */
 };
 
 /* ── Stack canary ────────────────────────────────────────────── */

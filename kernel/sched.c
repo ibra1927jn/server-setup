@@ -1,8 +1,8 @@
 /*
- * Anykernel OS — Preemptive Priority Scheduler
+ * Anykernel OS — O(1) Preemptive Priority Scheduler
  *
- * Features (v0.4.2):
- *   - 3-level priority queues (HIGH > NORMAL > LOW)
+ * Features (v0.4.5):
+ *   - 64-level priority queues with O(1) bitmap scheduling (BSF)
  *   - task_sleep(ms) with sleep queue and PIT-driven wakeup
  *   - task_join(tid) with sleeping wait
  *   - CPU tick accounting per task
@@ -44,13 +44,32 @@ extern void context_switch(struct task *old, struct task *new_task);
 
 static spinlock_t sched_lock = SPINLOCK_INIT;
 
-/* 3-level priority ready queues */
-static struct list_head prio_queues[TASK_PRIO_COUNT] = {
-    LIST_HEAD_INIT(prio_queues[0]),  /* HIGH */
-    LIST_HEAD_INIT(prio_queues[1]),  /* NORMAL */
-    LIST_HEAD_INIT(prio_queues[2])   /* LOW */
-};
+/* O(1) bitmap scheduler: 64 priority queues + bitmap */
+static struct list_head prio_queues[TASK_PRIO_LEVELS];
+static volatile uint64_t prio_bitmap = 0;  /* bit N set = queue N non-empty */
 static struct list_head sleep_queue = LIST_HEAD_INIT(sleep_queue);
+
+/* O(1) helpers: BSF finds lowest set bit = highest priority */
+static inline int bitmap_find_first(uint64_t bm) {
+    uint64_t result;
+    asm volatile("bsfq %1, %0" : "=r"(result) : "r"(bm));
+    return (int)result;
+}
+
+static inline void bitmap_enqueue(struct task *t) {
+    list_push_back(&prio_queues[t->priority], &t->run_node);
+    prio_bitmap |= (1ULL << t->priority);
+}
+
+static inline struct task *bitmap_dequeue(void) {
+    int p = bitmap_find_first(prio_bitmap);
+    struct list_node *node = prio_queues[p].sentinel.next;
+    struct task *t = container_of(node, struct task, run_node);
+    list_remove_node(node);
+    if (list_empty(&prio_queues[p]))
+        prio_bitmap &= ~(1ULL << p);
+    return t;
+}
 static struct list_head dead_queue  = LIST_HEAD_INIT(dead_queue);
 
 static struct task  task_pool[MAX_TASKS];
@@ -168,7 +187,7 @@ int task_create(const char *name, task_entry_fn entry) {
 
     t->rsp = (uint64_t)sp;
 
-    list_push_back(&prio_queues[t->priority], &t->run_node);
+    bitmap_enqueue(t);
 
     spin_unlock_irqrestore(&sched_lock, irq_flags);
 
@@ -243,7 +262,7 @@ static void wake_sleepers(void) {
         if (now >= t->sleep_until) {
             list_remove_node(pos);
             t->state = TASK_READY;
-            list_push_back(&prio_queues[t->priority], &t->run_node);
+            bitmap_enqueue(t);
         }
     }
 }
@@ -262,17 +281,13 @@ void schedule(void) {
     /* Check stack canary of current task */
     stack_canary_check(current_task);
 
-    /* Pick from highest priority queue with tasks */
-    struct task *next = 0;
-    for (int p = 0; p < TASK_PRIO_COUNT; p++) {
-        if (!list_empty(&prio_queues[p])) {
-            struct list_node *node = prio_queues[p].sentinel.next;
-            next = container_of(node, struct task, run_node);
-            list_remove_node(node);
-            break;
-        }
+    /* O(1) pick: BSF on bitmap finds highest priority in 1 cycle */
+    struct task *next;
+    if (prio_bitmap != 0) {
+        next = bitmap_dequeue();
+    } else {
+        next = idle_task;
     }
-    if (!next) next = idle_task;
 
     if (next == current_task) {
         spin_unlock_irqrestore(&sched_lock, irq_flags);
@@ -282,7 +297,7 @@ void schedule(void) {
     struct task *old = current_task;
     if (old->state == TASK_RUNNING) {
         old->state = TASK_READY;
-        list_push_back(&prio_queues[old->priority], &old->run_node);
+        bitmap_enqueue(old);
     }
 
     next->state = TASK_RUNNING;
@@ -322,7 +337,7 @@ int sched_need_resched(void) {
 void sched_add_ready(struct task *t) {
     uint64_t irq_flags;
     spin_lock_irqsave(&sched_lock, &irq_flags);
-    list_push_back(&prio_queues[t->priority], &t->run_node);
+    bitmap_enqueue(t);
     spin_unlock_irqrestore(&sched_lock, irq_flags);
 }
 
@@ -359,6 +374,11 @@ void sched_reap_dead(void) {
 /* ── sched_init ──────────────────────────────────────────────── */
 
 void sched_init(void) {
+    /* Initialize all 64 priority queues */
+    for (int i = 0; i < TASK_PRIO_LEVELS; i++)
+        list_head_init(&prio_queues[i]);
+    prio_bitmap = 0;
+
     struct task *init_task = alloc_tcb();
     init_task->tid = next_tid++;
     init_task->state = TASK_RUNNING;
@@ -382,6 +402,8 @@ void sched_init(void) {
         if (t == &task_pool[1]) {
             idle_task = t;
             list_remove_node(pos);
+            if (list_empty(&prio_queues[TASK_PRIO_NORMAL]))
+                prio_bitmap &= ~(1ULL << TASK_PRIO_NORMAL);
             idle_task->state = TASK_READY;
             break;
         }
