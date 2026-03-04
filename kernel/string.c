@@ -168,3 +168,37 @@ char *strncpy(char *dest, const char *src, size_t n) {
     }
     return dest;
 }
+
+char *strcat(char *dest, const char *src) {
+    char *d = dest;
+    while (*d) d++;
+    while ((*d++ = *src++));
+    return dest;
+}
+
+char *strchr(const char *s, int c) {
+    while (*s) {
+        if (*s == (char)c) return (char *)s;
+        s++;
+    }
+    return (c == '\0') ? (char *)s : 0;
+}
+
+char *strstr(const char *haystack, const char *needle) {
+    if (!*needle) return (char *)haystack;
+    for (; *haystack; haystack++) {
+        const char *h = haystack;
+        const char *n = needle;
+        while (*h && *n && *h == *n) { h++; n++; }
+        if (!*n) return (char *)haystack;
+    }
+    return 0;
+}
+
+void *memchr(const void *s, int c, size_t n) {
+    const unsigned char *p = (const unsigned char *)s;
+    for (size_t i = 0; i < n; i++) {
+        if (p[i] == (unsigned char)c) return (void *)&p[i];
+    }
+    return 0;
+}

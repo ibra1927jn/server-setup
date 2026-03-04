@@ -299,7 +299,7 @@ void _start(void) {
     /* Banner */
     uint64_t uptime_ms = pit_get_ticks() * 10;  /* 100 Hz = 10ms per tick */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.5.2\n");
+    kprintf("  Anykernel OS v0.5.3\n");
     kprintf("  %d tests, %d failures\n", selftest_count(), failures);
     kprintf("  Boot time: %lu ms\n", uptime_ms);
     kprintf("==============================\n");
@@ -385,7 +385,18 @@ void _start(void) {
     LOG_INFO("System ready. Init task handling keyboard.");
 
     for (;;) {
+        /* Idle work: reap dead tasks, process workqueues, check memory */
+        sched_reap_dead();
+
+        extern void workqueue_process_system(void);
+        workqueue_process_system();
+
+        mempressure_check();
+
+        /* HLT: sleep until next interrupt (saves power) */
         asm volatile("hlt");
+
+        /* Handle keyboard input */
         char c;
         while ((c = kb_getchar()) != 0) {
             if (console_available()) {

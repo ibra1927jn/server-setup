@@ -124,6 +124,8 @@ void exception_handler_c(struct interrupt_frame *frame) {
 
 #include "kb.h"
 #include "sched.h"
+#include "ktimer.h"
+#include "watchdog.h"
 
 /* Forward decl from pic.c */
 extern void irq_dispatch(uint8_t irq);
@@ -134,7 +136,9 @@ void irq_handler_c(struct interrupt_frame *frame) {
     switch (irq) {
         case IRQ_TIMER:
             pit_tick();
-            sched_tick();  /* Set need_resched flag */
+            ktimer_tick();  /* Process timer wheel (O(1) per tick) */
+            sched_tick();   /* Set need_resched flag */
+            watchdog_check(); /* Detect hung tasks */
 
             /*
              * TRAP 1: EOI MUST be sent BEFORE schedule().

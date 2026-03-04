@@ -34,4 +34,16 @@ int strncmp(const char *a, const char *b, size_t n);
 /* Copy at most n chars from src to dest, null-padding. */
 char *strncpy(char *dest, const char *src, size_t n);
 
+/* Concatenate src to end of dest. dest must have enough space. */
+char *strcat(char *dest, const char *src);
+
+/* Find first occurrence of c in s, or NULL. */
+char *strchr(const char *s, int c);
+
+/* Find first occurrence of needle in haystack, or NULL. */
+char *strstr(const char *haystack, const char *needle);
+
+/* Find first occurrence of c in n bytes of s, or NULL. */
+void *memchr(const void *s, int c, size_t n);
+
 #endif /* STRING_H */
