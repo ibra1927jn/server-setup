@@ -213,7 +213,7 @@ void _start(void) {
     /* Banner */
     uint64_t uptime_ms = pit_get_ticks() * 10;  /* 100 Hz = 10ms per tick */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.3.8\n");
+    kprintf("  Anykernel OS v0.3.9\n");
     kprintf("  %d tests, %d failures\n", selftest_count(), failures);
     kprintf("  Boot time: %lu ms\n", uptime_ms);
     kprintf("==============================\n");

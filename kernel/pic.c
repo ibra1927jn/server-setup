@@ -100,6 +100,15 @@ void pic_mask(uint8_t irq) {
 static volatile uint64_t pit_ticks = 0;
 static uint32_t pit_freq = 0;
 
+/* Timer callback storage (forward decl for pit_tick) */
+static struct {
+    timer_callback_fn fn;
+    uint32_t interval;
+    uint32_t counter;
+} timer_cbs[MAX_TIMER_CALLBACKS];
+
+static int timer_cb_count = 0;
+
 void pit_init(uint32_t frequency_hz) {
     pit_freq = frequency_hz;
     uint16_t divisor = (uint16_t)(PIT_BASE_FREQ / frequency_hz);
@@ -119,4 +128,42 @@ uint64_t pit_get_ticks(void) {
  */
 void pit_tick(void) {
     pit_ticks++;
+
+    /* Fire timer callbacks */
+    for (int i = 0; i < timer_cb_count; i++) {
+        timer_cbs[i].counter++;
+        if (timer_cbs[i].counter >= timer_cbs[i].interval) {
+            timer_cbs[i].counter = 0;
+            timer_cbs[i].fn();
+        }
+    }
+}
+
+/* ── Dynamic IRQ handlers ────────────────────────────────────── */
+
+static irq_handler_fn irq_handlers[16] = {0};
+
+irq_handler_fn irq_register(uint8_t irq, irq_handler_fn handler) {
+    if (irq >= 16) return (irq_handler_fn)0;
+    irq_handler_fn prev = irq_handlers[irq];
+    irq_handlers[irq] = handler;
+    return prev;
+}
+
+/* Called from idt.c irq_handler_c for non-timer/keyboard IRQs */
+void irq_dispatch(uint8_t irq) {
+    if (irq < 16 && irq_handlers[irq]) {
+        irq_handlers[irq](irq);
+    }
+}
+
+/* ── Timer callbacks ────────────────────────────────────────── */
+
+int timer_register(timer_callback_fn fn, uint32_t interval_ticks) {
+    if (timer_cb_count >= MAX_TIMER_CALLBACKS) return -1;
+    timer_cbs[timer_cb_count].fn = fn;
+    timer_cbs[timer_cb_count].interval = interval_ticks;
+    timer_cbs[timer_cb_count].counter = 0;
+    timer_cb_count++;
+    return 0;
 }

@@ -27,6 +27,7 @@
 /* ── Internal helpers ─────────────────────────────────────────── */
 
 #include "console.h"
+#include "klog.h"
 
 static void kprint_char(char c) {
     if (c == '\n') {
@@ -34,6 +35,7 @@ static void kprint_char(char c) {
     }
     uart_putc(c);
     console_putchar(c);  /* Also render to framebuffer (no-op if not init'd) */
+    klog_putchar(c);     /* Also store in ring buffer for post-mortem */
 }
 
 static void kprint_string_padded(const char *s, int width, bool left_align) {

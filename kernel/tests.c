@@ -289,6 +289,115 @@ static bool test_kb_buffer_empty(void) {
     return !kb_has_input();
 }
 
+/* ── PMM stress test ─────────────────────────────────────────── */
+
+static bool test_pmm_stress(void) {
+    /* Allocate 256 pages, verify no duplicates, free all */
+    #define STRESS_COUNT 256
+    uint64_t pages[STRESS_COUNT];
+
+    /* Allocate */
+    for (int i = 0; i < STRESS_COUNT; i++) {
+        pages[i] = pmm_alloc_pages_zero(0);
+        if (pages[i] == 0) return false;  /* OOM */
+    }
+
+    /* Verify no duplicates */
+    for (int i = 0; i < STRESS_COUNT; i++) {
+        for (int j = i + 1; j < STRESS_COUNT; j++) {
+            if (pages[i] == pages[j]) return false;  /* Duplicate! */
+        }
+    }
+
+    /* Free all */
+    for (int i = 0; i < STRESS_COUNT; i++) {
+        pmm_free_pages(pages[i], 0);
+    }
+    #undef STRESS_COUNT
+    return true;
+}
+
+/* ── List test ───────────────────────────────────────────────── */
+
+#include "list.h"
+
+static bool test_list_operations(void) {
+    struct list_head head = LIST_HEAD_INIT(head);
+    if (!list_empty(&head)) return false;
+
+    struct { int val; struct list_node node; } items[3];
+    items[0].val = 10;
+    items[1].val = 20;
+    items[2].val = 30;
+
+    list_push_back(&head, &items[0].node);
+    list_push_back(&head, &items[1].node);
+    list_push_back(&head, &items[2].node);
+
+    if (list_empty(&head)) return false;
+
+    /* Verify order: 10, 20, 30 */
+    int expected[] = {10, 20, 30};
+    int idx = 0;
+    struct list_node *pos;
+    list_for_each(pos, &head) {
+        int val = container_of(pos, typeof(items[0]), node)->val;
+        if (val != expected[idx]) return false;
+        idx++;
+    }
+    if (idx != 3) return false;
+
+    /* Remove middle */
+    list_remove_node(&items[1].node);
+
+    /* Verify: 10, 30 */
+    idx = 0;
+    int expected2[] = {10, 30};
+    list_for_each(pos, &head) {
+        int val = container_of(pos, typeof(items[0]), node)->val;
+        if (val != expected2[idx]) return false;
+        idx++;
+    }
+    return idx == 2;
+}
+
+/* ── Stosq memset test ───────────────────────────────────────── */
+
+static bool test_memset_large(void) {
+    /* Test that our stosq memset works for large + small fills */
+    uint8_t buf[128];
+    memset(buf, 0xAB, sizeof(buf));
+    for (int i = 0; i < 128; i++) {
+        if (buf[i] != 0xAB) return false;
+    }
+    /* Test small fill (< 8 bytes, uses rep stosb path) */
+    uint8_t small[5];
+    memset(small, 0xCD, 5);
+    for (int i = 0; i < 5; i++) {
+        if (small[i] != 0xCD) return false;
+    }
+    return true;
+}
+
+/* ── Timer callback test ─────────────────────────────────────── */
+
+static volatile int timer_test_fired = 0;
+static void timer_test_callback(void) { timer_test_fired++; }
+
+static bool test_timer_callback(void) {
+    timer_test_fired = 0;
+    int ret = timer_register(timer_test_callback, 1); /* fire every tick */
+    if (ret != 0) return false;
+
+    /* Wait a few ticks */
+    uint64_t start = pit_get_ticks();
+    while (pit_get_ticks() - start < 5) {
+        asm volatile("hlt");
+    }
+
+    return timer_test_fired >= 3;  /* Should have fired at least 3 times */
+}
+
 /* ── Registration ────────────────────────────────────────────── */
 
 void register_selftests(void) {
@@ -333,4 +442,10 @@ void register_selftests(void) {
     /* Console / Keyboard */
     selftest_register("Framebuffer console active",     test_console_available);
     selftest_register("Keyboard buffer starts empty",   test_kb_buffer_empty);
+
+    /* Stress & infrastructure tests */
+    selftest_register("PMM stress 256 pages no-dup",    test_pmm_stress);
+    selftest_register("Intrusive list operations",      test_list_operations);
+    selftest_register("memset stosq large+small",       test_memset_large);
+    selftest_register("Timer callback fires",           test_timer_callback);
 }

@@ -116,6 +116,9 @@ void exception_handler_c(struct interrupt_frame *frame) {
 
 #include "kb.h"
 
+/* Forward decl from pic.c */
+extern void irq_dispatch(uint8_t irq);
+
 void irq_handler_c(struct interrupt_frame *frame) {
     uint8_t irq = (uint8_t)(frame->vector - PIC_IRQ_BASE_MASTER);
 
@@ -127,6 +130,7 @@ void irq_handler_c(struct interrupt_frame *frame) {
             kb_irq_handler();
             break;
         default:
+            irq_dispatch(irq);  /* Dynamic handler table */
             break;
     }
 

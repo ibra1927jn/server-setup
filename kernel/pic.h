@@ -65,4 +65,26 @@ uint64_t pit_get_ticks(void);
  */
 void pit_tick(void);
 
+/* ── Dynamic IRQ handlers ────────────────────────────────────── */
+
+typedef void (*irq_handler_fn)(uint8_t irq);
+
+/*
+ * Register a handler for a specific IRQ (0-15).
+ * Only one handler per IRQ. Returns previous handler (or NULL).
+ */
+irq_handler_fn irq_register(uint8_t irq, irq_handler_fn handler);
+
+/* ── Timer callbacks ─────────────────────────────────────────── */
+
+typedef void (*timer_callback_fn)(void);
+
+#define MAX_TIMER_CALLBACKS 8
+
+/*
+ * Register a function to be called every `interval_ticks` PIT ticks.
+ * Returns 0 on success, -1 if table full.
+ */
+int timer_register(timer_callback_fn fn, uint32_t interval_ticks);
+
 #endif /* PIC_H */
