@@ -26,6 +26,7 @@
 #include "kref.h"
 #include "kevent.h"
 #include "vfs.h"
+#include "rwlock.h"
 
 /* ── Spinlock & Memory tests ─────────────────────────────────── */
 
@@ -607,6 +608,27 @@ static bool test_vfs_lifecycle(void) {
     return true;
 }
 
+static bool test_rwlock(void) {
+    struct rwlock rw = RWLOCK_INIT;
+
+    /* Multiple reads should succeed */
+    rwlock_read_lock(&rw);
+    if (rw.readers != 1) return false;
+    rwlock_read_lock(&rw);
+    if (rw.readers != 2) return false;
+    rwlock_read_unlock(&rw);
+    rwlock_read_unlock(&rw);
+    if (rw.readers != 0) return false;
+
+    /* Write lock should work when no readers */
+    rwlock_write_lock(&rw);
+    if (!rw.writer) return false;
+    rwlock_write_unlock(&rw);
+    if (rw.writer) return false;
+
+    return true;
+}
+
 /* ── Registration ──────────────────────────────────────────────── */
 
 void register_selftests(void) {
@@ -671,4 +693,5 @@ void register_selftests(void) {
     selftest_register("kref lifecycle",                 test_kref);
     selftest_register("KEVENT signal/wait",             test_kevent);
     selftest_register("VFS open/write/close",           test_vfs_lifecycle);
+    selftest_register("RWLock read/write",               test_rwlock);
 }

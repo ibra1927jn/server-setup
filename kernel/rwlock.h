@@ -30,7 +30,7 @@ struct rwlock {
 #define RWLOCK_INIT { .lock = SPINLOCK_INIT, .readers = 0, .writer = 0, .w_waiting = 0 }
 
 static inline void rwlock_init(struct rwlock *rw) {
-    spinlock_init(&rw->lock);
+    rw->lock = (spinlock_t)SPINLOCK_INIT;
     rw->readers = 0;
     rw->writer = 0;
     rw->w_waiting = 0;

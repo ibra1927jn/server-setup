@@ -24,10 +24,19 @@ static uint32_t rows = 0;      /* max rows */
 
 #define FONT_W 8
 #define FONT_H 16
-#define BG_COLOR 0x00101010    /* Near-black background */
+
+/* ── Color palette (ARGB32) ──────────────────────────────────── */
+#define COL_BG       0x00101010  /* Near-black background */
+#define COL_WHITE    0x00E0E0E0  /* Light gray (default fg)  */
+#define COL_RED      0x00FF4444
+#define COL_GREEN    0x0044FF44
+#define COL_YELLOW   0x00FFFF44
+#define COL_BLUE     0x006666FF
+#define COL_MAGENTA  0x00FF44FF
+#define COL_CYAN     0x0044FFFF
 
 /* Current foreground color (changeable via ANSI codes) */
-static uint32_t fg_color = 0x00E0E0E0;  /* Default: light gray */
+static uint32_t fg_color = COL_WHITE;
 
 /* ANSI escape sequence state machine */
 #define ANSI_STATE_NORMAL  0
@@ -55,7 +64,7 @@ static inline void draw_glyph(uint32_t px, uint32_t py, char c) {
         uint8_t row = glyph[y];
         uint32_t *line = fb + (py + y) * ppitch + px;
         for (int x = 0; x < FONT_W; x++) {
-            line[x] = (row & (0x80 >> x)) ? fg_color : BG_COLOR;
+            line[x] = (row & (0x80 >> x)) ? fg_color : COL_BG;
         }
     }
 }
@@ -71,7 +80,7 @@ static void scroll_up(void) {
 
     /* Clear the last line */
     uint8_t *last = (uint8_t *)fb + total - line_bytes;
-    memset(last, 0x10, line_bytes);  /* BG_COLOR approximation */
+    memset(last, 0x10, line_bytes);  /* COL_BG approximation */
 }
 
 /* ── Public API ──────────────────────────────────────────────── */
@@ -99,7 +108,7 @@ void console_clear(void) {
     uint32_t ppitch = fb_pitch / 4;
     for (uint64_t y = 0; y < fb_height; y++) {
         for (uint64_t x = 0; x < fb_width; x++) {
-            fb[y * ppitch + x] = BG_COLOR;
+            fb[y * ppitch + x] = COL_BG;
         }
     }
     cursor_x = 0;
@@ -108,14 +117,14 @@ void console_clear(void) {
 
 static void ansi_set_color(int code) {
     switch (code) {
-        case 0:  fg_color = 0x00E0E0E0; break;  /* Reset */
-        case 31: fg_color = 0x00FF4444; break;  /* Red */
-        case 32: fg_color = 0x0044FF44; break;  /* Green */
-        case 33: fg_color = 0x00FFFF44; break;  /* Yellow */
-        case 34: fg_color = 0x006666FF; break;  /* Blue */
-        case 35: fg_color = 0x00FF44FF; break;  /* Magenta */
-        case 36: fg_color = 0x0044FFFF; break;  /* Cyan */
-        case 37: fg_color = 0x00E0E0E0; break;  /* White */
+        case 0:  fg_color = COL_WHITE;   break;  /* Reset */
+        case 31: fg_color = COL_RED;     break;
+        case 32: fg_color = COL_GREEN;   break;
+        case 33: fg_color = COL_YELLOW;  break;
+        case 34: fg_color = COL_BLUE;    break;
+        case 35: fg_color = COL_MAGENTA; break;
+        case 36: fg_color = COL_CYAN;    break;
+        case 37: fg_color = COL_WHITE;   break;
         default: break;
     }
 }
