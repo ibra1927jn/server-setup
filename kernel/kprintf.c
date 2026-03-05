@@ -319,3 +319,25 @@ int ksnprintf(char *buf, size_t size, const char *fmt, ...) {
     va_end(args);
     return ret;
 }
+
+/* ── Rate limiter (Linux printk_ratelimit pattern) ───────────── */
+
+#include "pic.h"  /* pit_get_ticks() */
+
+int kprintf_rl_allow(struct kprintf_ratelimit *rl) {
+    uint64_t now = pit_get_ticks();
+
+    /* New window? Reset counter */
+    if (now - rl->last_tick >= rl->interval_ticks) {
+        if (rl->count > rl->burst) {
+            /* Report how many were suppressed */
+            kprintf("[WARN]  kprintf_ratelimit: %u messages suppressed\n",
+                    rl->count - rl->burst);
+        }
+        rl->last_tick = now;
+        rl->count = 0;
+    }
+
+    rl->count++;
+    return (rl->count <= rl->burst);
+}

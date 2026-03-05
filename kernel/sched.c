@@ -87,7 +87,7 @@ static inline struct task *bitmap_dequeue(void) {
 static struct list_head dead_queue  = LIST_HEAD_INIT(dead_queue);
 
 static struct task  task_pool[MAX_TASKS];
-static uint32_t     task_pool_used = 0;
+static uint64_t     tcb_bitmap = ~0ULL;  /* 1 = free, 0 = used (BSF alloc) */
 static uint32_t     next_tid = 0;
 
 /* Per-task quantum from QoS class (macOS-inspired) */
@@ -121,29 +121,36 @@ static struct task *edf_pick(void) {
     return t;
 }
 
-/* ── Allocate a TCB — recycles dead slots first ──────────────── */
+/* ── Allocate a TCB — O(1) via BSF bitmap (macOS zone-style) ── */
 
 static struct task *alloc_tcb(void) {
-    /* First pass: recycle a DEAD slot */
-    for (uint32_t i = 0; i < task_pool_used; i++) {
-        if (task_pool[i].state == TASK_DEAD && task_pool[i].stack_phys == 0) {
-            struct task *t = &task_pool[i];
-            memset(t, 0, sizeof(*t));
-            return t;
-        }
-    }
-    /* Second pass: extend pool */
-    if (task_pool_used >= MAX_TASKS) return 0;
-    struct task *t = &task_pool[task_pool_used++];
+    if (tcb_bitmap == 0) return 0;  /* All 64 slots used */
+
+    /* BSF: find first free bit in O(1) — like macOS zone allocator */
+    int slot;
+    asm volatile("bsfq %1, %q0" : "=r"(slot) : "rm"(tcb_bitmap));
+    tcb_bitmap &= ~(1ULL << slot);  /* Mark used */
+
+    struct task *t = &task_pool[slot];
     memset(t, 0, sizeof(*t));
     return t;
+}
+
+/* Free a TCB slot back to the bitmap */
+static void free_tcb(struct task *t) {
+    int slot = (int)(t - task_pool);
+    if (slot >= 0 && slot < MAX_TASKS) {
+        tcb_bitmap |= (1ULL << slot);  /* Mark free */
+    }
 }
 
 /* ── Find task by TID ────────────────────────────────────────── */
 
 static struct task *find_task(uint32_t tid) {
-    for (uint32_t i = 0; i < task_pool_used; i++) {
-        if (task_pool[i].tid == tid) return &task_pool[i];
+    for (uint32_t i = 0; i < MAX_TASKS; i++) {
+        /* Only check allocated slots (bit clear in bitmap = in use) */
+        if (!(tcb_bitmap & (1ULL << i)) && task_pool[i].tid == tid)
+            return &task_pool[i];
     }
     return 0;
 }
@@ -463,6 +470,10 @@ void sched_reap_dead(void) {
         char dead_name[16];
         strncpy(dead_name, dead->name, sizeof(dead_name));
         uint32_t dead_tid = dead->tid;
+
+        /* Free TCB bitmap slot — O(1) reclaim (macOS zone-style) */
+        dead->stack_phys = 0;
+        free_tcb(dead);
 
         spin_unlock_irqrestore(&sched_lock, irq_flags);
 

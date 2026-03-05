@@ -10,7 +10,7 @@
 #include "kprintf.h"
 #include "log.h"
 #include "compiler.h"
-#include "spinlock.h"
+#include "rwlock.h"
 #include "bitmap_alloc.h"
 #include "errno.h"
 
@@ -18,7 +18,7 @@
 
 static struct vnode devices[VFS_MAX_DEVICES];
 static uint32_t    device_count = 0;
-static spinlock_t  vfs_lock = SPINLOCK_INIT;
+static struct rwlock vfs_rwlock = RWLOCK_INIT;  /* macOS XNU / Linux VFS: concurrent reads */
 
 /* ── Global fd table (future: per-task) ──────────────────────── */
 
@@ -40,11 +40,10 @@ void vfs_init(void) {
 
 int vfs_register_device(const char *name, enum vnode_type type,
                         struct file_ops *ops, void *private_data) {
-    uint64_t irq_flags;
-    spin_lock_irqsave(&vfs_lock, &irq_flags);
+    rwlock_write_lock(&vfs_rwlock);
 
     if (device_count >= VFS_MAX_DEVICES) {
-        spin_unlock_irqrestore(&vfs_lock, irq_flags);
+        rwlock_write_unlock(&vfs_rwlock);
         return -ENOSPC;
     }
 
@@ -56,7 +55,7 @@ int vfs_register_device(const char *name, enum vnode_type type,
     vn->private_data = private_data;
     vn->refcount = 0;
 
-    spin_unlock_irqrestore(&vfs_lock, irq_flags);
+    rwlock_write_unlock(&vfs_rwlock);
 
     LOG_OK("VFS: registered '%s' (type=%d)", name, type);
     return 0;
@@ -79,13 +78,12 @@ int vfs_open(const char *path, int flags) {
     struct vnode *vn = vfs_lookup(path);
     if (!vn) return -ENOENT;
 
-    uint64_t irq_flags;
-    spin_lock_irqsave(&vfs_lock, &irq_flags);
+    rwlock_write_lock(&vfs_rwlock);
 
     /* O(1) fd allocation via bitmap BSF */
     int fd = id_alloc(&fd_pool);
     if (fd < 0 || fd >= VFS_MAX_FDS) {
-        spin_unlock_irqrestore(&vfs_lock, irq_flags);
+        rwlock_write_unlock(&vfs_rwlock);
         return -EMFILE;
     }
 
@@ -95,17 +93,17 @@ int vfs_open(const char *path, int flags) {
     fd_table[fd].in_use = true;
     __sync_fetch_and_add(&vn->refcount, 1);  /* Atomic increment */
 
-    spin_unlock_irqrestore(&vfs_lock, irq_flags);
+    rwlock_write_unlock(&vfs_rwlock);
 
     /* Call device open if provided (outside lock — may sleep) */
     if (vn->ops && vn->ops->open) {
         int ret = vn->ops->open(vn, flags);
         if (ret < 0) {
-            spin_lock_irqsave(&vfs_lock, &irq_flags);
+            rwlock_write_lock(&vfs_rwlock);
             fd_table[fd].in_use = false;
             __sync_fetch_and_sub(&vn->refcount, 1);
             id_free(&fd_pool, fd);
-            spin_unlock_irqrestore(&vfs_lock, irq_flags);
+            rwlock_write_unlock(&vfs_rwlock);
             return -EIO;
         }
     }
@@ -117,11 +115,10 @@ int vfs_open(const char *path, int flags) {
 int vfs_close(int fd) {
     if (fd < 0 || fd >= VFS_MAX_FDS) return -EBADF;
 
-    uint64_t irq_flags;
-    spin_lock_irqsave(&vfs_lock, &irq_flags);
+    rwlock_write_lock(&vfs_rwlock);
 
     if (!fd_table[fd].in_use) {
-        spin_unlock_irqrestore(&vfs_lock, irq_flags);
+        rwlock_write_unlock(&vfs_rwlock);
         return -EBADF;
     }
 
@@ -131,7 +128,7 @@ int vfs_close(int fd) {
     __sync_fetch_and_sub(&vn->refcount, 1);  /* Atomic decrement */
     id_free(&fd_pool, fd);
 
-    spin_unlock_irqrestore(&vfs_lock, irq_flags);
+    rwlock_write_unlock(&vfs_rwlock);
 
     /* Call device close outside lock */
     if (vn->ops && vn->ops->close) {
