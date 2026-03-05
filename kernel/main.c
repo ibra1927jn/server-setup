@@ -87,6 +87,7 @@ static const char *memmap_type_str(uint64_t type) {
 
 #include "selftest.h"
 #include "pic.h"
+#include "percpu.h"
 
 /* Tests are in kernel/tests.c */
 extern void register_selftests(void);
@@ -123,6 +124,9 @@ void _start(void) {
     /* 6. IDT — catch exceptions + handle IRQs */
     idt_init();
     LOG_OK("IDT loaded (#DE #UD #DF #GP #PF + IRQ0/1)");
+
+    /* 6b. Per-CPU data — MUST be before sti (sched_tick reads GS) */
+    percpu_init_bsp();
 
     /* 7. PIC + PIT — hardware interrupt infrastructure */
     pic_init();
@@ -248,7 +252,7 @@ void _start(void) {
     /* Banner */
     uint64_t uptime_ms = pit_get_ticks() * 10;  /* 100 Hz = 10ms per tick */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.6.0\n");
+    kprintf("  Anykernel OS v0.6.1\n");
     kprintf("  %d tests, %d failures\n", selftest_count(), failures);
     kprintf("  Boot time: %lu ms\n", uptime_ms);
     kprintf("==============================\n");
@@ -258,9 +262,9 @@ void _start(void) {
         LOG_ERROR("SELF-TEST FAILURES: %d", failures);
     }
 
-    /* ── Step 16: Scheduler ──────────────────────────────────── */
+    /* ── Step 16: Scheduler ────────────────────────── */
     sched_init();
-    LOG_OK("Scheduler initialized");
+    LOG_OK("Scheduler initialized (per-CPU via GS)");
 
     run_runtime_tests();
 

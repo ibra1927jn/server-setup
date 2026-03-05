@@ -31,6 +31,7 @@
 #include "compiler.h"
 #include "qos.h"
 #include "vmm.h"
+#include "percpu.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -87,11 +88,6 @@ static struct list_head dead_queue  = LIST_HEAD_INIT(dead_queue);
 static struct task  task_pool[MAX_TASKS];
 static uint32_t     task_pool_used = 0;
 static uint32_t     next_tid = 0;
-
-static struct task *current_task __cacheline_aligned = 0;
-static struct task *idle_task    = 0;
-
-static volatile int need_resched = 0;
 
 /* Per-task quantum from QoS class (macOS-inspired) */
 static inline uint32_t task_quantum(struct task *t) {
@@ -177,7 +173,7 @@ static void task_entry_trampoline(void) {
     spin_unlock(&sched_lock);       /* Trap 2 */
     asm volatile("sti");            /* Trap 3 */
 
-    task_entry_fn fn = current_task->entry;
+    task_entry_fn fn = get_current()->entry;
     fn();
 
     task_exit();
@@ -259,22 +255,24 @@ int task_create(const char *name, task_entry_fn entry) {
 
 __attribute__((noreturn))
 void task_exit(void) {
-    asm volatile("cli");
+    uint64_t exit_flags;
+    spin_lock_irqsave(&sched_lock, &exit_flags);
 
-    current_task->state = TASK_DEAD;
-    current_task->finished = true;
+    struct task *self = get_current();
+    self->state = TASK_DEAD;
+    self->finished = true;
 
     /* Wake ALL threads waiting to join us — instant, no polling */
-    if (current_task->join_wq) {
-        wq_wake_all(current_task->join_wq);
+    if (self->join_wq) {
+        wq_wake_all(self->join_wq);
     }
 
-    list_push_back(&dead_queue, &current_task->run_node);
+    list_push_back(&dead_queue, &self->run_node);
 
     LOG_INFO("Task '%s' (TID %u) exiting, used %lu ticks",
-             current_task->name, current_task->tid, current_task->ticks_used);
+             self->name, self->tid, self->ticks_used);
 
-    asm volatile("sti");
+    spin_unlock_irqrestore(&sched_lock, exit_flags);
     schedule();
 
     for (;;) asm volatile("hlt");
@@ -283,7 +281,7 @@ void task_exit(void) {
 /* ── task_current ────────────────────────────────────────────── */
 
 struct task *task_current(void) {
-    return current_task;
+    return get_current();
 }
 
 /* ── task_sleep ──────────────────────────────────────────────── */
@@ -295,9 +293,10 @@ void task_sleep(uint64_t ms) {
     uint64_t ticks = ms / 10;  /* 100 Hz PIT = 10ms/tick */
     if (ticks == 0) ticks = 1;
 
-    current_task->sleep_until = pit_get_ticks() + ticks;
-    current_task->state = TASK_SLEEPING;
-    list_push_back(&sleep_queue, &current_task->run_node);
+    struct task *self = get_current();
+    self->sleep_until = pit_get_ticks() + ticks;
+    self->state = TASK_SLEEPING;
+    list_push_back(&sleep_queue, &self->run_node);
 
     spin_unlock_irqrestore(&sched_lock, irq_flags);
     schedule();
@@ -350,13 +349,13 @@ __hot void schedule(void) {
     uint64_t irq_flags;
     spin_lock_irqsave(&sched_lock, &irq_flags);
 
-    need_resched = 0;
+    set_need_resched(0);
 
     /* Wake any sleeping tasks whose time has come */
     wake_sleepers();
 
     /* Check stack canary of current task */
-    stack_canary_check(current_task);
+    stack_canary_check(get_current());
 
     /* O(1) pick: BSF on bitmap finds highest priority in 1 cycle */
     /* But EDF tasks with deadlines get absolute priority */
@@ -367,22 +366,22 @@ __hot void schedule(void) {
     } else if (likely(prio_bitmap != 0)) {
         next = bitmap_dequeue();
     } else {
-        next = idle_task;
+        next = get_idle();
     }
 
-    if (likely(next == current_task)) {
+    if (likely(next == get_current())) {
         spin_unlock_irqrestore(&sched_lock, irq_flags);
         return;
     }
 
-    struct task *old = current_task;
+    struct task *old = get_current();
     if (old->state == TASK_RUNNING) {
         old->state = TASK_READY;
         bitmap_enqueue(old);
     }
 
     next->state = TASK_RUNNING;
-    current_task = next;
+    set_current(next);
     next->watchdog_ticks = 0;  /* Reset watchdog on schedule */
 
     /* Prefetch new task's stack into L1 cache before switching */
@@ -405,21 +404,22 @@ void sched_yield(void) {
 /* ── sched_tick — called from PIT handler ────────────────────── */
 
 __hot void sched_tick(void) {
-    /* Guard: PIT fires before sched_init sets current_task */
-    if (unlikely(!current_task)) return;
+    /* Guard: PIT fires before sched_init sets current via GS */
+    struct task *cur = get_current();
+    if (unlikely(!cur)) return;
 
     /* CPU accounting */
-    current_task->ticks_used++;
-    current_task->watchdog_ticks++;  /* Watchdog: counts uninterrupted ticks */
+    cur->ticks_used++;
+    cur->watchdog_ticks++;  /* Watchdog: counts uninterrupted ticks */
 
     /* Per-QoS quantum: only reschedule when quantum expires */
-    if (current_task->ticks_used % task_quantum(current_task) == 0)
-        need_resched = 1;
+    if (cur->ticks_used % task_quantum(cur) == 0)
+        set_need_resched(1);
 }
 
 int sched_need_resched(void) {
-    if (!current_task) return 0;
-    return need_resched;
+    if (!get_current()) return 0;
+    return get_need_resched();
 }
 
 /* ── sched_add_ready — used by wait queues to re-enqueue ─────── */
@@ -436,8 +436,9 @@ void sched_add_ready(struct task *t) {
 void task_set_deadline(uint64_t deadline_tick) {
     uint64_t irq_flags;
     spin_lock_irqsave(&sched_lock, &irq_flags);
-    if (current_task)
-        current_task->deadline = deadline_tick;
+    struct task *cur = get_current();
+    if (cur)
+        cur->deadline = deadline_tick;
     spin_unlock_irqrestore(&sched_lock, irq_flags);
 }
 
@@ -492,7 +493,7 @@ void sched_init(void) {
     init_task->fd_table = 0;
     init_task->qos = QOS_DEFAULT;
     strncpy(init_task->name, "init", sizeof(init_task->name));
-    current_task = init_task;
+    set_current(init_task);
 
     int idle_tid = task_create("idle", idle_fn);
     (void)idle_tid;
@@ -504,11 +505,11 @@ void sched_init(void) {
     list_for_each(pos, &prio_queues[TASK_PRIO_NORMAL]) {
         struct task *t = container_of(pos, struct task, run_node);
         if (t == &task_pool[1]) {
-            idle_task = t;
+            set_idle(t);
             list_remove_node(pos);
             if (list_empty(&prio_queues[TASK_PRIO_NORMAL]))
                 prio_bitmap &= ~(1ULL << TASK_PRIO_NORMAL);
-            idle_task->state = TASK_READY;
+            t->state = TASK_READY;
             break;
         }
     }
@@ -516,5 +517,5 @@ void sched_init(void) {
     spin_unlock_irqrestore(&sched_lock, irq_flags);
 
     LOG_OK("Scheduler initialized (init TID=%u, idle TID=%u)",
-           init_task->tid, idle_task->tid);
+           init_task->tid, get_idle()->tid);
 }

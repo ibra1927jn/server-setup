@@ -57,8 +57,14 @@ static inline void write_cr3(uint64_t cr3) {
 }
 
 /* Flush a single TLB entry */
-static inline void invlpg(uint64_t virt) {
+/*
+ * Flush TLB for a single virtual address.
+ * Currently flushes only the local CPU's TLB.
+ * Sprint 5 (SMP): Send IPI to all other cores for cross-CPU TLB invalidation.
+ */
+static inline void vmm_flush_tlb(uint64_t virt) {
     asm volatile("invlpg (%0)" :: "r"(virt) : "memory");
+    /* TODO (Sprint 5): Send IPI_TLB_SHOOTDOWN to all other CPUs */
 }
 
 /* Enable NX bit support via EFER MSR */
@@ -148,7 +154,7 @@ void vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags) {
 
     spin_unlock_irqrestore(&vmm_lock, irq_flags);
 
-    invlpg(virt);
+    vmm_flush_tlb(virt);
 }
 
 /* ── Core: Unmap a 4KB page ───────────────────────────────────── */
@@ -170,7 +176,7 @@ void vmm_unmap_page(uint64_t virt) {
     uint64_t *pt = (uint64_t *)PHYS2VIRT(pte_to_phys(pd[PD_INDEX(virt)]));
 
     pt[PT_INDEX(virt)] = 0;
-    invlpg(virt);
+    vmm_flush_tlb(virt);
 }
 
 /* ── Walk: Virtual → Physical ─────────────────────────────────── */
