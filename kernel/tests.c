@@ -27,6 +27,7 @@
 #include "kevent.h"
 #include "vfs.h"
 #include "rwlock.h"
+#include "percpu.h"
 
 /* ── Spinlock & Memory tests ─────────────────────────────────── */
 
@@ -629,6 +630,28 @@ static bool test_rwlock(void) {
     return true;
 }
 
+/* ── Per-CPU GS register test ─────────────────────────────────── */
+
+static bool test_percpu(void) {
+    /* BSP should be CPU 0 */
+    if (get_cpu_id() != 0) return false;
+
+    /* set/get round-trip: save current (may be NULL before sched_init) */
+    struct task *saved = get_current();
+
+    struct task dummy;
+    memset(&dummy, 0, sizeof(dummy));
+
+    set_current(&dummy);
+    if (get_current() != &dummy) return false;
+
+    /* Restore original value */
+    set_current(saved);
+    if (get_current() != saved) return false;
+
+    return true;
+}
+
 /* ── Registration ──────────────────────────────────────────────── */
 
 void register_selftests(void) {
@@ -694,4 +717,5 @@ void register_selftests(void) {
     selftest_register("KEVENT signal/wait",             test_kevent);
     selftest_register("VFS open/write/close",           test_vfs_lifecycle);
     selftest_register("RWLock read/write",               test_rwlock);
+    selftest_register("Per-CPU GS accessor",             test_percpu);
 }

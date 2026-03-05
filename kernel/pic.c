@@ -8,6 +8,7 @@
  */
 
 #include "pic.h"
+#include "errno.h"
 #include "io.h"
 #include "kprintf.h"
 #include "log.h"
@@ -160,7 +161,7 @@ void irq_dispatch(uint8_t irq) {
 /* ── Timer callbacks ────────────────────────────────────────── */
 
 int timer_register(timer_callback_fn fn, uint32_t interval_ticks) {
-    if (timer_cb_count >= MAX_TIMER_CALLBACKS) return -1;
+    if (timer_cb_count >= MAX_TIMER_CALLBACKS) return -ENOSPC;
     timer_cbs[timer_cb_count].fn = fn;
     timer_cbs[timer_cb_count].interval = interval_ticks;
     timer_cbs[timer_cb_count].counter = 0;

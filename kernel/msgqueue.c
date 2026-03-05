@@ -6,6 +6,7 @@
 #include "task.h"
 #include "sched.h"
 #include "string.h"
+#include "errno.h"
 
 void mq_init(struct msg_queue *mq) {
     mq->head = 0;
@@ -42,7 +43,7 @@ static void mq_dequeue(struct msg_queue *mq, void *buf,
 /* ── Blocking send ───────────────────────────────────────────── */
 
 int mq_send(struct msg_queue *mq, const void *data, uint32_t len) {
-    if (len > MQ_MSG_SIZE) return -1;
+    if (len > MQ_MSG_SIZE) return -EINVAL;
 
     while (1) {
         uint64_t irq_flags;
@@ -99,14 +100,14 @@ int mq_recv(struct msg_queue *mq, void *buf, uint32_t *out_len,
 /* ── Non-blocking variants ───────────────────────────────────── */
 
 int mq_trysend(struct msg_queue *mq, const void *data, uint32_t len) {
-    if (len > MQ_MSG_SIZE) return -1;
+    if (len > MQ_MSG_SIZE) return -EINVAL;
 
     uint64_t irq_flags;
     spin_lock_irqsave(&mq->lock, &irq_flags);
 
     if (mq->count >= MQ_CAPACITY) {
         spin_unlock_irqrestore(&mq->lock, irq_flags);
-        return -1;
+        return -EAGAIN;
     }
 
     mq_enqueue(mq, data, len, task_current()->tid);
@@ -123,7 +124,7 @@ int mq_tryrecv(struct msg_queue *mq, void *buf, uint32_t *out_len,
 
     if (mq->count == 0) {
         spin_unlock_irqrestore(&mq->lock, irq_flags);
-        return -1;
+        return -EAGAIN;
     }
 
     mq_dequeue(mq, buf, out_len, out_sender);

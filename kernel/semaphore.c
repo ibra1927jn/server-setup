@@ -6,6 +6,7 @@
 #include "task.h"
 #include "sched.h"
 #include "list.h"
+#include "errno.h"
 
 /* ── sem_wait — decrement or sleep ───────────────────────────── */
 
@@ -64,5 +65,5 @@ int sem_trywait(struct semaphore *sem) {
     }
 
     spin_unlock_irqrestore(&sem->lock, irq_flags);
-    return -1;
+    return -EAGAIN;
 }

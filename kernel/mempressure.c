@@ -6,6 +6,7 @@
 #include "pmm.h"
 #include "kprintf.h"
 #include "log.h"
+#include "errno.h"
 
 /* ── State ───────────────────────────────────────────────────── */
 
@@ -26,7 +27,7 @@ void mempressure_init(void) {
 /* ── Register ────────────────────────────────────────────────── */
 
 int mempressure_register(mem_pressure_fn fn) {
-    if (callback_count >= MAX_PRESSURE_CALLBACKS) return -1;
+    if (callback_count >= MAX_PRESSURE_CALLBACKS) return -ENOSPC;
     callbacks[callback_count++] = fn;
     return (int)(callback_count - 1);
 }

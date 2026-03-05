@@ -32,6 +32,7 @@
 #include "qos.h"
 #include "vmm.h"
 #include "percpu.h"
+#include "errno.h"
 
 #include <stdint.h>
 #include <stdbool.h>
@@ -197,13 +198,13 @@ int task_create(const char *name, task_entry_fn entry) {
     struct task *t = alloc_tcb();
     if (!t) {
         spin_unlock_irqrestore(&sched_lock, irq_flags);
-        return -1;
+        return -ENOMEM;
     }
 
     uint64_t stack_phys = pmm_alloc_pages_zero(2);
     if (stack_phys == 0) {
         spin_unlock_irqrestore(&sched_lock, irq_flags);
-        return -1;
+        return -ENOMEM;
     }
 
     t->stack_phys = stack_phys;
@@ -306,7 +307,7 @@ void task_sleep(uint64_t ms) {
 
 int task_join(uint32_t tid) {
     struct task *target = find_task(tid);
-    if (!target) return -1;
+    if (!target) return -ESRCH;
 
     /* Already finished? Return immediately */
     if (target->finished) return 0;

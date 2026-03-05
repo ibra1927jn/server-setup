@@ -8,6 +8,7 @@
 #include "log.h"
 #include "compiler.h"
 #include "kmalloc.h"
+#include "errno.h"
 
 /* ── Global kernel address space ─────────────────────────────── */
 
@@ -40,7 +41,7 @@ void vm_space_init(struct vm_space *vs) {
 int vma_add(struct vm_space *vs, uint64_t start, uint64_t end,
             enum vma_type type, uint32_t perms, const char *name) {
     struct vma *v = alloc_vma();
-    if (!v) return -1;
+    if (!v) return -ENOMEM;
 
     v->start = start;
     v->end = end;
@@ -81,7 +82,7 @@ int vma_remove(struct vm_space *vs, uint64_t start) {
             return 0;
         }
     }
-    return -1; /* Not found */
+    return -ENOENT; /* Not found */
 }
 
 /* ── Find VMA containing address ─────────────────────────────── */

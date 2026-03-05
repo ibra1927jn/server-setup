@@ -25,5 +25,6 @@
 #define EDEADLK    14   /* Deadlock would occur */
 #define ERANGE     15   /* Result out of range */
 #define EIO        16   /* I/O error */
+#define ESRCH      17   /* No such process/task */
 
 #endif /* ERRNO_H */
