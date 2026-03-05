@@ -135,10 +135,14 @@ static struct file_ops zero_ops = {
 /* ── Register all devices ────────────────────────────────────── */
 
 void devfs_init(void) {
-    vfs_register_device("serial",   VN_CHARDEV, &serial_ops,   0);
-    vfs_register_device("console",  VN_CHARDEV, &console_ops,  0);
-    vfs_register_device("keyboard", VN_CHARDEV, &keyboard_ops, 0);
-    vfs_register_device("null",     VN_CHARDEV, &null_ops,     0);
-    vfs_register_device("zero",     VN_CHARDEV, &zero_ops,     0);
+    int r = 0;
+    r |= vfs_register_device("serial",   VN_CHARDEV, &serial_ops,   0);
+    r |= vfs_register_device("console",  VN_CHARDEV, &console_ops,  0);
+    r |= vfs_register_device("keyboard", VN_CHARDEV, &keyboard_ops, 0);
+    r |= vfs_register_device("null",     VN_CHARDEV, &null_ops,     0);
+    r |= vfs_register_device("zero",     VN_CHARDEV, &zero_ops,     0);
+    if (r < 0) {
+        LOG_FAIL("devfs: failed to register one or more devices!");
+    }
     LOG_OK("devfs: 5 devices registered (serial, console, keyboard, null, zero)");
 }

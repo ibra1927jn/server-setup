@@ -12,6 +12,7 @@
 #include "compiler.h"
 #include "spinlock.h"
 #include "bitmap_alloc.h"
+#include "errno.h"
 
 /* ── Device registry ─────────────────────────────────────────── */
 
@@ -44,7 +45,7 @@ int vfs_register_device(const char *name, enum vnode_type type,
 
     if (device_count >= VFS_MAX_DEVICES) {
         spin_unlock_irqrestore(&vfs_lock, irq_flags);
-        return -1;
+        return -ENOSPC;
     }
 
     struct vnode *vn = &devices[device_count++];
@@ -76,26 +77,36 @@ struct vnode *vfs_lookup(const char *name) {
 
 int vfs_open(const char *path, int flags) {
     struct vnode *vn = vfs_lookup(path);
-    if (!vn) return -1;
+    if (!vn) return -ENOENT;
+
+    uint64_t irq_flags;
+    spin_lock_irqsave(&vfs_lock, &irq_flags);
 
     /* O(1) fd allocation via bitmap BSF */
     int fd = id_alloc(&fd_pool);
-    if (fd < 0 || fd >= VFS_MAX_FDS) return -1;
+    if (fd < 0 || fd >= VFS_MAX_FDS) {
+        spin_unlock_irqrestore(&vfs_lock, irq_flags);
+        return -EMFILE;
+    }
 
     fd_table[fd].vnode = vn;
     fd_table[fd].flags = flags;
     fd_table[fd].offset = 0;
     fd_table[fd].in_use = true;
-    vn->refcount++;
+    __sync_fetch_and_add(&vn->refcount, 1);  /* Atomic increment */
 
-    /* Call device open if provided */
+    spin_unlock_irqrestore(&vfs_lock, irq_flags);
+
+    /* Call device open if provided (outside lock — may sleep) */
     if (vn->ops && vn->ops->open) {
         int ret = vn->ops->open(vn, flags);
         if (ret < 0) {
+            spin_lock_irqsave(&vfs_lock, &irq_flags);
             fd_table[fd].in_use = false;
-            vn->refcount--;
+            __sync_fetch_and_sub(&vn->refcount, 1);
             id_free(&fd_pool, fd);
-            return -1;
+            spin_unlock_irqrestore(&vfs_lock, irq_flags);
+            return -EIO;
         }
     }
     return fd;
@@ -104,29 +115,39 @@ int vfs_open(const char *path, int flags) {
 /* ── Close ───────────────────────────────────────────────────── */
 
 int vfs_close(int fd) {
-    if (fd < 0 || fd >= VFS_MAX_FDS) return -1;
-    if (!fd_table[fd].in_use) return -1;
+    if (fd < 0 || fd >= VFS_MAX_FDS) return -EBADF;
+
+    uint64_t irq_flags;
+    spin_lock_irqsave(&vfs_lock, &irq_flags);
+
+    if (!fd_table[fd].in_use) {
+        spin_unlock_irqrestore(&vfs_lock, irq_flags);
+        return -EBADF;
+    }
 
     struct vnode *vn = fd_table[fd].vnode;
+    fd_table[fd].in_use = false;
+    fd_table[fd].vnode = 0;
+    __sync_fetch_and_sub(&vn->refcount, 1);  /* Atomic decrement */
+    id_free(&fd_pool, fd);
+
+    spin_unlock_irqrestore(&vfs_lock, irq_flags);
+
+    /* Call device close outside lock */
     if (vn->ops && vn->ops->close) {
         vn->ops->close(vn);
     }
-
-    vn->refcount--;
-    fd_table[fd].in_use = false;
-    fd_table[fd].vnode = 0;
-    id_free(&fd_pool, fd);  /* O(1) return fd to bitmap */
     return 0;
 }
 
 /* ── Read ────────────────────────────────────────────────────── */
 
 int64_t vfs_read(int fd, void *buf, uint64_t count) {
-    if (fd < 0 || fd >= VFS_MAX_FDS) return -1;
-    if (!fd_table[fd].in_use) return -1;
+    if (fd < 0 || fd >= VFS_MAX_FDS) return -EBADF;
+    if (!fd_table[fd].in_use) return -EBADF;
 
     struct vnode *vn = fd_table[fd].vnode;
-    if (!vn->ops || !vn->ops->read) return -1;
+    if (!vn->ops || !vn->ops->read) return -ENOTSUP;
 
     return vn->ops->read(vn, buf, count);
 }
@@ -134,11 +155,11 @@ int64_t vfs_read(int fd, void *buf, uint64_t count) {
 /* ── Write ───────────────────────────────────────────────────── */
 
 int64_t vfs_write(int fd, const void *buf, uint64_t count) {
-    if (fd < 0 || fd >= VFS_MAX_FDS) return -1;
-    if (!fd_table[fd].in_use) return -1;
+    if (fd < 0 || fd >= VFS_MAX_FDS) return -EBADF;
+    if (!fd_table[fd].in_use) return -EBADF;
 
     struct vnode *vn = fd_table[fd].vnode;
-    if (!vn->ops || !vn->ops->write) return -1;
+    if (!vn->ops || !vn->ops->write) return -ENOTSUP;
 
     return vn->ops->write(vn, buf, count);
 }
@@ -146,11 +167,11 @@ int64_t vfs_write(int fd, const void *buf, uint64_t count) {
 /* ── Ioctl ───────────────────────────────────────────────────── */
 
 int vfs_ioctl(int fd, uint32_t cmd, void *arg) {
-    if (fd < 0 || fd >= VFS_MAX_FDS) return -1;
-    if (!fd_table[fd].in_use) return -1;
+    if (fd < 0 || fd >= VFS_MAX_FDS) return -EBADF;
+    if (!fd_table[fd].in_use) return -EBADF;
 
     struct vnode *vn = fd_table[fd].vnode;
-    if (!vn->ops || !vn->ops->ioctl) return -1;
+    if (!vn->ops || !vn->ops->ioctl) return -ENOTSUP;
 
     return vn->ops->ioctl(vn, cmd, arg);
 }

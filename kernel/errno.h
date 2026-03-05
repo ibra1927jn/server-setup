@@ -24,5 +24,6 @@
 #define ETIMEDOUT  13   /* Timed out */
 #define EDEADLK    14   /* Deadlock would occur */
 #define ERANGE     15   /* Result out of range */
+#define EIO        16   /* I/O error */
 
 #endif /* ERRNO_H */
