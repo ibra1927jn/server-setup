@@ -15,6 +15,9 @@
 
 #include <stdint.h>
 
+/* PIT oscillator frequency (Hz) */
+#define PIT_BASE_FREQ  1193182UL
+
 /* Remapped IRQ vector base */
 #define PIC_IRQ_BASE_MASTER  0x20
 #define PIC_IRQ_BASE_SLAVE   0x28
@@ -59,6 +62,31 @@ void pit_init(uint32_t frequency_hz);
  * Get the current tick count since boot.
  */
 uint64_t pit_get_ticks(void);
+
+/* ── Tickless Timer (Linux NO_HZ + macOS Timer Coalescing) ───── */
+
+/*
+ * Switch PIT to one-shot mode: fire ONE interrupt after `ticks` periods.
+ * CPU can sleep deeply until the next scheduled event.
+ * ticks=0 means "fire ASAP" (1 PIT cycle).
+ */
+void pit_set_oneshot(uint32_t ticks);
+
+/*
+ * Stop PIT completely. CPU will only wake on external interrupts.
+ * Used when no timers are pending (deepest idle).
+ */
+void pit_stop(void);
+
+/*
+ * Returns 1 if PIT is in one-shot/stopped mode, 0 if periodic.
+ */
+int pit_is_tickless(void);
+
+/*
+ * Returns number of ticks the CPU spent in idle (no PIT firing).
+ */
+uint64_t pit_idle_ticks(void);
 
 /*
  * Called from IRQ0 handler to increment tick counter.

@@ -96,10 +96,11 @@ void pic_mask(uint8_t irq) {
 
 #define PIT_CHANNEL0   0x40
 #define PIT_CMD        0x43
-#define PIT_BASE_FREQ  1193182UL  /* PIT oscillator frequency */
 
 static volatile uint64_t pit_ticks = 0;
 static uint32_t pit_freq = 0;
+static volatile int pit_oneshot_mode = 0;   /* 0=periodic, 1=oneshot, 2=stopped */
+static volatile uint64_t pit_idle_count = 0; /* Ticks spent idle (no PIT) */
 
 /* Timer callback storage (forward decl for pit_tick) */
 static struct {
@@ -118,6 +119,53 @@ void pit_init(uint32_t frequency_hz) {
     outb(PIT_CMD, 0x34);
     outb(PIT_CHANNEL0, (uint8_t)(divisor & 0xFF));
     outb(PIT_CHANNEL0, (uint8_t)((divisor >> 8) & 0xFF));
+    pit_oneshot_mode = 0;
+}
+
+/*
+ * ── Tickless Timer — Linux NO_HZ + macOS Timer Coalescing ──────
+ *
+ * PIT Mode 0 = Interrupt on Terminal Count (one-shot).
+ * After the countdown reaches 0, OUT goes high and stays there.
+ * No more interrupts until reprogrammed.
+ *
+ * This lets the CPU sleep until the next scheduled event
+ * instead of waking 100x/sec doing nothing.
+ */
+void pit_set_oneshot(uint32_t ticks) {
+    if (ticks == 0) ticks = 1;
+    /* Cap at 16-bit max (65535 = ~55ms at 1.193MHz) */
+    if (ticks > 65535) ticks = 65535;
+
+    /* Channel 0, Access: lobyte/hibyte, Mode 0 (one-shot) */
+    outb(PIT_CMD, 0x30);
+    outb(PIT_CHANNEL0, (uint8_t)(ticks & 0xFF));
+    outb(PIT_CHANNEL0, (uint8_t)((ticks >> 8) & 0xFF));
+    pit_oneshot_mode = 1;
+}
+
+void pit_stop(void) {
+    /* Program PIT with max count in one-shot mode — effectively stopped.
+     * The CPU will only wake on keyboard/external IRQs. */
+    outb(PIT_CMD, 0x30);
+    outb(PIT_CHANNEL0, 0xFF);
+    outb(PIT_CHANNEL0, 0xFF);
+    pit_oneshot_mode = 2;
+}
+
+int pit_is_tickless(void) {
+    return pit_oneshot_mode;
+}
+
+uint64_t pit_idle_ticks(void) {
+    return pit_idle_count;
+}
+
+/* Resume periodic mode (called when exiting idle) */
+static void pit_resume_periodic(void) {
+    if (pit_oneshot_mode != 0 && pit_freq > 0) {
+        pit_init(pit_freq);
+    }
 }
 
 uint64_t pit_get_ticks(void) {
@@ -129,6 +177,12 @@ uint64_t pit_get_ticks(void) {
  */
 void pit_tick(void) {
     pit_ticks++;
+
+    /* If we were in one-shot/stopped mode, resume periodic */
+    if (pit_oneshot_mode != 0) {
+        pit_idle_count++;
+        pit_resume_periodic();
+    }
 
     /* Fire timer callbacks */
     for (int i = 0; i < timer_cb_count; i++) {

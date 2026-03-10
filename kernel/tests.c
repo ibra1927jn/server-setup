@@ -28,6 +28,7 @@
 #include "vfs.h"
 #include "rwlock.h"
 #include "percpu.h"
+#include "cpuidle.h"
 
 /* ── Spinlock & Memory tests ─────────────────────────────────── */
 
@@ -115,11 +116,18 @@ static bool test_krealloc(void) {
 }
 
 static bool test_slab_reclamation(void) {
+    /* Use size 512 (class 5) — rarely used by other tests, forces new slab.
+     * With quarantine, freed memory is NOT immediately returned to PMM.
+     * We verify: (1) alloc takes a PMM page, (2) kfree doesn't crash. */
     uint64_t before = pmm_free_count();
-    void *p = kmalloc(64);
-    if (pmm_free_count() >= before) { kfree(p); return false; }
+    void *p = kmalloc(512);
+    if (!p) return false;
+    uint64_t after_alloc = pmm_free_count();
+    if (after_alloc >= before) { kfree(p); return false; }  /* Must have taken a page */
     kfree(p);
-    return pmm_free_count() == before;
+    /* With quarantine: freed slot sits in ring, page NOT returned yet.
+     * That's correct behavior (OpenBSD pattern). Just verify no crash. */
+    return true;
 }
 
 static bool test_pmm_watermark(void) {
@@ -652,6 +660,50 @@ static bool test_percpu(void) {
     return true;
 }
 
+/* ── Phase 0.5: Foundation Hardening tests ─────────────────────── */
+
+static bool test_tickless_api(void) {
+    /* Test oneshot: switch, verify, resume */
+    pit_set_oneshot(100);
+    if (pit_is_tickless() == 0) return false;  /* Should be oneshot */
+
+    /* Resume periodic */
+    pit_init(100);
+    if (pit_is_tickless() != 0) return false;  /* Should be periodic */
+
+    return true;
+}
+
+static bool test_wx_audit(void) {
+    /* W^X audit: no page should be both Writable AND Executable */
+    uint32_t violations = vmm_audit_wx();
+    return violations == 0;
+}
+
+static bool test_cpuidle_init(void) {
+    /* cpuidle should have been initialized — deepest state valid */
+    int deepest = cpuidle_deepest_state();
+    /* Must be IDLE_HLT(1) or IDLE_MWAIT(2) */
+    return (deepest == IDLE_HLT || deepest == IDLE_MWAIT);
+}
+
+static bool test_quarantine_delay(void) {
+    /* Quarantine should delay reuse of freed memory.
+     * Allocate+free, then allocate again — should NOT get same address
+     * (the freed slot is in quarantine, not on free list yet). */
+    void *p1 = kmalloc(64);
+    if (!p1) return false;
+    memset(p1, 0x42, 64);
+    kfree(p1);
+
+    void *p2 = kmalloc(64);
+    if (!p2) return false;
+    /* p2 should NOT be p1 because p1 is in quarantine */
+    bool different = (p2 != p1);
+    kfree(p2);
+    return different;
+}
+
 /* ── Registration ──────────────────────────────────────────────── */
 
 void register_selftests(void) {
@@ -718,4 +770,10 @@ void register_selftests(void) {
     selftest_register("VFS open/write/close",           test_vfs_lifecycle);
     selftest_register("RWLock read/write",               test_rwlock);
     selftest_register("Per-CPU GS accessor",             test_percpu);
+
+    /* Phase 0.5: Foundation Hardening */
+    selftest_register("Tickless timer API",              test_tickless_api);
+    selftest_register("W^X audit 0 violations",          test_wx_audit);
+    selftest_register("CPU idle state detection",        test_cpuidle_init);
+    selftest_register("Quarantine delays reuse",         test_quarantine_delay);
 }

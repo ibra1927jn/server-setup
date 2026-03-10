@@ -70,6 +70,26 @@ static spinlock_t large_lock = SPINLOCK_INIT;  /* Only for > 2048B allocs */
 static uint64_t large_allocs = 0;
 static uint64_t large_frees  = 0;
 
+/*
+ * ── Quarantine Ring (OpenBSD malloc + macOS libmalloc) ───────────
+ *
+ * Freed memory is NOT immediately returned to the free list.
+ * Instead, it sits in a quarantine ring for QUARANTINE_SIZE frees,
+ * giving us time to detect use-after-free.
+ *
+ * OpenBSD does this with delayed free + junk filling.
+ * macOS libmalloc uses a "nano" quarantine for small objects.
+ */
+#define QUARANTINE_SIZE 32
+
+static struct {
+    void *entries[QUARANTINE_SIZE];
+    int head;  /* Next write position */
+    int count; /* Number of valid entries */
+} quarantine = { .head = 0, .count = 0 };
+
+static spinlock_t quarantine_lock = SPINLOCK_INIT;
+
 /* ── Helpers ──────────────────────────────────────────────────── */
 
 /* Find the size class index (log2 of rounded-up-to-power-of-2) */
@@ -233,10 +253,22 @@ void kfree(void *ptr) {
         return;
     }
 
-    /* Slab free: use per-class lock */
+    /* ── Double-free detection (OpenBSD hardened malloc) ────────── */
     struct slab_header *slab = slab_from_ptr(ptr);
     int cls_idx = size_to_class(slab->obj_size);
     KASSERT(slab->used > 0);
+
+    /* Check poison: if first 8 bytes after header match poison,
+     * this slot was already freed → double-free! */
+    if (slab->obj_size > 8) {
+        uint8_t *check = (uint8_t *)ptr + 8;
+        if (check[0] == POISON_BYTE && check[1] == POISON_BYTE &&
+            check[2] == POISON_BYTE && check[3] == POISON_BYTE) {
+            kprintf("[PANIC] DOUBLE FREE detected at %p (class %u)\n",
+                    ptr, slab->obj_size);
+            KASSERT(0);  /* Halt */
+        }
+    }
 
     uint64_t irq_flags;
     spin_lock_irqsave(&classes[cls_idx].lock, &irq_flags);
@@ -246,30 +278,41 @@ void kfree(void *ptr) {
         memset((uint8_t *)ptr + 8, POISON_BYTE, slab->obj_size - 8);
     }
 
-    /* Push back onto free list */
-    *(void **)ptr = slab->free;
-    slab->free = ptr;
-    slab->used--;
+    /* Quarantine: delay reuse by pushing through ring buffer */
+    {
+        uint64_t q_flags;
+        spin_lock_irqsave(&quarantine_lock, &q_flags);
 
-    /* Slab reclamation: if all slots are free, return page to PMM */
-    if (slab->used == 0) {
-        classes[cls_idx].total_frees++;
-        /* Unlink from class list */
-        struct slab_header **pp = &classes[cls_idx].slabs;
-        while (*pp && *pp != slab) {
-            pp = &(*pp)->next;
+        /* If ring is full, flush oldest entry back to real free list */
+        if (quarantine.count >= QUARANTINE_SIZE) {
+            void *old = quarantine.entries[quarantine.head];
+            if (old) {
+                struct slab_header *old_slab = slab_from_ptr(old);
+                *(void **)old = old_slab->free;
+                old_slab->free = old;
+                old_slab->used--;
+                /* Check for slab reclamation */
+                int old_cls = size_to_class(old_slab->obj_size);
+                if (old_slab->used == 0 && old_cls >= 0) {
+                    classes[old_cls].total_frees++;
+                    struct slab_header **pp = &classes[old_cls].slabs;
+                    while (*pp && *pp != old_slab) pp = &(*pp)->next;
+                    if (*pp == old_slab) *pp = old_slab->next;
+                    memset(old_slab, POISON_BYTE, PAGE_SIZE);
+                    uint64_t phys = virt_to_phys((void *)old_slab);
+                    pmm_free_pages(phys, 0);
+                }
+            }
         }
-        if (*pp == slab) {
-            *pp = slab->next;
-        }
-        /* Poison entire page and return to PMM */
-        memset(slab, POISON_BYTE, PAGE_SIZE);
-        uint64_t phys = virt_to_phys((void *)slab);
-        pmm_free_pages(phys, 0);
-    } else {
-        classes[cls_idx].total_frees++;
+
+        quarantine.entries[quarantine.head] = ptr;
+        quarantine.head = (quarantine.head + 1) % QUARANTINE_SIZE;
+        if (quarantine.count < QUARANTINE_SIZE) quarantine.count++;
+
+        spin_unlock_irqrestore(&quarantine_lock, q_flags);
     }
 
+    classes[cls_idx].total_frees++;
     spin_unlock_irqrestore(&classes[cls_idx].lock, irq_flags);
 }
 

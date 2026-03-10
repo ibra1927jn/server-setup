@@ -90,4 +90,11 @@ void vmm_dump_tables(void);
  */
 uint64_t vmm_tables_count(void);
 
+/*
+ * W^X Enforcement (OpenBSD + macOS Hardened Runtime).
+ * Audit all mapped pages: no page should be both Writable AND Executable.
+ * Returns the number of violations found.
+ */
+uint32_t vmm_audit_wx(void);
+
 #endif /* VMM_H */

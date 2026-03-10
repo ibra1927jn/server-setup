@@ -41,6 +41,7 @@ extern char __bss_start, __bss_end;
 static uint64_t pml4_phys = 0;
 static spinlock_t vmm_lock = SPINLOCK_INIT;
 static uint64_t vmm_tables_allocated = 0;  /* Count of page tables we've allocated */
+static int vmm_wx_enforced = 0;  /* W^X enforcement: disabled during vmm_init boot-up */
 
 /* ── Helpers ──────────────────────────────────────────────────── */
 
@@ -148,6 +149,19 @@ void vmm_map_page(uint64_t virt, uint64_t phys, uint64_t flags) {
     if ((old & PTE_PRESENT) && (old & PTE_ADDR_MASK) != phys) {
         LOG_WARN("VMM: remap 0x%lx: old phys 0x%lx → new phys 0x%lx",
                  virt, old & PTE_ADDR_MASK, phys);
+    }
+
+    /*
+     * W^X Enforcement (OpenBSD + macOS Hardened Runtime):
+     * A page must NEVER be both Writable AND Executable.
+     * Writable = PTE_WRITE set, Executable = PTE_NX NOT set.
+     * Disabled during vmm_init boot sequence (initial broad mapping
+     * needs W+X temporarily before per-section permissions refine it).
+     */
+    if (vmm_wx_enforced && (flags & PTE_WRITE) && !(flags & PTE_NX)) {
+        LOG_WARN("VMM: W^X VIOLATION at 0x%lx (flags=0x%lx) — page is W+X!", virt, flags);
+        /* Force NX bit on writable pages */
+        flags |= PTE_NX;
     }
 
     pt[PT_INDEX(virt)] = phys | flags;
@@ -304,10 +318,11 @@ void vmm_init(void) {
     uint64_t kernel_size = (uint64_t)&__kernel_end - (uint64_t)&__kernel_start;
     LOG_INFO("VMM: Kernel size: %lu KB (%lu pages)", kernel_size / 1024, kernel_size / PAGE_SIZE);
 
-    /* 3. Map kernel: entire range with RW for now.
-     *    Per-section permissions (RX for .text, R for .rodata) are ideal
-     *    but Limine may have loaded sections non-contiguously.
-     *    We map the full kernel range as RWX first, then refine. */
+    /* 3. Map kernel: entire range with RW+X initially.
+     *    The CPU must execute code from .text immediately after CR3 switch,
+     *    so we need X permission. Per-section permissions refine after:
+     *    .text → RX, .rodata → RO+NX, .data/.bss → RW+NX.
+     *    W^X enforcement is deferred until per-section is complete. */
     vmm_map_range(
         (uint64_t)&__kernel_start,
         kernel_phys_base,
@@ -398,11 +413,41 @@ void vmm_init(void) {
         if (bss_size > 0)
             vmm_map_range(bss_virt, bss_phys, bss_size, VMM_FLAGS_KERNEL_RW);
 
-        LOG_OK("VMM: Per-section permissions applied");
+        /* Gap-page sweep: any kernel page not in a named section
+         * still has the initial W+X flags. Set NX on those gaps.
+         * (Alignment padding between .text/.rodata/.data/.bss) */
+        {
+            uint64_t kstart = (uint64_t)&__kernel_start;
+            uint64_t kend   = (uint64_t)&__kernel_end;
+            uint32_t gaps_fixed = 0;
+
+            for (uint64_t va = kstart; va < kend; va += PAGE_SIZE) {
+                /* Skip pages inside known sections */
+                if (va >= text_virt  && va < text_virt  + text_size) continue;
+                if (va >= ro_virt    && va < ro_virt    + ro_size)   continue;
+                if (va >= data_virt  && va < data_virt  + data_size) continue;
+                if (va >= bss_virt   && va < bss_virt   + bss_size)  continue;
+
+                /* This is a gap page — set NX to close W^X violation */
+                uint64_t gap_phys = kernel_phys_base + (va - kstart);
+                vmm_map_page(va, gap_phys, VMM_FLAGS_KERNEL_RW);
+                gaps_fixed++;
+            }
+            if (gaps_fixed > 0) {
+                LOG_INFO("VMM: %u gap pages fixed (W+X → RW+NX)", gaps_fixed);
+            }
+        }
+
+        LOG_OK("VMM: Per-section permissions applied (W^X clean)");
         LOG_INFO("  .text:   %lu KB (RX)", text_size / 1024);
         LOG_INFO("  .rodata: %lu KB (RO)", ro_size / 1024);
         LOG_INFO("  .data:   %lu KB (RW+NX)", data_size / 1024);
         LOG_INFO("  .bss:    %lu KB (RW+NX)", bss_size / 1024);
+
+        /* W^X now enforced — all future map_page calls are audited.
+         * OpenBSD does the same: permissive during boot, strict after. */
+        vmm_wx_enforced = 1;
+        LOG_OK("VMM: W^X enforcement ENABLED (OpenBSD mode)");
     }
 
     /* 7. Kernel stack improvements:
@@ -512,4 +557,52 @@ void vmm_dump_tables(void) {
 
 uint64_t vmm_tables_count(void) {
     return vmm_tables_allocated;
+}
+
+/* ── W^X Audit (OpenBSD W^X + macOS Hardened Runtime) ──────────── */
+
+uint32_t vmm_audit_wx(void) {
+    if (pml4_phys == 0) return 0;
+
+    uint32_t violations = 0;
+    uint64_t *pml4 = (uint64_t *)PHYS2VIRT(pml4_phys);
+
+    for (int i = 0; i < 512; i++) {
+        if (!(pml4[i] & PTE_PRESENT)) continue;
+        uint64_t *pdpt = (uint64_t *)PHYS2VIRT(pte_to_phys(pml4[i]));
+
+        for (int j = 0; j < 512; j++) {
+            if (!(pdpt[j] & PTE_PRESENT)) continue;
+            if (pdpt[j] & PTE_HUGE) continue;
+
+            uint64_t *pd = (uint64_t *)PHYS2VIRT(pte_to_phys(pdpt[j]));
+            for (int k = 0; k < 512; k++) {
+                if (!(pd[k] & PTE_PRESENT)) continue;
+                if (pd[k] & PTE_HUGE) {
+                    /* 2MB page: check W^X */
+                    if ((pd[k] & PTE_WRITE) && !(pd[k] & PTE_NX)) {
+                        violations++;
+                    }
+                    continue;
+                }
+
+                uint64_t *pt = (uint64_t *)PHYS2VIRT(pte_to_phys(pd[k]));
+                for (int l = 0; l < 512; l++) {
+                    if (!(pt[l] & PTE_PRESENT)) continue;
+                    /* W^X: both Writable AND Executable = violation */
+                    if ((pt[l] & PTE_WRITE) && !(pt[l] & PTE_NX)) {
+                        violations++;
+                    }
+                }
+            }
+        }
+    }
+
+    if (violations == 0) {
+        LOG_OK("VMM: W^X audit PASSED — 0 violations");
+    } else {
+        LOG_ERROR("VMM: W^X audit FAILED — %u violations!", violations);
+    }
+
+    return violations;
 }

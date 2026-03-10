@@ -88,6 +88,7 @@ static const char *memmap_type_str(uint64_t type) {
 #include "selftest.h"
 #include "pic.h"
 #include "percpu.h"
+#include "cpuidle.h"
 
 /* Tests are in kernel/tests.c */
 extern void register_selftests(void);
@@ -194,6 +195,16 @@ void _start(void) {
     hal_init();
 
     /* ─────────────────────────────────────────────────────────────
+     * 11d. CPU Idle States (Linux cpuidle + macOS Power Nap)
+     * ───────────────────────────────────────────────────────────── */
+    cpuidle_init();
+
+    /* ─────────────────────────────────────────────────────────────
+     * 11e. W^X Audit (OpenBSD + macOS Hardened Runtime)
+     * ───────────────────────────────────────────────────────────── */
+    vmm_audit_wx();
+
+    /* ─────────────────────────────────────────────────────────────
      * 12. Framebuffer Console
      * ───────────────────────────────────────────────────────────── */
     if (fb_request.response && fb_request.response->framebuffer_count > 0) {
@@ -252,9 +263,11 @@ void _start(void) {
     /* Banner */
     uint64_t uptime_ms = pit_get_ticks() * 10;  /* 100 Hz = 10ms per tick */
     kprintf("\n==============================\n");
-    kprintf("  Anykernel OS v0.6.3\n");
+    kprintf("  Anykernel OS v0.7.0\n");
     kprintf("  %d tests, %d failures\n", selftest_count(), failures);
     kprintf("  Boot time: %lu ms\n", uptime_ms);
+    kprintf("  Idle: %s\n", cpuidle_has_mwait() ? "MWAIT (deep sleep)" : "HLT");
+    kprintf("  Timer: tickless-ready\n");
     kprintf("==============================\n");
 
     kprintf("\n");
@@ -279,8 +292,19 @@ void _start(void) {
 
         mempressure_check();
 
-        /* HLT: sleep until next interrupt (saves power) */
-        asm volatile("hlt");
+        /* Tickless: enter one-shot/stop when no work pending.
+         * Linux NO_HZ: stop ticks when idle.
+         * macOS Timer Coalescing: batch wakeups.
+         * This saves power on laptops. */
+        if (pit_is_tickless() == 0) {
+            /* Switch to one-shot for next scheduler tick (~10ms) */
+            pit_set_oneshot(PIT_BASE_FREQ / 100);
+        }
+
+        /* CPU Idle: use MWAIT if available, else HLT.
+         * Linux cpuidle: selects deepest C-state.
+         * macOS Power Nap: ultra-low power idle. */
+        cpu_idle();
 
         /* Handle keyboard input */
         char c;
