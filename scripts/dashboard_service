@@ -1,0 +1,13 @@
+[Unit]
+Description=Dashboard HTTP Server
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/status_panel
+ExecStart=/usr/bin/python3 -m http.server 8080
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target

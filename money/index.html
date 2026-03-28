@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description"
+    content="ALZ detecta fugas de conversión en tu web utilizando Inteligencia Artificial avanzada. Aumentamos tus ventas sin aumentar tu inversión en ads.">
+  <meta name="keywords"
+    content="CRO, optimización de conversión, auditoría web, inteligencia artificial, landing page, diseño web">
+  <meta name="author" content="ALZ">
+  <link rel="canonical" href="https://alz-web.web.app/">
+
+  <!-- Favicon: SVG primary, PNG fallback -->
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Cdefs%3E%3ClinearGradient id='g' x1='0' y1='0' x2='1' y2='1'%3E%3Cstop offset='0%25' stop-color='%237f13ec'/%3E%3Cstop offset='100%25' stop-color='%2300d4ff'/%3E%3C/linearGradient%3E%3C/defs%3E%3Crect width='64' height='64' rx='12' fill='%230a0a1a'/%3E%3Ctext x='32' y='44' text-anchor='middle' font-family='system-ui,sans-serif' font-weight='800' font-size='24' fill='url(%23g)'%3EALZ%3C/text%3E%3C/svg%3E">
+  <link rel="icon" type="image/png" href="favicon.png">
+
+  <!-- Google Analytics GA4 (cargado solo con consentimiento) -->
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    // Solo inicializar GA4 si el usuario ya dio consentimiento
+    function initGA4() {
+      var s = document.createElement('script');
+      s.async = true;
+      s.src = 'https://www.googletagmanager.com/gtag/js?id=G-4T4PHY53HV';
+      document.head.appendChild(s);
+      gtag('js', new Date());
+      gtag('config', 'G-4T4PHY53HV');
+    }
+    if (localStorage.getItem('alz_consent') === 'true') {
+      initGA4();
+    }
+  </script>
+
+  <!-- Preconnect for performance -->
+  <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+
+  <!-- Open Graph -->
+  <meta property="og:title" content="ALZ — Tu publicidad está quemando dinero">
+  <meta property="og:description"
+    content="ALZ detecta fugas de conversión en tu web utilizando Inteligencia Artificial avanzada. Aumentamos tus ventas sin aumentar tu inversión en ads.">
+  <meta property="og:type" content="website">
+  <meta property="og:url" content="https://alz-web.web.app/">
+  <meta property="og:image" content="https://alz-web.web.app/hero-bg.png">
+  <meta property="og:locale" content="es_ES">
+  <meta property="og:site_name" content="ALZ">
+
+  <!-- Twitter Card -->
+  <meta name="twitter:card" content="summary_large_image">
+  <meta name="twitter:title" content="ALZ — Auditoría de Conversión con IA">
+  <meta name="twitter:description" content="Detectamos fugas de conversión en tu web con IA. Cada clic que pagas y no convierte es dinero que tiras.">
+  <meta name="twitter:image" content="https://alz-web.web.app/hero-bg.png">
+
+  <title>ALZ — Auditoría de Conversión con IA</title>
+  <link rel="stylesheet" href="styles.css">
+
+  <!-- CDN: Three.js (particles only) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js" defer></script>
+
+</head>
+
+<body>
+
+  <!-- Custom Cursor -->
+  <div id="custom-cursor" class="custom-cursor"></div>
+  <div id="cursor-dot" class="cursor-dot"></div>
+
+  <!-- ========== NAVBAR ========== -->
+  <nav class="navbar" id="navbar">
+    <div class="container">
+      <a href="#" class="nav-logo">
+        <img src="alz-logo.png" alt="ALZ" class="logo-img" />
+      </a>
+
+      <div class="nav-links">
+        <a href="#problem" data-i18n="nav.problem">El Problema</a>
+        <a href="#how" data-i18n="nav.how">Cómo Funciona</a>
+        <a href="#services" data-i18n="nav.services">Servicios</a>
+        <a href="#pricing" data-i18n="nav.pricing">Precios</a>
+      </div>
+
+      <div class="nav-right">
+        <div class="lang-selector">
+          <button class="lang-btn active" data-lang="es" onclick="setLanguage('es')">ES</button>
+          <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+          <button class="lang-btn" data-lang="pt" onclick="setLanguage('pt')">PT</button>
+          <button class="lang-btn" data-lang="fr" onclick="setLanguage('fr')">FR</button>
+          <button class="lang-btn" data-lang="de" onclick="setLanguage('de')">DE</button>
+        </div>
+        <a href="#cta" class="btn-primary" data-i18n="nav.cta">Auditoría Gratis</a>
+        <button class="nav-hamburger" id="nav-hamburger" aria-label="Menu">
+          <span></span>
+          <span></span>
+          <span></span>
+        </button>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Mobile Nav -->
+  <div class="mobile-nav" id="mobile-nav">
+    <button class="mobile-nav-close" id="mobile-nav-close">✕</button>
+    <a href="#problem" data-i18n="nav.problem">El Problema</a>
+    <a href="#how" data-i18n="nav.how">Cómo Funciona</a>
+    <a href="#services" data-i18n="nav.services">Servicios</a>
+    <a href="#pricing" data-i18n="nav.pricing">Precios</a>
+    <a href="#cta" class="btn-primary" data-i18n="nav.cta">Auditoría Gratis</a>
+    <div class="lang-selector" style="margin-top: 16px;">
+      <button class="lang-btn active" data-lang="es" onclick="setLanguage('es')">ES</button>
+      <button class="lang-btn" data-lang="en" onclick="setLanguage('en')">EN</button>
+      <button class="lang-btn" data-lang="pt" onclick="setLanguage('pt')">PT</button>
+      <button class="lang-btn" data-lang="fr" onclick="setLanguage('fr')">FR</button>
+      <button class="lang-btn" data-lang="de" onclick="setLanguage('de')">DE</button>
+    </div>
+  </div>
+
+  <!-- ========== HERO ========== -->
+  <section class="hero" id="hero">
+    <canvas id="hero-canvas" class="hero-canvas"></canvas>
+    <div class="hero-bg-image"></div>
+    <div class="container">
+      <div class="hero-content">
+        <div class="badge" data-i18n="hero.badge">🔥 Potenciado por Inteligencia Artificial</div>
+        <h1 data-i18n="hero.title">Tu publicidad está <span class="gradient-text">quemando dinero</span> ahora mismo
+        </h1>
+        <p data-i18n="hero.subtitle">Detectamos las fugas de conversión en tu web con IA. Cada clic que pagas y no
+          convierte es dinero que tiras a la basura. Nosotros lo arreglamos.</p>
+        <div class="hero-buttons">
+          <a href="https://wa.me/34602199253?text=Hola%20ALZ%2C%20quiero%20mi%20auditor%C3%ADa%20gratuita%20de%20conversi%C3%B3n" target="_blank" rel="noopener" class="btn-primary" data-i18n="hero.cta">
+            Solicitar Auditoría ALZ Gratuita
+          </a>
+          <a href="#how" class="btn-secondary" data-i18n="hero.cta2">
+            Descubrir la Metodología
+          </a>
+        </div>
+      </div>
+
+      <!-- Dashboard Mockup -->
+      <!-- CSS Dashboard Mockup (pixel-perfect, no blur) -->
+      <div class="hero-mockup">
+        <div class="dashboard-mock">
+          <!-- Sidebar -->
+          <div class="mock-sidebar">
+            <div class="mock-sidebar-logo">ALZ</div>
+            <div class="mock-sidebar-item active"><span class="mock-icon">📊</span> Dashboard</div>
+            <div class="mock-sidebar-item"><span class="mock-icon">📈</span> Analytics</div>
+            <div class="mock-sidebar-item"><span class="mock-icon">🎯</span> Funnels</div>
+            <div class="mock-sidebar-item"><span class="mock-icon">🔥</span> Heatmaps</div>
+          </div>
+          <!-- Main content -->
+          <div class="mock-main">
+            <div class="mock-header">
+              <span class="mock-title">CRO Dashboard</span>
+              <span class="mock-date">Últimos 30 días</span>
+            </div>
+            <div class="mock-cards">
+              <div class="mock-metric">
+                <span class="mock-metric-label">Conversion Rate</span>
+                <span class="mock-metric-value">3.58%</span>
+                <span class="mock-metric-change up">↑ 12.4%</span>
+              </div>
+              <div class="mock-metric">
+                <span class="mock-metric-label">Revenue</span>
+                <span class="mock-metric-value">€28,450</span>
+                <span class="mock-metric-change up">↑ 8.2%</span>
+              </div>
+              <div class="mock-metric">
+                <span class="mock-metric-label">Bounce Rate</span>
+                <span class="mock-metric-value">34.2%</span>
+                <span class="mock-metric-change down">↓ 5.1%</span>
+              </div>
+            </div>
+            <!-- Chart area -->
+            <div class="mock-chart">
+              <div class="mock-chart-title">Conversiones por semana</div>
+              <div class="mock-chart-bars">
+                <div class="mock-bar" style="--h: 45%"></div>
+                <div class="mock-bar" style="--h: 62%"></div>
+                <div class="mock-bar" style="--h: 38%"></div>
+                <div class="mock-bar" style="--h: 75%"></div>
+                <div class="mock-bar" style="--h: 55%"></div>
+                <div class="mock-bar" style="--h: 82%"></div>
+                <div class="mock-bar" style="--h: 90%"></div>
+                <div class="mock-bar" style="--h: 68%"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="mockup-glow"></div>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat-card">
+          <div class="stat-number" data-i18n="hero.stat1.number">97%</div>
+          <div class="stat-label" data-i18n="hero.stat1.label">de las webs tienen errores críticos de conversión</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" data-i18n="hero.stat2.number">+40%</div>
+          <div class="stat-label" data-i18n="hero.stat2.label">mejora promedio tras nuestra optimización</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-number" data-i18n="hero.stat3.number">&lt; 24h</div>
+              <div class="stat-label" data-i18n="hero.stat3.label">tiempo de entrega del diagnóstico completo</div>
+          </div>
+        </div>
+
+        <!-- Trust Logos -->
+        <div class="trust-row reveal">
+          <span class="trust-label">Tecnología utilizada por:</span>
+          <div class="trust-logos">
+            <span>Google</span>
+            <span>Meta</span>
+            <span>Shopify</span>
+            <span>HubSpot</span>
+            <span>Stripe</span>
+          </div>
+        </div>
+      </div>
+  </section>
+
+  <!-- ========== PROBLEM ========== -->
+  <section class="problem" id="problem">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="badge" data-i18n="problem.badge">⚠️ El Problema Real</div>
+        <h2 class="section-title" data-i18n="problem.title">Estás pagando por clics que <span
+            class="gradient-text">nunca convierten</span></h2>
+        <p class="section-desc" data-i18n="problem.description">Inviertes en Facebook Ads, Google Ads o TikTok... la
+          gente hace clic, entra a tu web y se va en 3 segundos. ¿El resultado? Dinero quemado.</p>
+      </div>
+
+      <div class="problem-grid">
+        <div class="problem-card reveal reveal-delay-1">
+          <div class="problem-card-icon">🎨</div>
+          <h3 data-i18n="problem.card1.title">Diseño que espanta</h3>
+          <p data-i18n="problem.card1.desc">Botones invisibles, textos interminables, cero claridad. Tu web confunde en
+            vez de vender.</p>
+        </div>
+        <div class="problem-card reveal reveal-delay-2">
+          <div class="problem-card-icon">👥</div>
+          <h3 data-i18n="problem.card2.title">Sin prueba social</h3>
+          <p data-i18n="problem.card2.desc">No hay testimonios, ni logos de clientes, ni indicadores de confianza. El
+            visitante no se fía.</p>
+        </div>
+        <div class="problem-card reveal reveal-delay-3">
+          <div class="problem-card-icon">🎯</div>
+          <h3 data-i18n="problem.card3.title">CTA inexistente</h3>
+          <p data-i18n="problem.card3.desc">El usuario no sabe qué hacer. No hay un camino claro hacia la compra o el
+            contacto.</p>
+        </div>
+        <div class="problem-card reveal reveal-delay-4">
+          <div class="problem-card-icon">📱</div>
+          <h3 data-i18n="problem.card4.title">Móvil olvidado</h3>
+          <p data-i18n="problem.card4.desc">El 80% del tráfego viene del móvil, pero tu web parece de 2010 en pantalla
+            pequeña.</p>
+        </div>
+      </div>
+
+      <div class="problem-bottom reveal">
+        <p data-i18n="problem.bottom">Cada día que tu web sigue así, pierdes clientes que ya estaban listos para
+          comprarte.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== HOW IT WORKS ========== -->
+  <section class="how-it-works" id="how">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="badge" data-i18n="how.badge">⚙️ Nuestro Proceso</div>
+        <h2 class="section-title" data-i18n="how.title">Cómo funciona el <span class="gradient-text">diagnóstico
+            IA</span></h2>
+      </div>
+
+      <!-- AI Analysis Visual -->
+      <div class="how-visual">
+        <img src="ai-analysis.png" alt="AI Analysis" class="how-image" loading="lazy" width="800" height="500" />
+      </div>
+
+      <div class="steps-container">
+        <div class="step reveal">
+          <div class="step-number" data-i18n="how.step1.number">01</div>
+          <div class="step-content">
+            <h3 data-i18n="how.step1.title">Captura Inteligente</h3>
+            <p data-i18n="how.step1.desc">Nuestro sistema escanea tu web completa simulando un usuario real en móvil y
+              desktop. Captura cada detalle visual.</p>
+          </div>
+        </div>
+
+        <div class="step reveal reveal-delay-1">
+          <div class="step-number" data-i18n="how.step2.number">02</div>
+          <div class="step-content">
+            <h3 data-i18n="how.step2.title">Análisis con Gemini Ultra</h3>
+            <p data-i18n="how.step2.desc">La IA analiza diseño, copy, estructura, UX y psicología de ventas usando
+              frameworks de expertos mundiales en CRO.</p>
+          </div>
+        </div>
+
+        <div class="step reveal reveal-delay-2">
+          <div class="step-number" data-i18n="how.step3.number">03</div>
+          <div class="step-content">
+            <h3 data-i18n="how.step3.title">Reporte de Fugas</h3>
+            <p data-i18n="how.step3.desc">Recibes un informe detallado con los errores exactos, las soluciones
+              específicas y los cambios prioritarios.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== SERVICES ========== -->
+  <section class="services" id="services">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="badge" data-i18n="services.badge">🚀 Servicios</div>
+        <h2 class="section-title" data-i18n="services.title">Soluciones que <span class="gradient-text">multiplican
+            ingresos</span></h2>
+      </div>
+
+      <div class="services-grid">
+        <div class="service-card reveal reveal-delay-1">
+          <div class="service-icon">🔍</div>
+          <h3 data-i18n="services.card1.title">Auditoría CRO con IA</h3>
+          <p data-i18n="services.card1.desc">Análisis completo de tu web con inteligencia artificial. Identificamos cada
+            punto donde pierdes clientes y te decimos exactamente cómo arreglarlo.</p>
+          <ul class="service-features" data-i18n-features="services.card1.features">
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Análisis visual completo</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Reporte de 3+ errores críticos</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Soluciones específicas</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Nuevo titular optimizado</li>
+          </ul>
+        </div>
+
+        <div class="service-card reveal reveal-delay-2">
+          <div class="service-icon">✨</div>
+          <h3 data-i18n="services.card2.title">Rediseño de Alta Conversión</h3>
+          <p data-i18n="services.card2.desc">Reconstruimos tu landing page desde cero con diseño premium, copy
+            persuasivo y arquitectura de conversión probada.</p>
+          <ul class="service-features" data-i18n-features="services.card2.features">
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Diseño premium con Framer AI</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Copy persuasivo con neuromarketing</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Optimizado para móvil</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Entrega en 48-72h</li>
+          </ul>
+        </div>
+
+        <div class="service-card reveal reveal-delay-3">
+          <div class="service-icon">🤖</div>
+          <h3 data-i18n="services.card3.title">Agente IA 24/7</h3>
+          <p data-i18n="services.card3.desc">Instalamos un chatbot inteligente en tu web que atiende, cualifica y cierra
+            leads las 24 horas. No pierdes ni un solo cliente fuera de horario.</p>
+          <ul class="service-features" data-i18n-features="services.card3.features">
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Atiende en cualquier idioma</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Cualifica leads automáticamente</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Agenda citas solo</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Integración con tu CRM</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== TESTIMONIALS ========== -->
+  <section class="testimonials" id="testimonials">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="badge">⭐ Resultados Reales</div>
+        <h2 class="section-title">Lo que dicen nuestros <span class="gradient-text">clientes</span></h2>
+      </div>
+
+      <div class="testimonials-grid">
+        <div class="testimonial-card reveal reveal-delay-1">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"En 48 horas nos identificaron 5 errores críticos que llevaban meses ahí. Tras
+            implementar los cambios, la conversión subió un 34%."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">MC</div>
+            <div>
+              <strong>María C.</strong>
+              <span>CEO, TiendaDigital.es</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card reveal reveal-delay-2">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"El informe de ALZ fue más completo que cualquier auditoría que nos habían hecho
+            antes. El agente IA que nos instalaron convierte leads solo."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">JR</div>
+            <div>
+              <strong>Javier R.</strong>
+              <span>Fundador, DataFlow SaaS</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="testimonial-card reveal reveal-delay-3">
+          <div class="testimonial-stars">★★★★★</div>
+          <p class="testimonial-text">"Estábamos gastando €3,000/mes en ads con un 1.2% de conversión. Con los cambios
+            de ALZ subimos a 3.8%. ROI brutal."</p>
+          <div class="testimonial-author">
+            <div class="testimonial-avatar">LP</div>
+            <div>
+              <strong>Laura P.</strong>
+              <span>CMO, FitnessPro</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== PRICING ========== -->
+  <section class="pricing" id="pricing">
+    <div class="container">
+      <div class="section-header reveal">
+        <div class="badge" data-i18n="pricing.badge">💎 Planes</div>
+        <h2 class="section-title" data-i18n="pricing.title">Invierte en <span class="gradient-text">resultados
+            reales</span></h2>
+      </div>
+
+      <div class="pricing-grid">
+        <!-- Tier 1 -->
+        <div class="pricing-card reveal reveal-delay-1">
+          <div class="pricing-card-header">
+            <div class="pricing-name" data-i18n="pricing.tier1.name">Diagnóstico</div>
+            <div class="pricing-price" data-i18n="pricing.tier1.price">$97</div>
+            <div class="pricing-period" data-i18n="pricing.tier1.period">pago único</div>
+          </div>
+          <p class="pricing-desc" data-i18n="pricing.tier1.desc">Perfecto para saber exactamente qué está mal en tu web.
+          </p>
+          <ul class="pricing-features" data-i18n-features="pricing.tier1.features">
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Auditoría CRO completa con IA</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Reporte PDF detallado</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>3 errores críticos + soluciones</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Nuevo titular H1 optimizado</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Entrega en 24 horas</li>
+          </ul>
+          <a href="https://wa.me/34602199253?text=Hola%20ALZ%2C%20me%20interesa%20el%20plan%20Diagn%C3%B3stico%20(%2497)" target="_blank" rel="noopener" class="pricing-cta" data-i18n="pricing.tier1.cta">Solicitar Diagnóstico</a>
+        </div>
+
+        <!-- Tier 2 (Popular) -->
+        <div class="pricing-card popular reveal reveal-delay-2">
+          <div class="popular-badge" data-i18n="pricing.tier2.popular">MÁS POPULAR</div>
+          <div class="pricing-card-header">
+            <div class="pricing-name" data-i18n="pricing.tier2.name">Implementación</div>
+            <div class="pricing-price" data-i18n="pricing.tier2.price">$497</div>
+            <div class="pricing-period" data-i18n="pricing.tier2.period">pago único</div>
+          </div>
+          <p class="pricing-desc" data-i18n="pricing.tier2.desc">Rediseñamos tu web para que convierta de verdad.</p>
+          <ul class="pricing-features" data-i18n-features="pricing.tier2.features">
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Todo del plan Diagnóstico</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Rediseño completo con Framer AI</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Copy persuasivo profesional</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Optimización móvil total</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>2 rondas de revisiones</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Entrega en 72 horas</li>
+          </ul>
+          <a href="https://wa.me/34602199253?text=Hola%20ALZ%2C%20quiero%20el%20plan%20Implementaci%C3%B3n%20(%24497)" target="_blank" rel="noopener" class="pricing-cta" data-i18n="pricing.tier2.cta">Empezar Rediseño</a>
+        </div>
+
+        <!-- Tier 3 -->
+        <div class="pricing-card reveal reveal-delay-3">
+          <div class="pricing-card-header">
+            <div class="pricing-name" data-i18n="pricing.tier3.name">Premium</div>
+            <div class="pricing-price" data-i18n="pricing.tier3.price">$997</div>
+            <div class="pricing-period" data-i18n="pricing.tier3.period">pago único</div>
+          </div>
+          <p class="pricing-desc" data-i18n="pricing.tier3.desc">El pack completo: web + agente IA + soporte.</p>
+          <ul class="pricing-features" data-i18n-features="pricing.tier3.features">
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Todo del plan Implementación</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Agente IA 24/7 instalado</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Integración con WhatsApp</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Soporte prioritario 30 días</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Optimización continua 1 mes</li>
+            <li><svg width="16" height="16" viewBox="0 0 16 16" fill="none">
+                <path d="M13.5 4.5L6 12L2.5 8.5" stroke="currentColor" stroke-width="2" stroke-linecap="round"
+                  stroke-linejoin="round" />
+              </svg>Informe de rendimiento semanal</li>
+          </ul>
+          <a href="https://wa.me/34602199253?text=Hola%20ALZ%2C%20quiero%20el%20plan%20Premium%20(%24997)" target="_blank" rel="noopener" class="pricing-cta" data-i18n="pricing.tier3.cta">Quiero el Premium</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CTA SECTION ========== -->
+  <section class="cta-section" id="cta">
+    <div class="container">
+      <div class="cta-box reveal">
+        <h2 data-i18n="cta.title">¿Listo para dejar de perder ventas?</h2>
+        <p data-i18n="cta.desc">Obtén tu primera auditoría con ALZ Intelligence gratis y descubre exactamente dónde
+          se van tus clientes.</p>
+        <div class="cta-dual">
+          <a href="https://wa.me/34602199253?text=Hola%20ALZ%2C%20quiero%20mi%20auditor%C3%ADa%20gratuita" target="_blank" rel="noopener" class="btn-primary btn-large" data-i18n="cta.button">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+            WhatsApp Directo
+          </a>
+          <button class="btn-secondary btn-large" onclick="document.getElementById('contact-modal').classList.add('open')" data-i18n="cta.form_btn">
+            📧 Enviar Formulario
+          </button>
+        </div>
+        <p class="cta-guarantee" data-i18n="cta.guarantee">✓ Análisis en 48h. Sin compromiso.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ========== CONTACT MODAL ========== -->
+  <div id="contact-modal" class="contact-modal">
+    <div class="contact-modal-backdrop" onclick="document.getElementById('contact-modal').classList.remove('open')"></div>
+    <div class="contact-modal-content">
+      <button class="contact-modal-close" onclick="document.getElementById('contact-modal').classList.remove('open')">✕</button>
+      <h2>Solicita tu Auditoría Gratis</h2>
+      <p>Completa el formulario y te contactamos en menos de 24h.</p>
+      <form id="audit-form">
+        <div class="form-row-modal">
+          <div class="form-group-modal">
+            <label for="modal-name">Nombre</label>
+            <input type="text" id="modal-name" name="nombre" placeholder="Tu nombre" required>
+          </div>
+          <div class="form-group-modal">
+            <label for="modal-email">Email</label>
+            <input type="email" id="modal-email" name="email" placeholder="tu@email.com" required>
+          </div>
+        </div>
+        <div class="form-group-modal">
+          <label for="modal-website">URL de tu web</label>
+          <input type="url" id="modal-website" name="web" placeholder="https://tuweb.com" required>
+        </div>
+        <div class="form-group-modal">
+          <label for="modal-message">¿Qué problema ves en tu web?</label>
+          <textarea id="modal-message" name="mensaje" placeholder="Ej: bajo ratio de conversión, alto bounce rate..." rows="3"></textarea>
+        </div>
+        <button type="submit" id="form-submit-btn" class="btn-primary btn-large" style="width: 100%; justify-content: center;">Enviar Solicitud →</button>
+        <div id="form-success" style="display:none; text-align:center; padding:24px;">
+          <div style="font-size:2.5rem; margin-bottom:12px;">🚀</div>
+          <h3 style="color:var(--accent-purple); margin-bottom:8px;">¡Solicitud Recibida!</h3>
+          <p style="color:var(--text-muted);">Te contactaremos en menos de 24h.<br>Revisa tu email para confirmar.</p>
+        </div>
+      </form>
+      <script>
+        document.getElementById('audit-form').addEventListener('submit', async function(e) {
+          e.preventDefault();
+          const btn = document.getElementById('form-submit-btn');
+          btn.textContent = 'Enviando...';
+          btn.disabled = true;
+          const data = {
+            nombre: document.getElementById('modal-name').value,
+            email: document.getElementById('modal-email').value,
+            web: document.getElementById('modal-website').value,
+            mensaje: document.getElementById('modal-message').value
+          };
+          // Send to n8n webhook (lead automation pipeline)
+          // Track conversion in GA4
+          if (typeof gtag === 'function') gtag('event', 'generate_lead', { event_category: 'form', event_label: data.email });
+          const n8nPromise = fetch('https://95.217.158.7/webhook/alz-lead', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data)
+          }).catch(() => {});
+          // Send backup to Web3Forms
+          const w3fData = new FormData();
+          w3fData.append('access_key', '526e2763-e15a-4c8d-ba7f-8101feba3f15');
+          w3fData.append('subject', 'Nueva solicitud de auditoría - ALZ');
+          w3fData.append('from_name', 'ALZ Website');
+          Object.entries(data).forEach(([k, v]) => w3fData.append(k, v));
+          const w3fPromise = fetch('https://api.web3forms.com/submit', {
+            method: 'POST', body: w3fData
+          }).catch(() => {});
+          await Promise.allSettled([n8nPromise, w3fPromise]);
+          this.querySelectorAll('input, textarea, button').forEach(el => el.style.display = 'none');
+          document.getElementById('form-success').style.display = 'block';
+        });
+      </script>
+      <p style="text-align:center; margin-top:12px; font-size:0.8rem; color:var(--text-muted);">O escríbenos directamente por <a href="https://wa.me/34602199253" target="_blank" rel="noopener" style="color:var(--accent-cyan);">WhatsApp</a></p>
+    </div>
+  </div>
+
+  <!-- ========== FOOTER ========== -->
+  <footer class="footer">
+    <div class="container">
+      <div class="footer-grid">
+        <div class="footer-brand">
+          <a href="#" class="nav-logo">
+            <img src="alz-logo.png" alt="ALZ" class="logo-img" loading="lazy" width="120" height="40" />
+          </a>
+          <p data-i18n="footer.desc">Convierte clics en clientes con la precisión de la Inteligencia Artificial de ALZ.
+          </p>
+        </div>
+        <div>
+          <h4 data-i18n="footer.links">Enlaces</h4>
+          <div class="footer-links">
+            <a href="#problem" data-i18n="nav.problem">El Problema</a>
+            <a href="#how" data-i18n="nav.how">Cómo Funciona</a>
+            <a href="#services" data-i18n="nav.services">Servicios</a>
+            <a href="#pricing" data-i18n="nav.pricing">Precios</a>
+          </div>
+        </div>
+        <div>
+          <h4 data-i18n="footer.legal">Legal</h4>
+          <div class="footer-links">
+            <a href="privacy.html" data-i18n="footer.privacy">Privacidad</a>
+            <a href="terms.html" data-i18n="footer.terms">Términos</a>
+            <a href="cookies.html" data-i18n="footer.cookies">Cookies</a>
+            <a href="contact.html">Contacto</a>
+          </div>
+        </div>
+      </div>
+      <div class="footer-bottom">
+        <p>© 2026 ALZ. <span data-i18n="footer.rights">Todos los derechos reservados.</span></p>
+        <p>Powered by <span class="gradient-text" style="font-weight: 600;">Gemini Ultra AI</span></p>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Cookie Consent Banner -->
+  <div id="cookie-banner" class="cookie-banner" style="display: none;">
+    <div class="cookie-content">
+      <p>🍪 Utilizamos cookies para mejorar tu experiencia. Al continuar navegando, aceptas nuestra <a
+          href="cookies.html">Política de Cookies</a>.</p>
+      <div class="cookie-actions">
+        <button onclick="acceptCookies()" class="cookie-accept">Aceptar</button>
+        <a href="cookies.html" class="cookie-more">Más info</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Floating WhatsApp Button -->
+  <a href="https://wa.me/34602199253?text=Hola%20ALZ%2C%20necesito%20ayuda%20con%20mi%20web" target="_blank" rel="noopener" id="whatsapp-float" class="whatsapp-float" aria-label="Chat on WhatsApp">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
+  </a>
+
+  <!-- Scripts -->
+  <script src="translations.js"></script>
+  <script src="script.js"></script>
+  <script src="effects.js" defer></script>
+  <script>
+    // Cookie consent
+    (function () {
+      if (!localStorage.getItem('alz_consent')) {
+        document.getElementById('cookie-banner').style.display = 'flex';
+      }
+    })();
+    function acceptCookies() {
+      localStorage.setItem('alz_consent', 'true');
+      document.getElementById('cookie-banner').style.display = 'none';
+      // Inicializar GA4 tras consentimiento
+      if (typeof initGA4 === 'function') initGA4();
+    }
+  </script>
+</body>
+
+</html>

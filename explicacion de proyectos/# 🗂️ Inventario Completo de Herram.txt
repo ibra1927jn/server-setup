@@ -1,0 +1,271 @@
+# 🗂️ Inventario Completo de Herramientas, Servicios y Configuraciones
+> Generado: 28 Marzo 2026 | Proyectos analizados: 7 activos + 2 auxiliares
+---
+## Índice Rápido
+| # | Sección |
+|---|---------|
+| I | [Mapa de Proyectos](#i-mapa-de-proyectos) |
+| II | [Lenguajes y Frameworks](#ii-lenguajes-y-frameworks) |
+| III | [Bases de Datos](#iii-bases-de-datos) |
+| IV | [Servicios Cloud y Cuentas](#iv-servicios-cloud-y-cuentas) |
+| V | [Infraestructura y Servidores](#v-infraestructura-y-servidores) |
+| VI | [Herramientas de Automatización](#vi-herramientas-de-automatización) |
+| VII | [Testing y QA](#vii-testing-y-qa) |
+| VIII | [Seguridad y Credenciales](#viii-seguridad-y-credenciales) |
+| IX | [DevOps y CI/CD](#ix-devops-y-cicd) |
+| X | [Analítica y Monitoreo](#x-analítica-y-monitoreo) |
+| XI | [Dependencias entre Proyectos](#xi-dependencias-entre-proyectos) |
+---
+## I. Mapa de Proyectos
+```mermaid
+graph LR
+    subgraph Desktop
+        A[harvestpro-nz] --> S[Supabase Cloud]
+        B[Crypto-Trading-Bot4] --> H[Hetzner VPS]
+        C[alze] --> L[Local Only]
+        D[alze-os] --> Q[QEMU Local]
+        E[money / ALZ] --> F[Firebase Hosting]
+        E --> H
+        G[set up] --> H
+        I[vida, control] --> H
+    end
+    H --> N[n8n]
+    H --> PG[PostgreSQL 16]
+    H --> NG[Nginx]
+```
+| Proyecto | Tipo | Líneas de Código | Estado |
+|----------|------|-----------------|--------|
+| **harvestpro-nz** | App Full-Stack (PWA + Android) | ~92,000 | v9.9.0 — Producción |
+| **Crypto-Trading-Bot4** | Bot de Trading Algorítmico | ~60,000+ | v15 — Live Trading |
+| **alze** | Game Engine 3D | ~11,000 | Fase 3.2 — Desarrollo activo |
+| **alze-os** | Sistema Operativo (Kernel) | ~19,000 | v0.7.0 — Desarrollo activo |
+| **money (ALZ)** | Landing Page + CRM + Automatización | ~5,000 | Producción |
+| **set up** | Scripts de Automatización | ~3,000 | Operativo |
+| **vida, control** | Sistema de Inteligencia Personal | ~8,000 | Producción en Hetzner |
+---
+## II. Lenguajes y Frameworks
+### Lenguajes de Programación
+| Lenguaje | Proyectos que lo usan | Versión |
+|----------|----------------------|---------|
+| **TypeScript** | harvestpro-nz | 5.3 |
+| **JavaScript (Vanilla)** | money, set up, vida-control | ES2020+ |
+| **Python** | Crypto-Trading-Bot4 | 3.13 |
+| **C++** | alze | C++17 (sin RTTI, sin excepciones) |
+| **C** | alze-os | C11 (freestanding) |
+| **x86-64 Assembly (NASM)** | alze-os | — |
+| **HTML/CSS** | money, harvestpro-nz, vida-control | HTML5 / CSS3 |
+| **SQL** | vida-control, harvestpro-nz | PostgreSQL 16 |
+| **JSON** | set up (workflows n8n) | — |
+### Frameworks y Librerías Principales
+| Framework / Librería | Proyecto | Versión | Función |
+|---------------------|----------|---------|---------|
+| **React** | harvestpro-nz | 19 | UI principal |
+| **Vite** | harvestpro-nz | 7.3.1 | Build tool |
+| **Tailwind CSS** | harvestpro-nz | 3.4.0 | Estilos |
+| **Zustand** | harvestpro-nz | 5.0.11 | Estado global |
+| **TanStack Query** | harvestpro-nz | 5.90.21 | Cache de datos |
+| **React Router** | harvestpro-nz | 7.13.0 | Routing |
+| **Zod** | harvestpro-nz | 4.3.6 | Validación |
+| **Capacitor** | harvestpro-nz | 8.2.0 | Build nativo (Android) |
+| **Dexie** | harvestpro-nz | 3.2.4 | IndexedDB offline |
+| **FastAPI** | Crypto-Trading-Bot4 | ≥0.110.0 | API REST |
+| **CCXT** | Crypto-Trading-Bot4 | ≥4.2.0 | Exchange connector |
+| **Pandas / Pandas-TA** | Crypto-Trading-Bot4 | ≥2.2.0 | Análisis de datos |
+| **Express** | vida, control | 5.1.0 | API REST |
+| **Tesseract.js** | vida, control | 5.1.1 | OCR |
+| **Cheerio** | vida, control | 1.0.0 | Web scraping |
+| **Three.js** | money | r128 (CDN) | Partículas 3D |
+| **SDL2** | alze | 2.30.12 | Ventana / Input |
+| **OpenGL (GLAD)** | alze | 4.6 | Renderizado 3D |
+| **CMake** | alze | 3.20+ | Build system |
+---
+## III. Bases de Datos
+| Tipo | Servicio | Proyecto | Ubicación |
+|------|----------|----------|-----------|
+| **PostgreSQL 16** | Supabase (hosted) | harvestpro-nz | Cloud (Supabase) |
+| **PostgreSQL 16** | Docker (postgres:16-alpine) | vida, control | Hetzner VPS |
+| **PostgreSQL** | Docker (para n8n) | money (n8n backend) | Hetzner VPS |
+| **SQLite** (aiosqlite) | Local | Crypto-Trading-Bot4 | Local / Hetzner |
+| **IndexedDB** (Dexie) | Navegador (offline) | harvestpro-nz | Cliente |
+| **Google Sheets** | Google Apps Script | money (CRM) | Cloud (Google) |
+---
+## IV. Servicios Cloud y Cuentas
+### Cuenta Google (ibraboutereg@gmail.com)
+| Servicio | Proyecto | Configuración | Estado |
+|----------|----------|---------------|--------|
+| **Firebase Hosting** | money (ALZ) | Proyecto: `alz-web` · URL: `https://alz-web.web.app` | ✅ Activo |
+| **Google Analytics GA4** | money (ALZ) | ID: `G-4T4PHY53HV` · Evento: `generate_lead` (€500) | ✅ Activo |
+| **Gmail SMTP** | money (n8n) | Puerto 587 STARTTLS · App Password: `kptcofhimxusznrl` | ✅ Activo |
+| **Google Apps Script** | money (CRM) | Script bridge para escribir leads en Sheets | ⏳ Pendiente de activar |
+| **Google Cloud Console** | — | Proyecto creado para GA4 | ✅ |
+### Supabase
+| Recurso | Proyecto | Detalles |
+|---------|----------|----------|
+| **Auth** | harvestpro-nz | JWT + silent refresh |
+| **Database** | harvestpro-nz | PostgreSQL con RLS (Row Level Security) |
+| **Edge Functions** | harvestpro-nz | Onboarding, notificaciones |
+| **Storage** | harvestpro-nz | Documentos de empleados |
+### Otras Cuentas / APIs
+| Servicio | Proyecto | Función |
+|----------|----------|---------|
+| **Binance** (API Key) | Crypto-Trading-Bot4 | Exchange de trading |
+| **CryptoPanic** (API) | Crypto-Trading-Bot4 | Noticias crypto |
+| **Telegram Bot API** | Crypto-Trading-Bot4, vida-control | Notificaciones / Bot |
+| **Web3Forms** | money | Backup de formularios (API key hardcodeada) |
+| **Sentry** | harvestpro-nz | Error tracking |
+| **PostHog** | harvestpro-nz | Analytics de producto |
+| **GitHub** | Todos (excepto set up, vida-control) | Control de versiones |
+---
+## V. Infraestructura y Servidores
+### Hetzner VPS (Servidor Central)
+| Atributo | Valor |
+|----------|-------|
+| **IP** | `95.217.158.7` |
+| **Modelo** | CX23 (2 vCPU, 4GB RAM, 40GB SSD) |
+| **OS** | Ubuntu 24.04.3 LTS |
+| **Acceso SSH** | `root@95.217.158.7` (contraseña) |
+| **Uso de disco** | 37.3% de 37.23GB |
+| **Uso de RAM** | 62% |
+**Servicios corriendo en el VPS:**
+| Puerto | Servicio | Proyecto | Tecnología |
+|--------|----------|----------|------------|
+| **80** | Ultra Engine (dashboard) | vida, control | Express.js + Docker |
+| **443** | n8n (HTTPS proxy) | money, set up | Nginx + SSL self-signed |
+| **5678** | n8n (interno) | money, set up | Docker |
+| **5432** | PostgreSQL (interno Docker) | vida-control, n8n | postgres:16-alpine |
+**Software instalado en el VPS:**
+| Software | Versión | Función |
+|----------|---------|---------|
+| Docker + Docker Compose | Latest | Contenerización |
+| Nginx | System | Reverse proxy + SSL |
+| PostgreSQL | 16 (Docker) | Base de datos |
+| n8n | Docker image | Automatización |
+| Python 3 | System | Scripts del bot |
+| Node.js | System | Ultra Engine |
+### Máquina Local (Windows)
+| Software | Función | Proyectos |
+|----------|---------|-----------|
+| **Node.js** + npm | Runtime JS | harvestpro-nz, money, set up, vida-control |
+| **Python 3.13** + venv | Runtime Python | Crypto-Trading-Bot4 |
+| **MSYS2 / MinGW** | Compilador C++ | alze |
+| **Clang / LLD / NASM** | Compilador C/ASM | alze-os |
+| **QEMU** | Emulador x86_64 | alze-os |
+| **GDB** | Debugger | alze-os |
+| **Docker Desktop** | Contenedores locales | vida-control |
+| **Git** | Control de versiones | Todos |
+| **Firebase CLI** | Deploy hosting | money |
+| **VS Code / Cursor** | IDE | Todos |
+| **Antigravity (Gemini)** | AI Coding Assistant | Todos |
+| **Claude Code** | AI Coding Assistant | Todos |
+---
+## VI. Herramientas de Automatización
+### n8n (Auto-alojado en Hetzner)
+| Workflow | Proyecto | Función |
+|----------|----------|---------|
+| **ALZ Lead Capture** (`GwbtqtKg0qlzKg8`) | money | Webhook → Email → (futuro: CRM) |
+| **Daily Briefing** | set up | Resumen diario automático |
+| **Crypto Alerts** | set up | Alertas de precios |
+| **GitHub Auto-Backup** | set up | Backup automático de repos |
+| **Uptime Monitor** | set up | Monitoreo de servicios |
+| **AI Agent** | set up | Agente de IA |
+### Bots de Telegram
+| Bot | Proyecto | Función |
+|-----|----------|---------|
+| Bot de Trading | Crypto-Trading-Bot4 | Alertas de trades, P&L, comandos |
+| Bot Ultra System | vida, control | Alertas de documentos, noticias, empleo |
+### Cron Jobs / Schedulers
+| Servicio | Proyecto | Función |
+|----------|----------|---------|
+| `node-cron` | vida, control | Scraping periódico, RSS, alertas |
+| n8n triggers | set up | Workflows programados |
+| Loop infinito (WebSocket) | Crypto-Trading-Bot4 | Monitoreo 24/7 de mercado |
+---
+## VII. Testing y QA
+| Herramienta | Proyecto | Tipo | Tests |
+|------------|----------|------|-------|
+| **Vitest** | harvestpro-nz | Unitarios | 3,800+ ✅ |
+| **Playwright** | harvestpro-nz | E2E (navegador) | Configurado |
+| **Storybook** | harvestpro-nz | Documentación visual | Configurado |
+| **pytest** + pytest-asyncio | Crypto-Trading-Bot4 | Unitarios + async | — |
+| **Tests custom (C)** | alze-os | Tests de kernel | 46 + 5 runtime ✅ |
+| **Tests custom (C++)** | alze | Tests de engine | 436/436 ✅ |
+| **Curl manual** | money | Pruebas de webhook | — |
+---
+## VIII. Seguridad y Credenciales
+### Variables de Entorno por Proyecto
+| Proyecto | Archivo | Variables Críticas |
+|----------|---------|-------------------|
+| harvestpro-nz | `.env` / `.env.local` | `VITE_SUPABASE_URL`, `VITE_SUPABASE_ANON_KEY`, `VITE_GEMINI_API_KEY`, `VITE_VAPID_PUBLIC_KEY` |
+| Crypto-Trading-Bot4 | `.env` | `API_KEY`, `API_SECRET` (Binance), `TELEGRAM_BOT_TOKEN`, `CRYPTOPANIC_TOKEN`, `CAPITAL` |
+| vida, control | `.env` | `POSTGRES_USER/PASSWORD/DB`, `TELEGRAM_BOT_TOKEN` |
+| set up | `env_temp.txt` | ⚠️ Credenciales en texto plano |
+| money | Hardcodeado en HTML | ⚠️ Web3Forms API key, GA4 ID en código fuente |
+### Estado de Seguridad del VPS
+| Control | Estado | Riesgo |
+|---------|--------|--------|
+| Acceso SSH por contraseña | ⚠️ Activo | 🔴 Alto — debería usar solo claves SSH |
+| Firewall UFW | ❌ No configurado | 🔴 Alto — puertos abiertos innecesarios |
+| Fail2ban | ❌ No instalado | 🟡 Medio — vulnerable a brute-force |
+| `N8N_ENCRYPTION_KEY` | ❌ No definida | 🔴 Alto — credenciales descifrables |
+| SSL en n8n | ⚠️ Self-signed | 🟡 Medio — navegadores muestran advertencia |
+| HSTS / CSP headers | ❌ No configurados | 🟡 Medio |
+| `env_temp.txt` en set up | ⚠️ Credenciales visibles | 🔴 Alto — debería estar en .gitignore |
+---
+## IX. DevOps y CI/CD
+| Herramienta | Proyecto | Función |
+|------------|----------|---------|
+| **GitHub Actions** | harvestpro-nz | CI/CD (workflows en `.github/workflows/`) |
+| **Husky** | harvestpro-nz | Git hooks (pre-commit) |
+| **lint-staged** | harvestpro-nz | Formato automático al commitear |
+| **Firebase CLI** (`firebase deploy`) | money | Deploy manual a Firebase Hosting |
+| **SCP / SSH** | Crypto-Trading-Bot4, vida-control | Deploy manual al VPS |
+| **Docker Compose** | vida, control | Orquestación de contenedores |
+| **`deploy_hetzner.js`** | vida, control | Script de deploy automatizado via SSH (ssh2) |
+---
+## X. Analítica y Monitoreo
+| Herramienta | Proyecto | Función |
+|------------|----------|---------|
+| **Google Analytics GA4** (`G-4T4PHY53HV`) | money | Tracking web + conversiones |
+| **Sentry** | harvestpro-nz | Error tracking en producción |
+| **PostHog** | harvestpro-nz | Analytics de producto (funnels, retención) |
+| **Dashboard HTML custom** | Crypto-Trading-Bot4 | P&L, win rate, drawdown, chart interactivo |
+| **Dashboard HTML custom** | vida, control | Panel de noticias, empleo, documentos |
+| **Telegram Bot** | Crypto-Trading-Bot4, vida-control | Alertas en tiempo real |
+---
+## XI. Dependencias entre Proyectos
+```mermaid
+graph TD
+    H[Hetzner VPS<br/>95.217.158.7]
+    M[money / ALZ] -->|Webhook HTTPS :443| H
+    M -->|Deploy| FB[Firebase Hosting]
+    M -->|GA4| GA[Google Analytics]
+    M -->|Email| GM[Gmail SMTP :587]
+    SU[set up] -->|Workflows n8n| H
+    VC[vida, control] -->|Docker Compose| H
+    CT[Crypto-Trading-Bot4] -->|SCP deploy| H
+    CT -->|API| BN[Binance Exchange]
+    CT -->|Alertas| TG[Telegram]
+    VC -->|Alertas| TG
+    HP[harvestpro-nz] -->|Auth + DB| SB[Supabase Cloud]
+    HP -->|Analytics| PH[PostHog]
+    HP -->|Errors| SE[Sentry]
+    AL[alze] --> LOCAL[Solo Local]
+    AO[alze-os] --> LOCAL
+```
+> [!IMPORTANT]
+> **El VPS de Hetzner es el punto único de fallo (SPOF) para 4 proyectos.** Si cae, afecta a: money (webhooks de leads), set up (automatizaciones), vida-control (dashboard personal) y Crypto-Trading-Bot4 (trading en vivo). Considerar un backup o failover.
+---
+## Resumen Numérico
+| Métrica | Valor |
+|---------|-------|
+| **Proyectos activos** | 7 |
+| **Lenguajes usados** | 7 (TS, JS, Python, C++, C, ASM, SQL) |
+| **Frameworks** | 15+ |
+| **Bases de datos** | 4 tipos (PostgreSQL, SQLite, IndexedDB, Sheets) |
+| **Servicios cloud** | 8 (Firebase, Supabase, Binance, Google, Telegram, Sentry, PostHog, CryptoPanic) |
+| **Servidores** | 1 VPS (Hetzner) + 1 PC local (Windows) |
+| **Contenedores Docker** | 4+ (2 ultra-system + n8n + postgres) |
+| **Bots de Telegram** | 2 |
+| **Tests totales** | 4,300+ |
+| **Líneas de código totales** | ~195,000+ |
+| **Cuentas/APIs con credenciales** | 10+ |

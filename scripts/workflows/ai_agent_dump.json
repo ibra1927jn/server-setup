@@ -1,0 +1,199 @@
+﻿{
+  "updatedAt": "2026-03-26T02:46:28.000Z",
+  "createdAt": "2026-03-25T12:15:29.947Z",
+  "id": "WiTcSI66bHwdSgkd",
+  "name": "AI Agent Base - Template con Memoria",
+  "description": null,
+  "active": true,
+  "isArchived": false,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "ai-agent",
+        "responseMode": "lastNode",
+        "options": {}
+      },
+      "id": "webhook-input",
+      "name": "Webhook Input",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        224,
+        304
+      ],
+      "webhookId": "ai-agent-endpoint"
+    },
+    {
+      "parameters": {
+        "sessionIdType": "customKey",
+        "sessionKey": "={{ $json.body.session_id || 'default' }}",
+        "contextWindowLength": 20
+      },
+      "id": "memory",
+      "name": "Window Buffer Memory",
+      "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
+      "typeVersion": 1.3,
+      "position": [
+        584,
+        528
+      ]
+    },
+    {
+      "parameters": {
+        "command": "uptime && free -h | head -2 && docker ps --format '{{.Names}} {{.Status}}' 2>/dev/null && (pgrep -fa v15_scalper > /dev/null && echo 'V15:UP' || echo 'V15:DOWN')"
+      },
+      "id": "tool-server",
+      "name": "Tool: Check Server",
+      "type": "n8n-nodes-base.ssh",
+      "typeVersion": 1,
+      "position": [
+        224,
+        632
+      ],
+      "credentials": {
+        "sshPassword": {
+          "id": "YIFWdMGpRRwrTXfA",
+          "name": "Hetzner SSH"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.url }}"
+      },
+      "id": "tool-http",
+      "name": "Tool: HTTP Request",
+      "type": "@n8n/n8n-nodes-langchain.toolHttpRequest",
+      "typeVersion": 1.1,
+      "position": [
+        224,
+        856
+      ]
+    },
+    {
+      "parameters": {
+        "model": {
+          "__rl": true,
+          "value": "=z-ai/glm-4.5-air:free",
+          "mode": "id"
+        },
+        "builtInTools": {},
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+      "typeVersion": 1.3,
+      "position": [
+        456,
+        528
+      ],
+      "id": "fe3d7875-b403-455d-9cfc-61ec4c510c3f",
+      "name": "OpenAI Chat Model",
+      "credentials": {
+        "openAiApi": {
+          "id": "KViDucLPeGURRcAd",
+          "name": "OpenRouter Account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{ $json.body.chatInput }}",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        448,
+        304
+      ],
+      "id": "346e5d50-6dda-4c5e-b888-83f178e8586c",
+      "name": "AI Agent1",
+      "notes": "Explain what AI model you are and confirm you are online."
+    }
+  ],
+  "connections": {
+    "Webhook Input": {
+      "main": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Window Buffer Memory": {
+      "ai_memory": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_memory",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Tool: Check Server": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "Tool: HTTP Request": {
+      "ai_tool": [
+        []
+      ]
+    },
+    "OpenAI Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent1",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "staticData": null,
+  "meta": {
+    "notes": "Plantilla base para AI Agent con LangChain. Incluye: Gemini Flash como LLM, Window Buffer Memory para conversaciones, y 2 herramientas (check server + HTTP). Personalizar seg\u00fan necesidad.",
+    "templateCredsSetupCompleted": true
+  },
+  "pinData": {},
+  "versionId": "f067a77f-cbdf-4a0e-a346-96840f555356",
+  "activeVersionId": "f067a77f-cbdf-4a0e-a346-96840f555356",
+  "versionCounter": 54,
+  "triggerCount": 1,
+  "tags": [],
+  "shared": [
+    {
+      "updatedAt": "2026-03-25T12:15:29.954Z",
+      "createdAt": "2026-03-25T12:15:29.954Z",
+      "role": "workflow:owner",
+      "workflowId": "WiTcSI66bHwdSgkd",
+      "projectId": "bJUhFqhoUAZBxl1i",
+      "project": {
+        "updatedAt": "2026-03-25T11:08:14.379Z",
+        "createdAt": "2026-03-25T11:06:58.879Z",
+        "id": "bJUhFqhoUAZBxl1i",
+        "name": "Ibrahim Admin <ibrahim@alz.agency>",
+        "type": "personal",
+        "icon": null,
+        "description": null,
+        "creatorId": "3794db0f-3aa8-4594-ac29-27c2108eab96"
+      }
+    }
+  ],
+  "versionMetadata": {
+    "name": null,
+    "description": null
+  }
+}

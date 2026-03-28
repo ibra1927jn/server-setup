@@ -1,0 +1,55 @@
+import time
+from shared_config import get_ssh_client
+
+ssh = get_ssh_client()
+
+_, o, _ = ssh.exec_command('find /root -name "docker-compose.yml" 2>/dev/null | grep n8n')
+compose_paths = o.read().decode().strip().split('\\n')
+print('=== COMPOSE PATHS ===')
+print(compose_paths)
+
+if compose_paths and compose_paths[0]:
+    compose_dir = compose_paths[0].replace('/docker-compose.yml', '')
+    print('Updating .env in', compose_dir)
+    
+    # Read current env
+    _, o, _ = ssh.exec_command(f'cat {compose_dir}/.env')
+    current_env = o.read().decode()
+    
+    # Fix settings
+    lines = []
+    for line in current_env.split('\\n'):
+        if line.startswith('WEBHOOK_URL='):
+            lines.append('WEBHOOK_URL=https://95.217.158.7/')
+        elif line.startswith('N8N_PROXY_HOPS='):
+            pass # we'll add it below
+        elif line.startswith('N8N_SECURE_COOKIE='):
+            lines.append('N8N_SECURE_COOKIE=false')
+        else:
+            if line.strip():
+                lines.append(line)
+                
+    # Ensure proxy hops
+    if not any('N8N_PROXY_HOPS' in line for line in lines):
+        lines.append('N8N_PROXY_HOPS=1')
+        
+    new_env = '\\n'.join(lines)
+    
+    # Write back
+    sftp = ssh.open_sftp()
+    env_path = f'/tmp/new_env'
+    with open('env_temp.txt', 'w') as f:
+        f.write(new_env)
+    sftp.put('env_temp.txt', f'{compose_dir}/.env')
+    sftp.close()
+    
+    # Restart
+    print('Restarting n8n...')
+    ssh.exec_command(f'cd {compose_dir} && docker-compose down && docker-compose up -d')
+    time.sleep(5)
+    
+    _, o, _ = ssh.exec_command('docker logs n8n-n8n-1 --tail 10')
+    print('=== DOCKER RESTART LOGS ===')
+    print(o.read().decode())
+    
+ssh.close()
