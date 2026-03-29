@@ -7,3 +7,11 @@ __pycache__/
 n8n_env.txt
 n8n_full_logs.txt
 exported_workflows.json
+bus_status.json
+hcom_out.txt
+help.txt
+help8.txt
+send_help.txt
+send_hcom.py
+ultra-system-temp/
+mission-control/node_modules/
