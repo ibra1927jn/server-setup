@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 
-const API_BASE = '';
+// Use production endpoint directly if built for PROD without Vite proxy, otherwise use relative path
+const API_BASE = import.meta.env.PROD ? 'http://95.217.158.7' : '';
 
 export function useApi(path, interval = null) {
   const [data, setData] = useState(null);
