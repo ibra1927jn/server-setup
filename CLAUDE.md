@@ -51,5 +51,5 @@ GitHub Auto-Backup (12h), Telegram AI Bot (webhook)
 - Credentials migrated from hardcoded to shared_config.py + .env
 - Scripts organized into subdirectories (deploy, diagnostics, fix, test, workflows)
 - ~35 duplicate/dead files cleaned up (2026-03-28)
-- Pending: migrate VPS auth from password to SSH keys
+- SSH key auth activo (id_agenticOS)
 - No formal test suite (pytest not configured yet)
