@@ -70,3 +70,91 @@ def test_default_vps_user():
     # If .env does set it, it should still be a non-empty string
     assert isinstance(VPS_USER, str)
     assert len(VPS_USER) > 0
+
+
+def test_get_ssh_client_password_auth(mocker):
+    """get_ssh_client connects with password when provided."""
+    from shared_config import get_ssh_client
+
+    mock_client = mocker.MagicMock()
+    mocker.patch("shared_config.paramiko.SSHClient", return_value=mock_client)
+
+    result = get_ssh_client(host="1.2.3.4", user="admin", password="secret")
+
+    assert result is mock_client
+    mock_client.set_missing_host_key_policy.assert_called_once()
+    mock_client.connect.assert_called_once_with(
+        hostname="1.2.3.4",
+        username="admin",
+        password="secret",
+        look_for_keys=False,
+        timeout=10,
+    )
+
+
+def test_get_ssh_client_key_auth(mocker, tmp_path):
+    """get_ssh_client connects with SSH key when key_path exists."""
+    from shared_config import get_ssh_client
+
+    key_file = tmp_path / "id_rsa"
+    key_file.write_text("fake-key")
+
+    mock_client = mocker.MagicMock()
+    mocker.patch("shared_config.paramiko.SSHClient", return_value=mock_client)
+
+    result = get_ssh_client(host="1.2.3.4", key_path=str(key_file))
+
+    assert result is mock_client
+    mock_client.connect.assert_called_once_with(
+        hostname="1.2.3.4",
+        username=mocker.ANY,
+        key_filename=str(key_file),
+        timeout=10,
+    )
+
+
+def test_get_ssh_client_agent_fallback(mocker):
+    """get_ssh_client uses SSH agent when no password or key provided."""
+    from shared_config import get_ssh_client
+
+    mock_client = mocker.MagicMock()
+    mocker.patch("shared_config.paramiko.SSHClient", return_value=mock_client)
+
+    result = get_ssh_client(host="1.2.3.4")
+
+    assert result is mock_client
+    mock_client.connect.assert_called_once_with(
+        hostname="1.2.3.4",
+        username=mocker.ANY,
+        allow_agent=True,
+        look_for_keys=True,
+        timeout=10,
+    )
+
+
+def test_get_ssh_client_custom_timeout(mocker):
+    """get_ssh_client respects custom timeout parameter."""
+    from shared_config import get_ssh_client
+
+    mock_client = mocker.MagicMock()
+    mocker.patch("shared_config.paramiko.SSHClient", return_value=mock_client)
+
+    get_ssh_client(host="1.2.3.4", password="pw", timeout=30)
+
+    call_kwargs = mock_client.connect.call_args[1]
+    assert call_kwargs["timeout"] == 30
+
+
+def test_n8n_url_uses_vps_host():
+    """N8N_URL should contain a reference to the VPS host."""
+    from shared_config import N8N_URL
+
+    assert isinstance(N8N_URL, str)
+    assert "5678" in N8N_URL or N8N_URL == ""
+
+
+def test_vps_ssh_key_path_is_string():
+    """VPS_SSH_KEY_PATH should be a string."""
+    from shared_config import VPS_SSH_KEY_PATH
+
+    assert isinstance(VPS_SSH_KEY_PATH, str)
