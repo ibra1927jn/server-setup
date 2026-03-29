@@ -1,5 +1,4 @@
 """Tests for import_workflows_hetzner.py JSON manipulation logic"""
-import json
 from unittest.mock import patch, MagicMock
 
 

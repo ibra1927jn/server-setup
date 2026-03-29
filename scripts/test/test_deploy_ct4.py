@@ -1,5 +1,5 @@
 """Tests for deploy/deploy_ct4.py deploy() function"""
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 import os
 
 
