@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-03-29] | Heartbeat #2: 9 more unused imports removed, 3 bare except→Exception, hardcoded chat ID→env, 5 pytest unit tests for shared_config (5/5 passing)
 - [2026-03-29] | Heartbeat: pytest config (pyproject.toml + conftest.py), test collection fixed (13 errors → 0), hardcoded creds removed from fix_n8n_login.py, 9 unused imports cleaned
 - [2026-03-28] | Sistema centralizado de credenciales (shared_config.py + .env + .gitignore + requirements.txt)
 - [2026-03-28] | Migracion de 90+ scripts Python de credenciales hardcodeadas a shared_config imports
