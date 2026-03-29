@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-03-29] | Heartbeat #7: late imports moved to top of file in 3 telegram bot scripts, 32 new tests (workflow JSON manipulation, node filtering, version patching, import preparation, fase2 data structures). 190/190 passing, coverage improved (was 38%)
 - [2026-03-29] | Heartbeat #6: hardcoded password removed from deploy_n8n_hetzner.py (moved to .env via shared_config), 2 unused imports removed (test files), 15 new tests (8 deploy_n8n main/templates + 7 deploy_ct4 deploy function). 154/154 passing, 38% coverage (was 26%)
 - [2026-03-29] | Heartbeat #5: duplicate time import removed (fix_chat_payload.py), 15 new tests for deploy helpers (run, _mkdir_p). 129/129 passing, 21% coverage (was 15%)
 - [2026-03-29] | Heartbeat #4: missing time import fix (query_n8n_db.py), 12 unnecessary f-string prefixes removed across 8 files, 103 new tests (5 check_server + 98 syntax validation). 114/114 passing, 15% coverage (was 11%)
