@@ -27,7 +27,6 @@ cmd = '''curl -s -k -X POST https://127.0.0.1/webhook/ai-agent \
   -H "Host: 95.217.158.7" \
   -d '{"chatInput": "Di solamente OK"}' '''
 _, o2, _ = ssh.exec_command(cmd)
-import time
 time.sleep(15)  # Give AI time to respond
 print("\n=== WEBHOOK TEST WITH chatInput ===")
 print(o2.read().decode())
