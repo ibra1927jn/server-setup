@@ -18,7 +18,7 @@ try:
             print(f"  ID: {c.get('id')} | Name: {c.get('name')} | Type: {c.get('type')}")
     else:
         print(f"  {creds_raw[:300]}")
-except:
+except Exception:
     print(f"  Raw: {creds_raw[:300]}")
 
 # 2. Export all workflows and check telegram node credential IDs
@@ -59,7 +59,7 @@ try:
             token_data = c.get("data", {})
             print(f"  Telegram cred: {c.get('name')} (ID: {c.get('id')})")
             print(f"  Token preview: {str(token_data)[:50]}...")
-except:
+except Exception:
     print("  Could not decrypt credentials (expected)")
 
 # Try sending via curl with known bot token from previous session

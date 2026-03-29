@@ -132,7 +132,7 @@ if not github_token:
                         github_token = match.group(1)
                         print(f"  Found token in {f}")
                         break
-    except:
+    except Exception:
         pass
 
 if github_token:
