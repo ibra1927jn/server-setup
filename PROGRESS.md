@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-03-29] | Heartbeat #5: duplicate time import removed (fix_chat_payload.py), 15 new tests for deploy helpers (run, _mkdir_p). 129/129 passing, 21% coverage (was 15%)
 - [2026-03-29] | Heartbeat #4: missing time import fix (query_n8n_db.py), 12 unnecessary f-string prefixes removed across 8 files, 103 new tests (5 check_server + 98 syntax validation). 114/114 passing, 15% coverage (was 11%)
 - [2026-03-29] | Heartbeat #3: 10 bare except→Exception across 9 files, unused MagicMock import removed, 6 new SSH auth tests (11/11 passing, shared_config 97% coverage)
 - [2026-03-29] | Heartbeat #2: 9 more unused imports removed, 3 bare except→Exception, hardcoded chat ID→env, 5 pytest unit tests for shared_config (5/5 passing)
