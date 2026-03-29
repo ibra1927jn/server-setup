@@ -34,7 +34,7 @@ for line in lines.split("\n"):
         try:
             out = o.read().decode()
             print(f"Execute output: {out[:500]}")
-        except:
+        except Exception:
             print("(timeout)")
         
         time.sleep(3)

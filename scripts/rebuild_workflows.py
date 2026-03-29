@@ -263,7 +263,7 @@ for wf in [crypto_wf]:
             _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n execute --id={wid} 2>&1", timeout=30)
             try:
                 print(f"  OUT: {o.read().decode().strip()[:300]}")
-            except:
+            except Exception:
                 pass
 
 sftp.close()

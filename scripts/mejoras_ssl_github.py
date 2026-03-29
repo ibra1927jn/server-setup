@@ -114,7 +114,7 @@ try:
             if "GITHUB" in line.upper() and "TOKEN" in line.upper() and "=" in line:
                 github_token = line.split("=", 1)[1].strip().strip('"').strip("'")
                 break
-except:
+except Exception:
     pass
 
 if not github_token:
@@ -212,7 +212,7 @@ if "API_UNAVAILABLE" not in exec_result:
                 finished = ex.get("stoppedAt", "?")
                 emoji = "V" if status == "success" else "X"
                 print(f"  [{emoji}] {wf_name} -> {status} ({finished})")
-    except:
+    except Exception:
         print("  Could not parse execution history")
 else:
     print("  API not available, checking via CLI...")

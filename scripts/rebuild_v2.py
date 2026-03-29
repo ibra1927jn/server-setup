@@ -258,7 +258,7 @@ for line in o.read().decode().strip().split("\n"):
         try:
             full = o2.read().decode().strip()
             print(f"  FULL OUTPUT:\n{full}")
-        except:
+        except Exception:
             print("  timeout")
 
 sftp.close()

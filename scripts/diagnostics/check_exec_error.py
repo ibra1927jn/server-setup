@@ -43,7 +43,7 @@ try:
                     for r in runs:
                         if r.get('error'):
                             print(f"  Node '{node_name}' error: {json.dumps(r['error'], indent=2)[:300]}")
-            except:
+            except Exception:
                 print(f"  Raw detail: {detail[:300]}")
             break
 except Exception as e:

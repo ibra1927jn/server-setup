@@ -36,7 +36,7 @@ try:
             print(f"  ID: {c.get('id')}")
             print(f"  Type: {c.get('type')}")
             print(f"  Data: {json.dumps(c.get('data', {}))}")
-except:
+except Exception:
     print(f"  Could not parse (may need --decrypted support): {raw[:200]}")
 
 # Test 5: What chatId does the workflow actually have?

@@ -108,7 +108,7 @@ for wf in all_wfs:
         try:
             out = o.read().decode().strip()
             print(f"  Result: {out[:200]}")
-        except:
+        except Exception:
             print("  (timeout - may still be running)")
         break
 

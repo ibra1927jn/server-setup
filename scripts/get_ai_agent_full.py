@@ -30,7 +30,7 @@ try:
     print("\n=== CREDENTIALS ===")
     for c in creds:
         print(f"  ID: {c['id']} | Name: {c['name']} | Type: {c['type']}")
-except:
+except Exception:
     print("Could not parse credentials")
 
 ssh.close()
