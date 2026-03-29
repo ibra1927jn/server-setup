@@ -4,7 +4,7 @@ Minimal absolute test:
 2. Execute it
 3. Check if message arrives
 """
-import json, time, requests
+import json
 from shared_config import get_ssh_client, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 BOT = TELEGRAM_BOT_TOKEN

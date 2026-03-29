@@ -1,5 +1,4 @@
 """Save diagnostic results to a file so we can read them without truncation"""
-import json
 from shared_config import get_ssh_client, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 ssh = get_ssh_client()

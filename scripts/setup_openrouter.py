@@ -1,6 +1,5 @@
 """Create OpenRouter (OpenAI-compatible) credential on Hetzner n8n"""
 import requests
-import json
 from shared_config import N8N_URL, N8N_HEADERS, OPENROUTER_API_KEY, VPS_HOST, VPS_USER, VPS_PASS
 
 headers = N8N_HEADERS
