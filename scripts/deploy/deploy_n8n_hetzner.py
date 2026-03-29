@@ -1,8 +1,8 @@
 """Deploy n8n to Hetzner VPS via Docker Compose"""
 import time
-from shared_config import get_ssh_client, VPS_HOST
+from shared_config import get_ssh_client, VPS_HOST, N8N_EMAIL, N8N_PASSWORD
 
-DOCKER_COMPOSE = """version: '3.8'
+DOCKER_COMPOSE_TEMPLATE = """version: '3.8'
 
 services:
   n8n:
@@ -15,10 +15,10 @@ services:
       - N8N_HOST=0.0.0.0
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
-      - WEBHOOK_URL=http://95.217.158.7:5678/
+      - WEBHOOK_URL=http://{vps_host}:5678/
       - N8N_BASIC_AUTH_ACTIVE=true
-      - N8N_BASIC_AUTH_USER=admin
-      - N8N_BASIC_AUTH_PASSWORD=AgenticOS2024!
+      - N8N_BASIC_AUTH_USER={n8n_user}
+      - N8N_BASIC_AUTH_PASSWORD={n8n_password}
       - GENERIC_TIMEZONE=Europe/Madrid
       - TZ=Europe/Madrid
       - N8N_DIAGNOSTICS_ENABLED=false
@@ -77,8 +77,13 @@ def main():
 
     # 2. Write docker-compose.yml
     print("\n=== Writing docker-compose.yml ===")
+    docker_compose = DOCKER_COMPOSE_TEMPLATE.format(
+        vps_host=VPS_HOST,
+        n8n_user=N8N_EMAIL or "admin",
+        n8n_password=N8N_PASSWORD,
+    )
     with sftp.open("/opt/n8n/docker-compose.yml", "w") as f:
-        f.write(DOCKER_COMPOSE)
+        f.write(docker_compose)
     print("Written to /opt/n8n/docker-compose.yml")
 
     # 3. Write nginx config
@@ -109,7 +114,7 @@ def main():
     ssh.close()
     print("\n=== DEPLOYMENT COMPLETE ===")
     print(f"n8n URL: http://{VPS_HOST}:5678")
-    print("Auth: admin / AgenticOS2024!")
+    print(f"Auth: {N8N_EMAIL or 'admin'} / ***")
 
 
 if __name__ == "__main__":
