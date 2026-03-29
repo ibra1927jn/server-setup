@@ -4,7 +4,7 @@ create a SIMPLE workflow that definitely works and replace the broken ones.
 Step 1: Test if a minimal workflow with just Cron + Telegram works.
 Step 2: If yes, rebuild each workflow as minimal working versions.
 """
-import json, time, requests
+import json, time
 from shared_config import get_ssh_client, TELEGRAM_CHAT_ID, GITHUB_PAT
 
 CHAT_ID = TELEGRAM_CHAT_ID

@@ -1,5 +1,4 @@
 """Deploy n8n to Hetzner VPS via Docker"""
-import sys
 from shared_config import get_ssh_client, VPS_HOST
 
 def run(ssh, cmd, label=""):

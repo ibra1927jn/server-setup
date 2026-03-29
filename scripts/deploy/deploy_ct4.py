@@ -1,6 +1,5 @@
 """Deploy CT4 to Hetzner VPS via SSH/SFTP (password auth)"""
 import os
-import sys
 from shared_config import get_ssh_client, VPS_HOST
 LOCAL_DIR = r"C:\Users\ibrab\Desktop\Crypto-Trading-Bot4"
 REMOTE_DIR = "/root/Crypto-Trading-Bot4"

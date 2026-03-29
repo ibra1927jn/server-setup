@@ -5,7 +5,7 @@ Fase 3: SSL Let's Encrypt + Dashboard de Monitoreo
 3. Nginx con certificado real
 4. Dashboard HTML de monitoreo
 """
-import json, time, requests
+import requests
 from shared_config import get_ssh_client, VPS_HOST
 
 HOST = VPS_HOST

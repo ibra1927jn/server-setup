@@ -4,7 +4,7 @@ FIX DEFINITIVO: El chatID en los workflows esta mal.
 Primero test directo, luego parchar todos los workflows.
 """
 import json, time, requests
-from shared_config import get_ssh_client, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, VPS_HOST
+from shared_config import get_ssh_client, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 BOT_TOKEN = TELEGRAM_BOT_TOKEN
 REAL_CHAT_ID = TELEGRAM_CHAT_ID

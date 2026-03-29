@@ -1,7 +1,6 @@
 """Upload credentials to Hetzner n8n"""
 import requests
 import json
-import os
 from shared_config import N8N_URL, N8N_HEADERS
 
 CRED_FILE = r"C:\AgenticOS\credentials-export.json"
