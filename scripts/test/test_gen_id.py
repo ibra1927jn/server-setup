@@ -4,7 +4,6 @@ gen_id generates random 16-char alphanumeric IDs for workflow nodes.
 Since fase2_deploy.py runs SSH commands at module level, we set up
 a mock SSH client before importing, then restore the original.
 """
-import sys
 from unittest.mock import MagicMock
 
 # Build a mock SSH client whose exec_command returns (stdin, stdout, stderr)

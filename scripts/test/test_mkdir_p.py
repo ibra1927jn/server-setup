@@ -1,5 +1,5 @@
 """Tests for _mkdir_p() in deploy/deploy_ct4.py"""
-from unittest.mock import MagicMock, call
+from unittest.mock import MagicMock
 from deploy.deploy_ct4 import _mkdir_p
 
 
