@@ -1,4 +1,5 @@
 import json
+import time
 from shared_config import get_ssh_client
 
 ssh = get_ssh_client()
@@ -92,7 +93,6 @@ escaped_json = workflow_json.replace("'", "'\\''")
 # Write to a temp file on the server
 ssh.exec_command(f"echo '{escaped_json}' > /tmp/telegram_ai_bot.json")
 
-import time
 time.sleep(1)
 
 # Verify file was written

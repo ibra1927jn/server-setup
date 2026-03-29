@@ -1,4 +1,5 @@
 import json
+import time
 import uuid
 from shared_config import get_ssh_client
 
@@ -95,7 +96,6 @@ with ssh.open_sftp() as sftp:
     with sftp.file('/tmp/telegram_ai_bot.json', 'w') as f:
         f.write(workflow_json)
 
-import time
 time.sleep(1)
 
 ssh.exec_command("docker cp /tmp/telegram_ai_bot.json n8n-n8n-1:/tmp/telegram_ai_bot.json")
