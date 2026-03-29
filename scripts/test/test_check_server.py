@@ -1,5 +1,5 @@
-"""Tests for diagnostics/check_server.py run() helper"""
-from unittest.mock import MagicMock
+"""Tests for diagnostics/check_server.py run() helper and main()"""
+from unittest.mock import MagicMock, patch
 from diagnostics.check_server import run
 
 
@@ -46,3 +46,26 @@ def test_run_stderr_shown(capsys):
     captured = capsys.readouterr()
     assert "[stderr]" in captured.out
     assert "warning: something" in captured.out
+
+
+@patch("diagnostics.check_server.get_ssh_client")
+def test_main_calls_six_checks(mock_get_ssh):
+    """main() should run 6 diagnostic commands and close the connection."""
+    from diagnostics.check_server import main
+
+    ssh = _mock_ssh(stdout="ok")
+    mock_get_ssh.return_value = ssh
+    main()
+    assert ssh.exec_command.call_count == 6
+    ssh.close.assert_called_once()
+
+
+@patch("diagnostics.check_server.get_ssh_client")
+def test_main_prints_done(mock_get_ssh, capsys):
+    """main() should print DONE at the end."""
+    from diagnostics.check_server import main
+
+    mock_get_ssh.return_value = _mock_ssh(stdout="ok")
+    main()
+    captured = capsys.readouterr()
+    assert "DONE" in captured.out
