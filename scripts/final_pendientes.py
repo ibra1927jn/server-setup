@@ -35,12 +35,12 @@ for wf_id, wf_name in wf_ids:
     _, o, e = ssh.exec_command(cmd)
     out = o.read().decode().strip()
     if "active" in out:
-        print(f"    OK - activated via API")
+        print("    OK - activated via API")
     else:
         # Try with n8n CLI instead
         _, o2, e2 = ssh.exec_command(f"docker exec n8n-n8n-1 n8n update:workflow --id={wf_id} --active=true")
         o2.read()
-        print(f"    Activated via CLI")
+        print("    Activated via CLI")
 
 # Restart to ensure all triggers register
 print("\n  Restarting n8n to register all triggers...")

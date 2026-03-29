@@ -20,10 +20,10 @@ if err:
 data = json.loads(raw)
 if isinstance(data, list):
     wf = data[0]
-    print(f"Parsed as list, using first element")
+    print("Parsed as list, using first element")
 else:
     wf = data
-    print(f"Parsed as dict")
+    print("Parsed as dict")
 
 print(f"Workflow: {wf.get('name')}")
 print(f"Nodes ({len(wf.get('nodes', []))}):")

@@ -37,7 +37,7 @@ for wf in all_wfs:
     for node in wf.get("nodes", []):
         if node.get("type") == "n8n-nodes-base.executeCommand":
             old_cmd = node["parameters"].get("command", "")
-            print(f"  Replacing executeCommand -> ssh")
+            print("  Replacing executeCommand -> ssh")
             print(f"  Command: {old_cmd[:100]}...")
             
             # Change to SSH node type

@@ -28,11 +28,11 @@ for f in MISSING_FILES:
     print(f"Uploading {f} with new ID {random_id}...")
     sftp.put(fixed_path, remote_path)
     
-    print(f"Copying into container...")
+    print("Copying into container...")
     copy_cmd = f"docker cp {remote_path} n8n-n8n-1:/tmp/n8n-import/{f}"
     ssh.exec_command(copy_cmd)
     
-    print(f"Importing via CLI...")
+    print("Importing via CLI...")
     import_cmd = f"docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/n8n-import/{f}"
     _, o, e = ssh.exec_command(import_cmd)
     

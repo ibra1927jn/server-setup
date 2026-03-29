@@ -37,7 +37,7 @@ if compose_paths and compose_paths[0]:
     
     # Write back
     sftp = ssh.open_sftp()
-    env_path = f'/tmp/new_env'
+    env_path = '/tmp/new_env'
     with open('env_temp.txt', 'w') as f:
         f.write(new_env)
     sftp.put('env_temp.txt', f'{compose_dir}/.env')

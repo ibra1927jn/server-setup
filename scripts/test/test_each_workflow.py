@@ -28,7 +28,7 @@ def main():
             print(f"  Node: {n['name']} | Type: {n['type']} | Creds: {json.dumps(creds)}")
 
         # Execute and capture FULL output
-        print(f"\n  Executing...")
+        print("\n  Executing...")
         _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n execute --id={wid} 2>&1", timeout=30)
         try:
             full_out = o.read().decode().strip()

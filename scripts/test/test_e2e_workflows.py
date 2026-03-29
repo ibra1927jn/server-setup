@@ -36,7 +36,7 @@ def main():
 
         # Execute workflow manually via n8n CLI
         cmd = f"docker exec n8n-n8n-1 n8n execute --id={wf_id} 2>&1"
-        print(f"  Executing...")
+        print("  Executing...")
         _, o, e = ssh.exec_command(cmd, timeout=30)
 
         try:
@@ -49,7 +49,7 @@ def main():
         if "error" in (out + err).lower():
             print(f"  [FAIL] Error: {(out + err)[:200]}")
         else:
-            print(f"  [OK] Execution completed")
+            print("  [OK] Execution completed")
             if out: print(f"  Output: {out[:150]}")
 
         time.sleep(2)
