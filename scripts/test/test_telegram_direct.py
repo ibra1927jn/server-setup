@@ -3,7 +3,7 @@ Test directo: enviar mensaje a Telegram usando la API del bot.
 Si esto no funciona, el problema es el token o el chatID.
 """
 import json
-from shared_config import get_ssh_client
+from shared_config import get_ssh_client, TELEGRAM_CHAT_ID
 
 
 def main():
@@ -38,7 +38,7 @@ def main():
 
         # Test 2: sendMessage
         print("\n=== Test sendMessage ===")
-        chat_id = "6915862027"
+        chat_id = TELEGRAM_CHAT_ID
         message = "Test AgenticOS - Si ves esto, Telegram funciona correctamente!"
         cmd2 = f'curl -s -X POST "https://api.telegram.org/bot{telegram_token}/sendMessage" -d "chat_id={chat_id}&text={message}"'
         _, o, _ = ssh.exec_command(cmd2)
