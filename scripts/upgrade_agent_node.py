@@ -57,7 +57,7 @@ def main():
 
     # Save patched workflow to server
     patched_json = json.dumps(wf)
-    local_path = r"C:\Users\ibrab\Desktop\set up\scripts\patched_agent.json"
+    local_path = "/tmp/patched_agent.json"
     with open(local_path, "w", encoding="utf-8") as f:
         f.write(patched_json)
 
