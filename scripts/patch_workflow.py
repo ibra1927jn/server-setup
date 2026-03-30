@@ -2,6 +2,7 @@ import time
 import json
 from shared_config import (
     get_ssh_client, N8N_EMAIL, N8N_PASSWORD, N8N_AI_WORKFLOW_ID,
+    N8N_CRED_OPENAI,
 )
 
 
@@ -32,7 +33,7 @@ def fix_model_connections(conns, model_name, agent_name):
 def build_chat_model_node(
     model="z-ai/glm-4.5-air:free",
     node_id="e4f8d5bc-3306-4649-8b4e-250327fcdbc1",
-    cred_id="D98S1Z0HkO9oWJ54",
+    cred_id=N8N_CRED_OPENAI,
 ):
     """Build an OpenRouter chat model node dict."""
     return {

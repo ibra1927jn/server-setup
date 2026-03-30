@@ -1,9 +1,12 @@
 import time
-from shared_config import get_ssh_client, N8N_CRED_TELEGRAM_BOT, N8N_CRED_TELEGRAM
+from shared_config import (
+    get_ssh_client, N8N_CRED_TELEGRAM_BOT, N8N_CRED_TELEGRAM,
+    N8N_TELEGRAM_BOT_WORKFLOW_ID,
+)
 
 ssh = get_ssh_client()
 
-w_id = '07a5ed10579849f6'
+w_id = N8N_TELEGRAM_BOT_WORKFLOW_ID
 old_cred = N8N_CRED_TELEGRAM_BOT
 new_cred = N8N_CRED_TELEGRAM
 

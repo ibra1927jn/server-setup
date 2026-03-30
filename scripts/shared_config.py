@@ -41,12 +41,15 @@ GITHUB_PAT: str = os.getenv("GITHUB_PAT", "")
 
 # --- n8n Workflow IDs ---
 N8N_AI_WORKFLOW_ID: str = os.getenv("N8N_AI_WORKFLOW_ID", "WiTcSI66bHwdSgkd")
+N8N_TELEGRAM_BOT_WORKFLOW_ID: str = os.getenv("N8N_TELEGRAM_BOT_WORKFLOW_ID", "07a5ed10579849f6")
+N8N_BRIEFING_WORKFLOW_ID: str = os.getenv("N8N_BRIEFING_WORKFLOW_ID", "O5sU2uD0f5SngbIu")
 
 # --- n8n Credential IDs ---
 N8N_CRED_OPENROUTER: str = os.getenv("N8N_CRED_OPENROUTER", "KViDucLPeGURRcAd")
 N8N_CRED_TELEGRAM: str = os.getenv("N8N_CRED_TELEGRAM", "GoCsBqVPx05691Ng")
 N8N_CRED_TELEGRAM_BOT: str = os.getenv("N8N_CRED_TELEGRAM_BOT", "nN6e7Ap905UGCGqB")
 N8N_CRED_SSH: str = os.getenv("N8N_CRED_SSH", "qdPHiEwKzTqUvpSe")
+N8N_CRED_OPENAI: str = os.getenv("N8N_CRED_OPENAI", "D98S1Z0HkO9oWJ54")
 
 # --- Headers reutilizables para n8n API ---
 N8N_HEADERS: dict = {

@@ -1,5 +1,5 @@
 import time
-from shared_config import get_ssh_client, N8N_AI_WORKFLOW_ID
+from shared_config import get_ssh_client, N8N_AI_WORKFLOW_ID, N8N_TELEGRAM_BOT_WORKFLOW_ID
 
 ssh = get_ssh_client()
 
@@ -12,7 +12,7 @@ sqlite_cmd = (
     'docker exec n8n-n8n-1 sqlite3'
     ' /home/node/.n8n/database.sqlite'
     " \"UPDATE workflow_entity SET active = 0"
-    " WHERE id = '07a5ed10579849f6';\""
+    f" WHERE id = '{N8N_TELEGRAM_BOT_WORKFLOW_ID}';\""
 )
 ssh.exec_command(sqlite_cmd)
 
