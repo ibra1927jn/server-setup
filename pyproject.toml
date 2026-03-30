@@ -30,6 +30,10 @@ select = [
     "RSE",    # flake8-raise
     "TID",    # flake8-tidy-imports
     "G",      # flake8-logging-format
+    "YTT",    # flake8-2020 (sys.version checks)
+    "PGH",    # pygrep-hooks
+    "INT",    # flake8-gettext
+    "EXE",    # flake8-executable
 ]
 ignore = [
     "S603",   # subprocess-without-shell-check (false positives)
