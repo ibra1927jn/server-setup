@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-03-30] | Heartbeat #23: replaced last hardcoded IP (95.217.158.7) in fase3_ssl_dashboard.py — NIP_DOMAIN now derived from VPS_HOST, dashboard HTML uses placeholder. 487/487 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #22: replaced 4 hardcoded chatId values in fase2_deploy.py with TELEGRAM_CHAT_ID from shared_config. 487/487 passing, 99% coverage, 0 lint errors. Codebase fully clean — no remaining hardcoded credentials, no dead imports, no TODO/FIXME markers
 - [2026-03-30] | Heartbeat #21: wrapped long lines in 28 files (E501), added timeout=30 to 14 requests calls (S113), combined 8 nested with statements (SIM117), replaced try-except-pass with contextlib.suppress (SIM105). 487/487 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #20: fixed 29 lint issues across 12 files (E121/E122/E126 indentation, E226 spacing, E302 blank lines, E306 nested defs, E501 line length). 487/487 passing, 3 remaining are false positives (W503 PEP8-preferred, E402 required sys.path)
