@@ -152,7 +152,7 @@ def test_full_patch_pipeline():
 
     # Verify
     assert len(wf_data["nodes"]) == 3
-    model_node = [n for n in wf_data["nodes"] if n["name"] == "OpenAI Chat Model"][0]
+    model_node = next(n for n in wf_data["nodes"] if n["name"] == "OpenAI Chat Model")
     assert model_node["parameters"]["model"] == "gpt-4"
     assert "Trigger" in wf_data["connections"]
 

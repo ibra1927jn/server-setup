@@ -54,7 +54,7 @@ def test_fix_wrong_chatid():
     wf = _make_workflow(WRONG_CHAT_ID)
     changed = _fix_chatids(wf, WRONG_CHAT_ID, REAL_CHAT_ID)
     assert changed is True
-    tg_node = [n for n in wf["nodes"] if n["name"] == "Send Telegram"][0]
+    tg_node = next(n for n in wf["nodes"] if n["name"] == "Send Telegram")
     assert tg_node["parameters"]["chatId"] == REAL_CHAT_ID
 
 
@@ -63,7 +63,7 @@ def test_fix_chatid_in_text():
     wf = _make_workflow(WRONG_CHAT_ID)
     changed = _fix_chatids(wf, WRONG_CHAT_ID, REAL_CHAT_ID)
     assert changed is True
-    tg_node = [n for n in wf["nodes"] if n["name"] == "Send Telegram"][0]
+    tg_node = next(n for n in wf["nodes"] if n["name"] == "Send Telegram")
     assert WRONG_CHAT_ID not in tg_node["parameters"]["text"]
     assert REAL_CHAT_ID in tg_node["parameters"]["text"]
 

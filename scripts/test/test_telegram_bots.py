@@ -40,13 +40,13 @@ class TestBuildV1:
 
     def test_telegram_trigger_has_credentials(self):
         wf = build_v1()
-        trigger = [n for n in wf["nodes"] if "Trigger" in n["name"]][0]
+        trigger = next(n for n in wf["nodes"] if "Trigger" in n["name"])
         assert "credentials" in trigger
         assert "telegramApi" in trigger["credentials"]
 
     def test_model_node_has_credentials(self):
         wf = build_v1()
-        model = [n for n in wf["nodes"] if "GLM" in n["name"]][0]
+        model = next(n for n in wf["nodes"] if "GLM" in n["name"])
         assert "credentials" in model
         assert "openAiApi" in model["credentials"]
 

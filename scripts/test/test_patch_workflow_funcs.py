@@ -18,7 +18,7 @@ class TestFilterAndReplaceModelNode:
         assert len(result) == 3
         names = [n["name"] for n in result]
         assert names.count("OpenAI Chat Model") == 1
-        model = [n for n in result if n["name"] == "OpenAI Chat Model"][0]
+        model = next(n for n in result if n["name"] == "OpenAI Chat Model")
         assert model["type"] == "new-model"
 
     def test_adds_when_not_present(self):

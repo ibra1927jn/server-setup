@@ -87,7 +87,7 @@ def test_list_nodes_fields():
     resp = _sample_export_response()
     wf = _extract_workflow_data(resp)
     nodes = _list_nodes(wf)
-    agent = [n for n in nodes if n["name"] == "AI Agent1"][0]
+    agent = next(n for n in nodes if n["name"] == "AI Agent1")
     assert agent["type"] == "@n8n/n8n-nodes-langchain.agent"
     assert agent["version"] == 1.6
 

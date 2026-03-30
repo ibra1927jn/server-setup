@@ -166,14 +166,14 @@ def test_crypto_workflow_is_json_serializable():
 
 def test_crypto_workflow_uses_chat_id():
     wf = _make_crypto_workflow("id1", "CHAT456", {"id": "t1", "name": "TG"})
-    tg_node = [n for n in wf["nodes"] if n["name"] == "Send Telegram"][0]
+    tg_node = next(n for n in wf["nodes"] if n["name"] == "Send Telegram")
     assert tg_node["parameters"]["chatId"] == "CHAT456"
 
 
 def test_crypto_workflow_credential_ref():
     cred = {"id": "cred-xyz", "name": "My TG Bot"}
     wf = _make_crypto_workflow("id1", "123", cred)
-    tg_node = [n for n in wf["nodes"] if n["name"] == "Send Telegram"][0]
+    tg_node = next(n for n in wf["nodes"] if n["name"] == "Send Telegram")
     assert tg_node["credentials"]["telegramApi"] == cred
 
 

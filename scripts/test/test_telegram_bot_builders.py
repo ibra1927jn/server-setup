@@ -40,12 +40,12 @@ class TestBotV1:
 
     def test_telegram_trigger_has_credentials(self):
         wf = bot_v1.build_telegram_ai_workflow()
-        trigger = [n for n in wf["nodes"] if n["name"] == "Telegram Trigger"][0]
+        trigger = next(n for n in wf["nodes"] if n["name"] == "Telegram Trigger")
         assert "telegramApi" in trigger["credentials"]
 
     def test_model_has_credentials(self):
         wf = bot_v1.build_telegram_ai_workflow()
-        model = [n for n in wf["nodes"] if n["name"] == "GLM-4.5 Air"][0]
+        model = next(n for n in wf["nodes"] if n["name"] == "GLM-4.5 Air")
         assert "openAiApi" in model["credentials"]
 
     def test_settings(self):
@@ -84,7 +84,7 @@ class TestBotV2:
 
     def test_agent_has_system_message(self):
         wf = bot_v2.build_telegram_ai_workflow()
-        agent = [n for n in wf["nodes"] if n["name"] == "AI Agent"][0]
+        agent = next(n for n in wf["nodes"] if n["name"] == "AI Agent")
         msg = agent["parameters"]["options"]["systemMessage"]
         assert "AgenticOS" in msg
 
@@ -128,6 +128,6 @@ class TestBotV3:
 
     def test_model_options(self):
         wf = bot_v3.build_telegram_ai_workflow()
-        model = [n for n in wf["nodes"] if n["name"] == "GLM-4.5 Air"][0]
+        model = next(n for n in wf["nodes"] if n["name"] == "GLM-4.5 Air")
         assert model["parameters"]["options"]["maxTokens"] == 500
         assert model["parameters"]["options"]["temperature"] == 0.7

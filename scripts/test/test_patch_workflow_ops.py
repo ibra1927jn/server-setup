@@ -80,7 +80,7 @@ def test_replace_node_in_workflow():
     }
     wf["nodes"].append(replacement)
     assert len(wf["nodes"]) == 3
-    model_node = [n for n in wf["nodes"] if n["name"] == "OpenAI Chat Model"][0]
+    model_node = next(n for n in wf["nodes"] if n["name"] == "OpenAI Chat Model")
     assert model_node["parameters"]["model"] == "new-model"
 
 

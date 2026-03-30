@@ -127,15 +127,15 @@ def test_daily_briefing_connections_chain():
 
 def test_daily_briefing_uses_provided_chat_id():
     wf = _build_daily_briefing(chat_id="999")
-    tg = [n for n in wf["nodes"] if n["type"] == "n8n-nodes-base.telegram"][0]
+    tg = next(n for n in wf["nodes"] if n["type"] == "n8n-nodes-base.telegram")
     assert tg["parameters"]["chatId"] == "999"
 
 
 def test_daily_briefing_uses_provided_credentials():
     wf = _build_daily_briefing(tg_cred_id="TG1", ssh_cred_id="SSH1")
-    tg = [n for n in wf["nodes"] if n["type"] == "n8n-nodes-base.telegram"][0]
+    tg = next(n for n in wf["nodes"] if n["type"] == "n8n-nodes-base.telegram")
     assert tg["credentials"]["telegramApi"]["id"] == "TG1"
-    ssh_node = [n for n in wf["nodes"] if n["type"] == "n8n-nodes-base.executeCommand"][0]
+    ssh_node = next(n for n in wf["nodes"] if n["type"] == "n8n-nodes-base.executeCommand")
     assert ssh_node["credentials"]["sshPassword"]["id"] == "SSH1"
 
 
@@ -176,7 +176,7 @@ def test_uptime_monitor_if_has_two_outputs():
 
 def test_uptime_monitor_trigger_interval():
     wf = _build_uptime_monitor()
-    trigger = [n for n in wf["nodes"] if n["name"] == "Every 5min"][0]
+    trigger = next(n for n in wf["nodes"] if n["name"] == "Every 5min")
     interval = trigger["parameters"]["rule"]["interval"][0]
     assert interval["minutesInterval"] == 5
 

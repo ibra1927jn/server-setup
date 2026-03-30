@@ -41,7 +41,7 @@ def test_patch_agent_nodes_basic():
     """Should patch agent nodes to 2.1."""
     wf = _workflow_dict()
     assert patch_agent_nodes(wf) is True
-    agent = [n for n in wf["nodes"] if "agent" in n["type"].lower()][0]
+    agent = next(n for n in wf["nodes"] if "agent" in n["type"].lower())
     assert agent["typeVersion"] == 2.1
 
 
@@ -49,7 +49,7 @@ def test_patch_agent_nodes_custom_version():
     """Should use custom target version."""
     wf = _workflow_dict()
     patch_agent_nodes(wf, target_version=3.0)
-    agent = [n for n in wf["nodes"] if "agent" in n["type"].lower()][0]
+    agent = next(n for n in wf["nodes"] if "agent" in n["type"].lower())
     assert agent["typeVersion"] == 3.0
 
 
@@ -57,9 +57,9 @@ def test_patch_agent_preserves_other_nodes():
     """Patching should not affect non-agent nodes."""
     wf = _workflow_dict()
     patch_agent_nodes(wf)
-    trigger = [n for n in wf["nodes"] if n["name"] == "Trigger"][0]
+    trigger = next(n for n in wf["nodes"] if n["name"] == "Trigger")
     assert trigger["typeVersion"] == 1
-    chat = [n for n in wf["nodes"] if n["name"] == "Chat Model"][0]
+    chat = next(n for n in wf["nodes"] if n["name"] == "Chat Model")
     assert chat["typeVersion"] == 1
 
 
@@ -114,5 +114,5 @@ def test_serialization_after_patch():
     patch_agent_nodes(wf)
     serialized = json.dumps(wf)
     restored = json.loads(serialized)
-    agent = [n for n in restored["nodes"] if "agent" in n.get("type", "").lower()][0]
+    agent = next(n for n in restored["nodes"] if "agent" in n.get("type", "").lower())
     assert agent["typeVersion"] == 2.1

@@ -110,5 +110,5 @@ def test_full_patch_roundtrip():
     serialized = json.dumps(wf)
     restored = json.loads(serialized)
     assert len(restored["nodes"]) == 3
-    model_node = [n for n in restored["nodes"] if n["name"] == "OpenAI Chat Model"][0]
+    model_node = next(n for n in restored["nodes"] if n["name"] == "OpenAI Chat Model")
     assert model_node["parameters"]["model"] == "gpt-4"
