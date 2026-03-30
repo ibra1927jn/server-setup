@@ -14,7 +14,7 @@ def main():
     for wf in workflows:
         if wf["name"] == "AI Agent Base":
             # Save full workflow to file for analysis
-            with open(r"C:\Users\ibrab\Desktop\set up\scripts\ai_agent_base_export.json", "w") as f:
+            with open(r"C:\Users\ibrab\Desktop\set up\scripts\ai_agent_base_export.json", "w", encoding="utf-8") as f:
                 json.dump(wf, f, indent=2)
             print(f"AI Agent Base ID: {wf['id']}")
             print(f"Active: {wf.get('active')}")

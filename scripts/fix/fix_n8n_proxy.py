@@ -39,7 +39,7 @@ def main():
 
         # Write back
         sftp = ssh.open_sftp()
-        with open("/tmp/env_temp.txt", "w") as f:
+        with open("/tmp/env_temp.txt", "w", encoding="utf-8") as f:
             f.write(new_env)
         sftp.put("/tmp/env_temp.txt", f"{compose_dir}/.env")
         sftp.close()
