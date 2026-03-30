@@ -7,7 +7,7 @@ def main():
     ssh = get_ssh_client()
 
     _, o, _ = ssh.exec_command('find /root -name "docker-compose.yml" 2>/dev/null | grep n8n')
-    compose_paths = o.read().decode().strip().split("\\n")
+    compose_paths = o.read().decode().strip().split("\n")
     print("=== COMPOSE PATHS ===")
     print(compose_paths)
 
@@ -21,7 +21,7 @@ def main():
 
         # Fix settings
         lines = []
-        for line in current_env.split("\\n"):
+        for line in current_env.split("\n"):
             if line.startswith("WEBHOOK_URL="):
                 lines.append(f"WEBHOOK_URL=https://{VPS_HOST}/")
             elif line.startswith("N8N_PROXY_HOPS="):
@@ -35,7 +35,7 @@ def main():
         if not any("N8N_PROXY_HOPS" in line for line in lines):
             lines.append("N8N_PROXY_HOPS=1")
 
-        new_env = "\\n".join(lines)
+        new_env = "\n".join(lines)
 
         # Write back
         sftp = ssh.open_sftp()

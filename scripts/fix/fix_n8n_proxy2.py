@@ -15,7 +15,7 @@ def main():
 
     # Fix settings
     lines = []
-    for line in current_env.split("\\n"):
+    for line in current_env.split("\n"):
         if line.startswith("WEBHOOK_URL="):
             lines.append(f"WEBHOOK_URL=https://{VPS_HOST}/")
         elif line.startswith("N8N_PROXY_HOPS="):
@@ -29,7 +29,7 @@ def main():
     if not any("N8N_PROXY_HOPS" in line for line in lines):
         lines.append("N8N_PROXY_HOPS=1")
 
-    new_env = "\\n".join(lines)
+    new_env = "\n".join(lines)
     print(f"Updated .env ({len(lines)} lines)")
 
     # Write back
