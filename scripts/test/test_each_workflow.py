@@ -18,9 +18,9 @@ def main():
             continue
 
         wid = wf["id"]
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print(f"WORKFLOW: {name} ({wid})")
-        print(f"{'='*50}")
+        print(f"{'=' * 50}")
         print(f"Active: {wf.get('active')}")
 
         # Show nodes detail

@@ -24,11 +24,11 @@ for line in lines.split("\n"):
     if "Crypto" in line:
         wid = line.split("|")[0].strip()
         print(f"\nRunning workflow {wid}...")
-        
+
         # Clear recent logs first
         _, o, _ = ssh.exec_command("docker logs n8n-n8n-1 --tail 1 2>&1")
         o.read()
-        
+
         # Execute
         _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n execute --id={wid} 2>&1", timeout=30)
         try:
@@ -36,9 +36,9 @@ for line in lines.split("\n"):
             print(f"Execute output: {out[:500]}")
         except Exception:
             print("(timeout)")
-        
+
         time.sleep(3)
-        
+
         # Get NEW logs that appeared during execution
         print("\n=== LOGS DURING EXECUTION ===")
         _, o, _ = ssh.exec_command("docker logs n8n-n8n-1 --tail 20 2>&1")
