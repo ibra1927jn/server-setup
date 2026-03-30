@@ -6,7 +6,9 @@ MEJORAS 2 y 3:
 """
 
 import contextlib
+import glob
 import json
+import re
 import time
 
 from shared_config import VPS_HOST, get_ssh_client
@@ -112,9 +114,6 @@ def find_github_token():
     if not github_token:
         print("  No GitHub token found in .env, checking for PAT...")
         with contextlib.suppress(Exception):
-            import glob
-            import re
-
             for f in glob.glob(r"C:\Users\ibrab\Desktop\set up\scripts\*.py"):
                 with open(f, encoding="utf-8") as fh:
                     content = fh.read()
