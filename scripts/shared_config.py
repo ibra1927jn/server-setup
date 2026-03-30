@@ -112,3 +112,22 @@ def get_ssh_client(
         )
 
     return client
+
+
+def fetch_n8n_credentials(ssh):
+    """Fetch telegram and SSH credential IDs from n8n via docker exec.
+
+    Returns (tg_cred, ssh_cred) where each is {"id": ..., "name": ...} or None.
+    """
+    import json
+
+    _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:credentials --all")
+    creds = json.loads(o.read().decode().strip())
+    tg_cred = None
+    ssh_cred = None
+    for c in creds:
+        if c["type"] == "telegramApi":
+            tg_cred = {"id": c["id"], "name": c["name"]}
+        if c["type"] == "sshPassword":
+            ssh_cred = {"id": c["id"], "name": c["name"]}
+    return tg_cred, ssh_cred
