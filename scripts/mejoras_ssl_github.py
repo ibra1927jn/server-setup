@@ -141,7 +141,7 @@ server {
             pass
 
     if github_token:
-        print(f"  Token found: {github_token[:10]}...")
+        print("  Token found: ***")
 
         # Update the GitHub Auto-Backup workflow to include the auth header
         _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:workflow --all")

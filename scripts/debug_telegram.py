@@ -66,7 +66,7 @@ def main():
             if "telegram" in c.get("type", "").lower():
                 token_data = c.get("data", {})
                 print(f"  Telegram cred: {c.get('name')} (ID: {c.get('id')})")
-                print(f"  Token preview: {str(token_data)[:50]}...")
+                print(f"  Telegram cred data found: {len(token_data)} fields")
     except Exception:
         print("  Could not decrypt credentials (expected)")
 
