@@ -16,7 +16,7 @@ def main():
         filepath = os.path.join(FLOWS_DIR, f)
         print(f"\n=== Importing {f} ===")
 
-        with open(filepath, 'r', encoding='utf-8') as fh:
+        with open(filepath, encoding='utf-8') as fh:
             raw_data = json.load(fh)
 
         # Strip everything except core properties n8n expects

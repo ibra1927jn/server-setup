@@ -102,7 +102,7 @@ def find_github_token():
     """Search for GitHub token in .env or local Python scripts."""
     github_token = None
     try:
-        with open(r"C:\AgenticOS\.env", "r") as f:
+        with open(r"C:\AgenticOS\.env") as f:
             for line in f:
                 if "GITHUB" in line.upper() and "TOKEN" in line.upper() and "=" in line:
                     github_token = line.split("=", 1)[1].strip().strip('"').strip("'")
@@ -116,7 +116,7 @@ def find_github_token():
             import glob
             import re
             for f in glob.glob(r"C:\Users\ibrab\Desktop\set up\scripts\*.py"):
-                with open(f, "r") as fh:
+                with open(f) as fh:
                     content = fh.read()
                     if "ghp_" in content or "github_pat_" in content:
                         match = re.search(r'(ghp_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+)', content)

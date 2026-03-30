@@ -16,7 +16,7 @@ def main():
 
     for f in MISSING_FILES:
         local_path = os.path.join(FLOWS_DIR, f)
-        with open(local_path, 'r', encoding='utf-8') as fh:
+        with open(local_path, encoding='utf-8') as fh:
             data = json.load(fh)
 
         # Inject a random 16-char alphanumeric ID

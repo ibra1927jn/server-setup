@@ -10,7 +10,7 @@ def main():
 
     headers = N8N_HEADERS
 
-    with open(cred_file, 'r', encoding='utf-8') as f:
+    with open(cred_file, encoding='utf-8') as f:
         creds = json.load(f)
 
     for c in creds:

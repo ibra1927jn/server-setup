@@ -67,7 +67,7 @@ def main():
         filepath = os.path.join(FLOWS_DIR, f)
         print(f"\n=== Importing {f} ===")
 
-        with open(filepath, 'r', encoding='utf-8') as fh:
+        with open(filepath, encoding='utf-8') as fh:
             workflow_data = json.load(fh)
 
         workflow_data = prepare_workflow(workflow_data, f)
