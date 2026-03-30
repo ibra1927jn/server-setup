@@ -5,13 +5,10 @@ MEJORAS 2 y 3:
 - Verificar ejecuciones de los tests E2E
 """
 
-import contextlib
-import glob
 import json
-import re
 import time
 
-from shared_config import VPS_HOST, get_ssh_client
+from shared_config import GITHUB_PAT, VPS_HOST, get_ssh_client
 
 
 def setup_nginx_ssl(ssh):
@@ -103,28 +100,8 @@ server {
 
 
 def find_github_token():
-    """Search for GitHub token in .env or local Python scripts."""
-    github_token = None
-    with contextlib.suppress(Exception), open(r"C:\AgenticOS\.env", encoding="utf-8") as f:
-        for line in f:
-            if "GITHUB" in line.upper() and "TOKEN" in line.upper() and "=" in line:
-                github_token = line.split("=", 1)[1].strip().strip('"').strip("'")
-                break
-
-    if not github_token:
-        print("  No GitHub token found in .env, checking for PAT...")
-        with contextlib.suppress(Exception):
-            for f in glob.glob(r"C:\Users\ibrab\Desktop\set up\scripts\*.py"):
-                with open(f, encoding="utf-8") as fh:
-                    content = fh.read()
-                    if "ghp_" in content or "github_pat_" in content:
-                        match = re.search(r"(ghp_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+)", content)
-                        if match:
-                            github_token = match.group(1)
-                            print(f"  Found token in {f}")
-                            break
-
-    return github_token
+    """Return GitHub token from shared_config (.env)."""
+    return GITHUB_PAT or None
 
 
 def update_github_workflow_token(ssh, github_token):
