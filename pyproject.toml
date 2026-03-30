@@ -14,6 +14,7 @@ select = [
     "PIE",    # flake8-pie
     "RET",    # flake8-return
     "PERF",   # perflint
+    "I",      # isort (import sorting)
 ]
 ignore = [
     "S603",   # subprocess-without-shell-check (false positives)
@@ -28,7 +29,6 @@ ignore = [
     "S311",   # suspicious-non-cryptographic-random-usage (IDs, not crypto)
     "S608",   # possible-sql-injection (config constants, not user input)
     "S507",   # paramiko-auto-add-policy (controlled environment, single VPS)
-    "UP015",  # redundant-open-modes
     "E402",   # module-import-not-at-top (required for sys.path setup)
 ]
 
