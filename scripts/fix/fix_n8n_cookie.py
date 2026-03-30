@@ -29,26 +29,32 @@ volumes:
     driver: local
 """
 
-ssh = get_ssh_client()
-sftp = ssh.open_sftp()
 
-print("Writing updated docker-compose.yml...")
-with sftp.open("/opt/n8n/docker-compose.yml", "w") as f:
-    f.write(DOCKER_COMPOSE)
+def main():
+    ssh = get_ssh_client()
+    sftp = ssh.open_sftp()
 
-print("Restarting n8n container...")
-_, o, e = ssh.exec_command("cd /opt/n8n && docker compose down && docker compose up -d 2>&1", timeout=60)
-print(o.read().decode())
+    print("Writing updated docker-compose.yml...")
+    with sftp.open("/opt/n8n/docker-compose.yml", "w") as f:
+        f.write(DOCKER_COMPOSE)
 
-print("Waiting 15s for n8n to start...")
-time.sleep(15)
+    print("Restarting n8n container...")
+    _, o, e = ssh.exec_command("cd /opt/n8n && docker compose down && docker compose up -d 2>&1", timeout=60)
+    print(o.read().decode())
 
-_, o, e = ssh.exec_command("curl -s -o /dev/null -w '%{http_code}' http://localhost:5678/setup")
-print(f"Setup page HTTP code: {o.read().decode()}")
+    print("Waiting 15s for n8n to start...")
+    time.sleep(15)
 
-_, o, e = ssh.exec_command("docker ps --filter name=n8n --format 'table {{.Names}}\t{{.Status}}'")
-print(o.read().decode())
+    _, o, e = ssh.exec_command("curl -s -o /dev/null -w '%{http_code}' http://localhost:5678/setup")
+    print(f"Setup page HTTP code: {o.read().decode()}")
 
-sftp.close()
-ssh.close()
-print("Done!")
+    _, o, e = ssh.exec_command("docker ps --filter name=n8n --format 'table {{.Names}}\t{{.Status}}'")
+    print(o.read().decode())
+
+    sftp.close()
+    ssh.close()
+    print("Done!")
+
+
+if __name__ == "__main__":
+    main()
