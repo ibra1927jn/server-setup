@@ -5,7 +5,7 @@ los workflows existentes con los nodos correctos.
 import json
 import time
 
-from shared_config import get_ssh_client, TELEGRAM_CHAT_ID, GITHUB_PAT
+from shared_config import get_ssh_client, TELEGRAM_CHAT_ID, GITHUB_PAT, VPS_HOST
 
 
 def fetch_credentials(ssh):
@@ -164,7 +164,7 @@ def build_uptime_workflow(wf_id):
                 },
                 {
                     "parameters": {
-                        "url": "http://95.217.158.7:5678/healthz",
+                        "url": f"http://{VPS_HOST}:5678/healthz",
                         "options": {"timeout": 5000}
                     },
                     "name": "Ping n8n",
