@@ -50,12 +50,8 @@ echo "[$(date)] Backup completed: n8n_db_$TIMESTAMP.sqlite"
 '''
 
 
-def main():
-    ssh = get_ssh_client()
-
-    # ====================================================
-    # PASO 1: Publicar workflows via REST API desde DENTRO del container
-    # ====================================================
+def publish_workflows(ssh):
+    """Publish all n8n workflows via REST API or CLI fallback."""
     print("=" * 50)
     print("PASO 1: PUBLICANDO WORKFLOWS")
     print("=" * 50)
@@ -98,9 +94,9 @@ def main():
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n list:workflow")
     print(o.read().decode().strip())
 
-    # ====================================================
-    # PASO 2: Backup automático de la DB de n8n
-    # ====================================================
+
+def setup_backup(ssh):
+    """Install and run the n8n backup script with daily cron."""
     print("\n" + "=" * 50)
     print("PASO 2: BACKUP AUTOMATICO DB N8N")
     print("=" * 50)
@@ -144,6 +140,11 @@ def main():
     _, o, _ = ssh.exec_command("ls -lh /root/n8n-backups/")
     print(o.read().decode().strip())
 
+
+def main():
+    ssh = get_ssh_client()
+    publish_workflows(ssh)
+    setup_backup(ssh)
     ssh.close()
     print("\n" + "=" * 50)
     print("COMPLETADO!")
