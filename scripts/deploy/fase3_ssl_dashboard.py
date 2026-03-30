@@ -362,7 +362,8 @@ dashboard_html = """<!DOCTYPE html>
             <div class="info-row"><span class="key">Provider</span><span class="val">Hetzner Cloud</span></div>
             <div class="info-row"><span class="key">OS</span><span class="val">Ubuntu 22.04</span></div>
             <div class="info-row"><span class="key">n8n</span><span class="val">Docker Container</span></div>
-            <div class="info-row"><span class="key">SSL</span><span class="val" id="ssl-status">Self-signed (activo)</span></div>
+            <div class="info-row"><span class="key">SSL</span>\
+<span class="val" id="ssl-status">Self-signed (activo)</span></div>
             <div class="info-row"><span class="key">Firewall</span><span class="val">UFW — 22/80/443/5678</span></div>
             <div class="info-row"><span class="key">Backups</span><span class="val">Diario 3:00 AM (7 días)</span></div>
             <div class="info-row"><span class="key">Telegram</span><span class="val">ChatID 5822131920 ✅</span></div>
