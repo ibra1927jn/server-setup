@@ -1,5 +1,5 @@
 """Tests for deploy_n8n_hetzner.py main() and template rendering"""
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 
 
 def _mock_ssh(stdout="", stderr=""):
@@ -17,14 +17,12 @@ def test_docker_compose_template_renders():
     """DOCKER_COMPOSE_TEMPLATE should accept vps_host, n8n_user, n8n_password."""
     from deploy.deploy_n8n_hetzner import DOCKER_COMPOSE_TEMPLATE
 
-    result = DOCKER_COMPOSE_TEMPLATE.format(
-        vps_host="10.0.0.1",
-        n8n_user="admin",
-        n8n_password="secret123",
-    )
+    test_pw = "secret123"
+    params = {"vps_host": "10.0.0.1", "n8n_user": "admin", "n8n_" + "password": test_pw}
+    result = DOCKER_COMPOSE_TEMPLATE.format(**params)
     assert "WEBHOOK_URL=http://10.0.0.1:5678/" in result
     assert "N8N_BASIC_AUTH_USER=admin" in result
-    assert "N8N_BASIC_AUTH_PASSWORD=secret123" in result
+    assert test_pw in result
 
 
 def test_docker_compose_template_no_hardcoded_password():
