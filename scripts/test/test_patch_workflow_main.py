@@ -57,8 +57,6 @@ def _make_mock_ssh(wf_data=None):
             # upload response
             result = json.dumps({"data": {"id": "wf123"}})
             stdout.read.return_value = result.encode()
-        else:
-            stdout.read.return_value = b''
         return (MagicMock(), stdout, stderr)
 
     ssh.exec_command.side_effect = exec_side

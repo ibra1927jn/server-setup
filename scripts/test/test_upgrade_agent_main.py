@@ -51,8 +51,6 @@ def _make_mock_ssh(wf=None, as_list=False):
         elif idx == 4:
             # list workflows
             stdout.read.return_value = b'id1 | AI Agent Base'
-        else:
-            stdout.read.return_value = b''
         return (MagicMock(), stdout, stderr)
 
     ssh.exec_command.side_effect = exec_side

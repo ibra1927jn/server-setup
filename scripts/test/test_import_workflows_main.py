@@ -38,9 +38,6 @@ class TestImportWorkflowsMain:
         post_resp = _mock_post_response()
         patch_resp = _mock_patch_response()
 
-        def route_request(url, **kwargs):
-            return get_resp
-
         mock_requests.get.return_value = get_resp
         mock_requests.post.return_value = post_resp
         mock_requests.patch.return_value = patch_resp
