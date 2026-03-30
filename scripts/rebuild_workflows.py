@@ -7,15 +7,11 @@ Step 2: If yes, rebuild each workflow as minimal working versions.
 import json
 import time
 
-from shared_config import get_ssh_client, TELEGRAM_CHAT_ID, GITHUB_PAT
+from shared_config import get_ssh_client, TELEGRAM_chat_id, GITHUB_PAT
 
 
-def main():
-    CHAT_ID = TELEGRAM_CHAT_ID
-
-    ssh = get_ssh_client()
-
-    # Get the REAL telegram credential ID
+def fetch_credentials(ssh):
+    """Fetch telegram and SSH credential IDs from n8n."""
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:credentials --all")
     creds = json.loads(o.read().decode().strip())
     tg_cred = None
@@ -25,12 +21,12 @@ def main():
             tg_cred = {"id": c["id"], "name": c["name"]}
         if c["type"] == "sshPassword":
             ssh_cred = {"id": c["id"], "name": c["name"]}
+    return tg_cred, ssh_cred
 
-    print(f"Telegram cred: {tg_cred}")
-    print(f"SSH cred: {ssh_cred}")
 
-    # === CRYPTO PORTFOLIO ALERTS (simplest - just HTTP + Telegram) ===
-    crypto_wf = {
+def build_crypto_workflow(chat_id, tg_cred):
+    """Build the Crypto Portfolio Alerts workflow definition."""
+    return {
         "name": "Crypto Portfolio Alerts",
         "active": True,
         "nodes": [
@@ -57,7 +53,7 @@ def main():
             },
             {
                 "parameters": {
-                    "chatId": CHAT_ID,
+                    "chatId": chat_id,
                     "text": (
                         "=📊 *Crypto Portfolio*\n\n"
                         "💰 BTC: ${{ $json.bitcoin.usd }} "
@@ -87,8 +83,10 @@ def main():
         }
     }
 
-    # === DAILY BRIEFING (SSH to server + Telegram) ===
-    daily_wf = {
+
+def build_daily_workflow(chat_id, ssh_cred, tg_cred):
+    """Build the Daily Briefing workflow definition."""
+    return {
         "name": "Daily Briefing",
         "active": True,
         "nodes": [
@@ -119,7 +117,7 @@ def main():
             },
             {
                 "parameters": {
-                    "chatId": CHAT_ID,
+                    "chatId": chat_id,
                     "text": "=🌅 *Daily Briefing*\n\n{{ $json.stdout }}",
                     "additionalFields": {"parse_mode": "Markdown"}
                 },
@@ -136,8 +134,10 @@ def main():
         }
     }
 
-    # === UPTIME MONITOR (HTTP ping + Telegram on fail) ===
-    uptime_wf = {
+
+def build_uptime_workflow(chat_id, ssh_cred, tg_cred):
+    """Build the Uptime Monitor workflow definition."""
+    return {
         "name": "Uptime Monitor",
         "active": True,
         "nodes": [
@@ -197,7 +197,7 @@ def main():
             },
             {
                 "parameters": {
-                    "chatId": CHAT_ID,
+                    "chatId": chat_id,
                     "text": "=🚨 *ALERTA: Servicio Caido!*\n\n{{ $('Check Services').item.json.stdout }}",
                     "additionalFields": {"parse_mode": "Markdown"}
                 },
@@ -227,8 +227,10 @@ def main():
         }
     }
 
-    # === GITHUB AUTO-BACKUP ===
-    github_wf = {
+
+def build_github_workflow(chat_id, tg_cred):
+    """Build the GitHub Auto-Backup workflow definition."""
+    return {
         "name": "GitHub Auto-Backup",
         "active": True,
         "nodes": [
@@ -258,7 +260,7 @@ def main():
             },
             {
                 "parameters": {
-                    "chatId": CHAT_ID,
+                    "chatId": chat_id,
                     "text": (
                         "=🗂️ *GitHub Backup Report*\n\n"
                         "Repos checked: {{ $json.length || 'N/A' }}\n"
@@ -279,14 +281,10 @@ def main():
         }
     }
 
-    # IMPORT ALL
+
+def import_all_workflows(ssh, workflows):
+    """Import workflow files to n8n via SFTP, restart, and activate."""
     sftp = ssh.open_sftp()
-    workflows = [
-        ("crypto_alerts.json", crypto_wf),
-        ("daily_briefing.json", daily_wf),
-        ("uptime_monitor.json", uptime_wf),
-        ("github_backup.json", github_wf),
-    ]
 
     for fname, wf_data in workflows:
         print(f"\nImporting: {wf_data['name']}...")
@@ -300,33 +298,58 @@ def main():
         _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/{fname}")
         print(f"  {o.read().decode().strip()}")
 
-    # Restart
     print("\nRestarting n8n...")
     ssh.exec_command("docker restart n8n-n8n-1")
     time.sleep(15)
 
-    # Activate all
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n update:workflow --all --active=true")
     o.read()
     print("All activated!")
 
-    # TEST: Execute Crypto Portfolio Alerts
-    print("\n=== TEST: Crypto Portfolio Alerts ===")
-    for wf in [crypto_wf]:
-        # Get new ID after import
-        _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n list:workflow")
-        lines = o.read().decode().strip().split("\n")
-        for line in lines:
-            if "Crypto" in line:
-                wid = line.split("|")[0].strip()
-                print(f"  Executing {wid}...")
-                _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n execute --id={wid} 2>&1", timeout=30)
-                try:
-                    print(f"  OUT: {o.read().decode().strip()[:300]}")
-                except Exception:
-                    pass
-
     sftp.close()
+
+
+def test_crypto_workflow(ssh):
+    """Execute the Crypto Portfolio Alerts workflow as a smoke test."""
+    print("\n=== TEST: Crypto Portfolio Alerts ===")
+    _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n list:workflow")
+    lines = o.read().decode().strip().split("\n")
+    for line in lines:
+        if "Crypto" in line:
+            wid = line.split("|")[0].strip()
+            print(f"  Executing {wid}...")
+            _, o, e = ssh.exec_command(
+                f"docker exec n8n-n8n-1 n8n execute --id={wid} 2>&1", timeout=30
+            )
+            try:
+                print(f"  OUT: {o.read().decode().strip()[:300]}")
+            except Exception:
+                pass
+
+
+def main():
+    chat_id = TELEGRAM_chat_id
+    ssh = get_ssh_client()
+
+    tg_cred, ssh_cred = fetch_credentials(ssh)
+    print(f"Telegram cred: {tg_cred}")
+    print(f"SSH cred: {ssh_cred}")
+
+    crypto_wf = build_crypto_workflow(chat_id, tg_cred)
+    daily_wf = build_daily_workflow(chat_id, ssh_cred, tg_cred)
+    uptime_wf = build_uptime_workflow(chat_id, ssh_cred, tg_cred)
+    github_wf = build_github_workflow(chat_id, tg_cred)
+
+    workflows = [
+        ("crypto_alerts.json", crypto_wf),
+        ("daily_briefing.json", daily_wf),
+        ("uptime_monitor.json", uptime_wf),
+        ("github_backup.json", github_wf),
+    ]
+
+    import_all_workflows(ssh, workflows)
+    test_crypto_workflow(ssh)
+
     ssh.close()
     print("\nDone! Revisa Telegram.")
 
