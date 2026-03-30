@@ -4,7 +4,8 @@ MEJORAS 2 y 3:
 - Agregar GitHub token al workflow GitHub Auto-Backup
 - Verificar ejecuciones de los tests E2E
 """
-import json, time
+import json
+import time
 from shared_config import get_ssh_client
 
 ssh = get_ssh_client()
@@ -64,7 +65,8 @@ ssl_cmds = [
 ]
 for cmd in ssl_cmds:
     _, o, e = ssh.exec_command(cmd)
-    o.read(); e.read()
+    o.read()
+    e.read()
     print(f"    OK: {cmd[:60]}...")
 
 # Check if there's an existing nginx config that might conflict
@@ -77,11 +79,13 @@ print(f"    Existing sites: {existing}")
 print("  Writing n8n nginx config...")
 write_cmd = "cat > /etc/nginx/sites-available/n8n << 'NGINXCONF'\n" + nginx_config + "\nNGINXCONF"
 _, o, e = ssh.exec_command(write_cmd)
-o.read(); e.read()
+o.read()
+e.read()
 
 # Enable the site
 _, o, e = ssh.exec_command("ln -sf /etc/nginx/sites-available/n8n /etc/nginx/sites-enabled/n8n")
-o.read(); e.read()
+o.read()
+e.read()
 
 # Test nginx config
 print("  Testing nginx config...")
@@ -92,7 +96,8 @@ print(f"    {test_result}")
 if "successful" in test_result:
     print("  Reloading nginx...")
     _, o, e = ssh.exec_command("systemctl reload nginx")
-    o.read(); e.read()
+    o.read()
+    e.read()
     print("    Nginx reloaded!")
 else:
     print("    [WARN] Nginx config test failed, skipping reload")

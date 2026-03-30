@@ -1,5 +1,7 @@
 """Debug final: revisar logs, execution history, y enviar test directo"""
-import json, requests
+import json
+
+import requests
 from shared_config import get_ssh_client, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 ssh = get_ssh_client()

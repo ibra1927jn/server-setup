@@ -3,7 +3,8 @@ Fix Daily Briefing and Uptime Monitor: replace executeCommand with SSH node.
 The n8n Docker image doesn't have executeCommand node available.
 The working Server Sentinel uses n8n-nodes-base.ssh for remote commands.
 """
-import json, time
+import json
+import time
 from shared_config import get_ssh_client
 
 ssh = get_ssh_client()
@@ -68,7 +69,8 @@ for wf in all_wfs:
         _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n import:workflow --input={remote_path}")
         print(f"  Import: {o.read().decode().strip()}")
         err = e.read().decode().strip()
-        if err: print(f"  Err: {err}")
+        if err:
+            print(f"  Err: {err}")
 
 # Restart
 print("\n=== Restarting n8n ===")

@@ -2,7 +2,8 @@
 MEJORA 1: Test E2E de todos los workflows nuevos
 Ejecuta manualmente cada workflow y verifica que Telegram recibe los mensajes.
 """
-import json, time
+import json
+import time
 from shared_config import get_ssh_client
 
 
@@ -50,7 +51,8 @@ def main():
             print(f"  [FAIL] Error: {(out + err)[:200]}")
         else:
             print("  [OK] Execution completed")
-            if out: print(f"  Output: {out[:150]}")
+            if out:
+                print(f"  Output: {out[:150]}")
 
         time.sleep(2)
 
