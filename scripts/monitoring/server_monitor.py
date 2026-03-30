@@ -30,10 +30,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 def _load_telegram_config():
     """Load Telegram config from shared_config or environment."""
     try:
-        from shared_config import TELEGRAM_BOT_TOKEN as _token, TELEGRAM_CHAT_ID as _chat
-        return _token, _chat
+        from shared_config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
     except ImportError:
         return os.getenv("TELEGRAM_BOT_TOKEN", ""), os.getenv("TELEGRAM_CHAT_ID", "")
+    else:
+        return TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 _TG_TOKEN, _TG_CHAT = _load_telegram_config()
 
@@ -205,9 +206,8 @@ def check_cpu() -> CheckResult:
             timeout=10,
         )
     except (subprocess.CalledProcessError, FileNotFoundError, subprocess.TimeoutExpired):
-        # Fallback: use /proc/loadavg
         try:
-            with open("/proc/loadavg") as f:
+            with Path("/proc/loadavg").open() as f:
                 load = float(f.read().split()[0])
             ncpu = os.cpu_count() or 1
             pct = round(load / ncpu * 100)
@@ -356,8 +356,9 @@ def send_telegram(message: str, token: str = "", chat_id: str = "") -> bool:
         print("[monitor] Telegram credentials not configured, skipping alert", file=sys.stderr)
         return False
 
-    import urllib.request
+    import urllib.error
     import urllib.parse
+    import urllib.request
 
     # Truncate to Telegram limit
     if len(message) > 4000:
@@ -372,10 +373,10 @@ def send_telegram(message: str, token: str = "", chat_id: str = "") -> bool:
     }).encode()
 
     try:
-        req = urllib.request.Request(url, data=data, method="POST")
-        with urllib.request.urlopen(req, timeout=10) as resp:
+        req = urllib.request.Request(url, data=data, method="POST")  # noqa: S310
+        with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310
             return resp.status == 200
-    except Exception as e:
+    except (urllib.error.URLError, OSError) as e:
         print(f"[monitor] Telegram send failed: {e}", file=sys.stderr)
         return False
 
@@ -394,14 +395,12 @@ def format_telegram_message(report: MonitorReport) -> str:
 
     if criticals:
         lines.append("\U0001f534 *CRITICAL:*")
-        for c in criticals:
-            lines.append(f"  \u2022 {c.message}")
+        lines.extend(f"  \u2022 {c.message}" for c in criticals)
         lines.append("")
 
     if warnings:
         lines.append("\u26a0\ufe0f *WARNING:*")
-        for c in warnings:
-            lines.append(f"  \u2022 {c.message}")
+        lines.extend(f"  \u2022 {c.message}" for c in warnings)
         lines.append("")
 
     # Only show OK summary in info-level reports (no problems)
@@ -418,8 +417,7 @@ def format_telegram_message(report: MonitorReport) -> str:
         problem = [c for c in report.docker_containers if c["health"] in ("unhealthy", "restarting", "exited")]
         lines.append("")
         lines.append(f"\U0001f433 *Docker:* {running}/{total} running")
-        for c in problem:
-            lines.append(f"  \u2022 {c['name']}: {c['health']}")
+        lines.extend(f"  \u2022 {c['name']}: {c['health']}" for c in problem)
 
     lines.append(f"\n_{report.timestamp}_")
     return "\n".join(lines)
@@ -436,22 +434,21 @@ def should_alert(report: MonitorReport) -> bool:
 
     try:
         if state_file.exists():
-            with open(state_file) as f:
+            with state_file.open() as f:
                 state = json.load(f)
             last_time = state.get("timestamp", 0)
             last_severity = state.get("severity", INFO)
 
             # Critical always alerts; warning has 15-min cooldown
-            if report.overall_severity == WARNING and last_severity != CRITICAL:
-                if now - last_time < 900:
-                    return False
+            if report.overall_severity == WARNING and last_severity != CRITICAL and now - last_time < 900:
+                return False
     except (json.JSONDecodeError, OSError):
         pass
 
     # Save state
     try:
         STATE_DIR.mkdir(parents=True, exist_ok=True)
-        with open(state_file, "w") as f:
+        with state_file.open("w") as f:
             json.dump({"timestamp": now, "severity": report.overall_severity}, f)
     except OSError:
         pass  # State dir may not be writable
