@@ -59,11 +59,9 @@ ignore = [
     "S110",   # try-except-pass (already using contextlib.suppress)
     "S101",   # assert (used in tests)
     "S301",   # suspicious-pickle-usage
-    "S113",   # request-without-timeout (already fixed)
     "S311",   # suspicious-non-cryptographic-random-usage (IDs, not crypto)
     "S608",   # possible-sql-injection (config constants, not user input)
     "S507",   # paramiko-auto-add-policy (controlled environment, single VPS)
-    "E402",   # module-import-not-at-top (required for sys.path setup)
     "PLR2004", # magic-value-comparison (HTTP status codes etc. are clear in context)
     "PLR0915", # too-many-statements (operational deploy scripts have long main())
     "PLC0415", # import-outside-top-level (conditional imports in operational scripts)
