@@ -13,7 +13,8 @@ def _sample_export_response():
                 {"name": "AI Agent1", "type": "@n8n/n8n-nodes-langchain.agent",
                  "typeVersion": 1.6},
                 {"name": "OpenAI Chat Model", "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-                 "typeVersion": 1},
+                 "typeVersion": 1,
+                 "credentials": {"openAiApi": {"id": "cred1", "name": "OpenAI"}}},
             ],
             "connections": {
                 "Telegram Trigger": {"main": [[{"node": "AI Agent1", "type": "main", "index": 0}]]},
@@ -140,8 +141,7 @@ def test_credential_extraction_from_nodes():
         for cred_type, cred_info in node.get("credentials", {}).items():
             creds.append({"type": cred_type, "id": cred_info.get("id"),
                           "name": cred_info.get("name")})
-    # No credentials in this sample (they're on the actual server)
-    assert isinstance(creds, list)
+    assert creds == [{"type": "openAiApi", "id": "cred1", "name": "OpenAI"}]
 
 
 def test_workflow_id_extraction():
