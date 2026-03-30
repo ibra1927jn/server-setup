@@ -40,16 +40,16 @@ def main():
         f.write(DOCKER_COMPOSE)
 
     print("Restarting n8n container...")
-    _, o, e = ssh.exec_command("cd /opt/n8n && docker compose down && docker compose up -d 2>&1", timeout=60)
+    _, o, _e = ssh.exec_command("cd /opt/n8n && docker compose down && docker compose up -d 2>&1", timeout=60)
     print(o.read().decode())
 
     print("Waiting 15s for n8n to start...")
     time.sleep(15)
 
-    _, o, e = ssh.exec_command("curl -s -o /dev/null -w '%{http_code}' http://localhost:5678/setup")
+    _, o, _e = ssh.exec_command("curl -s -o /dev/null -w '%{http_code}' http://localhost:5678/setup")
     print(f"Setup page HTTP code: {o.read().decode()}")
 
-    _, o, e = ssh.exec_command("docker ps --filter name=n8n --format 'table {{.Names}}\t{{.Status}}'")
+    _, o, _e = ssh.exec_command("docker ps --filter name=n8n --format 'table {{.Names}}\t{{.Status}}'")
     print(o.read().decode())
 
     sftp.close()

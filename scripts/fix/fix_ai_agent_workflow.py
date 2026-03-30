@@ -133,7 +133,7 @@ def main():
         "docker exec n8n-n8n-1 n8n update:workflow"
         f" --id={N8N_AI_WORKFLOW_ID} --active=true"
     )
-    _, o2, e2 = ssh.exec_command(cmd)
+    _, o2, _e2 = ssh.exec_command(cmd)
     time.sleep(3)
     print("ACTIVATE:", o2.read().decode())
 

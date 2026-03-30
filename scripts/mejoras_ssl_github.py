@@ -172,7 +172,7 @@ def update_github_workflow_token(ssh, github_token):
             sftp.put(local_path, "/tmp/github_backup_fixed.json")
             ssh.exec_command("docker cp /tmp/github_backup_fixed.json n8n-n8n-1:/tmp/github_backup_fixed.json")
             time.sleep(1)
-            _, o, e = ssh.exec_command(
+            _, o, _e = ssh.exec_command(
                 "docker exec n8n-n8n-1 n8n import:workflow"
                 " --input=/tmp/github_backup_fixed.json"
             )

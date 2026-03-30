@@ -107,7 +107,7 @@ def main():
                 "docker exec n8n-n8n-1 n8n import:workflow"
                 f" --input=/tmp/{fname}"
             )
-            _, o, e = ssh.exec_command(cmd)
+            _, o, _e = ssh.exec_command(cmd)
             result = o.read().decode().strip()
             print(f"  Import: {result}")
 
@@ -134,7 +134,7 @@ def main():
                 "docker exec n8n-n8n-1 n8n execute"
                 f" --id={wf_id} 2>&1"
             )
-            _, o, e = ssh.exec_command(cmd, timeout=30)
+            _, o, _e = ssh.exec_command(cmd, timeout=30)
             try:
                 out = o.read().decode().strip()
                 print(f"  Result: {out[:200]}")

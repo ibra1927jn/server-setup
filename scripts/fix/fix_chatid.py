@@ -66,7 +66,7 @@ def upload_and_import_fix(ssh, sftp, wf, name):
         "docker exec n8n-n8n-1 n8n import:workflow"
         f" --input=/tmp/{fname}"
     )
-    _, o, e = ssh.exec_command(cmd)
+    _, o, _e = ssh.exec_command(cmd)
     print(f"    Import: {o.read().decode().strip()}")
 
 
@@ -125,7 +125,7 @@ def main():
                 "docker exec n8n-n8n-1 n8n execute"
                 f" --id={wf['id']} 2>&1"
             )
-            _, o, e = ssh.exec_command(cmd, timeout=30)
+            _, o, _e = ssh.exec_command(cmd, timeout=30)
             try:
                 print(f"  {o.read().decode().strip()[:200]}")
             except Exception:

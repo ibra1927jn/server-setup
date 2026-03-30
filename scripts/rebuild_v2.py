@@ -320,7 +320,7 @@ def test_crypto_workflow(ssh):
                 "docker exec n8n-n8n-1 n8n execute"
                 f" --id={wid} 2>&1"
             )
-            _, o2, e2 = ssh.exec_command(cmd, timeout=30)
+            _, o2, _e2 = ssh.exec_command(cmd, timeout=30)
             try:
                 full = o2.read().decode().strip()
                 print(f"  FULL OUTPUT:\n{full}")

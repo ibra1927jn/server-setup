@@ -65,7 +65,7 @@ server {
     sftp.put(local_path, '/etc/nginx/sites-available/n8n')
     sftp.close()
 
-    _, o, e = ssh.exec_command('nginx -t && systemctl reload nginx')
+    _, o, _e = ssh.exec_command('nginx -t && systemctl reload nginx')
     print('NGINX:', o.read().decode())
 
     _, o, _ = ssh.exec_command(f'curl -s -k -H "Host: {VPS_HOST}" https://127.0.0.1/status_panel/ | head -n 5')

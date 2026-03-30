@@ -133,7 +133,7 @@ def main():
     ssh.exec_command("docker cp /tmp/fixed_ai_agent_v2.json n8n-n8n-1:/tmp/fixed_ai_agent_v2.json")
     time.sleep(1)
 
-    _, o2, e2 = ssh.exec_command("docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/fixed_ai_agent_v2.json")
+    _, o2, _e2 = ssh.exec_command("docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/fixed_ai_agent_v2.json")
     time.sleep(3)
     print("\n=== IMPORT ===")
     print(o2.read().decode())

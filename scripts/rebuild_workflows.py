@@ -329,7 +329,7 @@ def import_all_workflows(ssh, workflows):
             "docker exec n8n-n8n-1 n8n import:workflow"
             f" --input=/tmp/{fname}"
         )
-        _, o, e = ssh.exec_command(cmd)
+        _, o, _e = ssh.exec_command(cmd)
         print(f"  {o.read().decode().strip()}")
 
     print("\nRestarting n8n...")
@@ -356,7 +356,7 @@ def test_crypto_workflow(ssh):
         if "Crypto" in line:
             wid = line.split("|")[0].strip()
             print(f"  Executing {wid}...")
-            _, o, e = ssh.exec_command(
+            _, o, _e = ssh.exec_command(
                 f"docker exec n8n-n8n-1 n8n execute --id={wid} 2>&1", timeout=30
             )
             with contextlib.suppress(Exception):

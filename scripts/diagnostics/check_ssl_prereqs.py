@@ -16,7 +16,7 @@ def main():
 
     for name, cmd in checks:
         print(f"=== {name} ===")
-        _, o, e = ssh.exec_command(cmd)
+        _, o, _e = ssh.exec_command(cmd)
         out = o.read().decode().strip()
         if out:
             print(out)

@@ -12,7 +12,7 @@ def main():
 
     # Test 1: Direct curl from HOST to Telegram
     print("TEST 1: Curl from Hetzner host")
-    _, o, e = ssh.exec_command(
+    _, o, _e = ssh.exec_command(
         f'curl -s -X POST "https://api.telegram.org/bot{BOT}/sendMessage"'
         ' -H "Content-Type: application/json"'
         f" -d '{{\"chat_id\": {CHAT_ID},"

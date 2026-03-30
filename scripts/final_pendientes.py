@@ -77,12 +77,12 @@ def publish_workflows(ssh):
             f"-H 'Content-Type: application/json' "
             f"""-d '{{\\\"active\\\": true}}' 2>/dev/null | head -c 200\""""
         )
-        _, o, e = ssh.exec_command(cmd)
+        _, o, _e = ssh.exec_command(cmd)
         out = o.read().decode().strip()
         if "active" in out:
             print("    OK - activated via API")
         else:
-            _, o2, e2 = ssh.exec_command(
+            _, o2, _e2 = ssh.exec_command(
                 f"docker exec n8n-n8n-1 n8n update:workflow"
                 f" --id={wf_id} --active=true"
             )
