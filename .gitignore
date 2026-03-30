@@ -17,3 +17,4 @@ send_help.txt
 send_hcom.py
 ultra-system-temp/
 mission-control/node_modules/
+*.bak
