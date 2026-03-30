@@ -191,6 +191,30 @@ def test_fetch_n8n_credentials_finds_both(mocker):
     assert ssh == {"id": "2", "name": "SSH Server"}
 
 
+def test_load_dotenv_called_when_env_exists():
+    """shared_config calls load_dotenv when .env file exists."""
+    import importlib
+    from pathlib import Path
+    from unittest.mock import patch
+
+    env_path = Path(__file__).parent.parent / ".env"
+    env_existed = env_path.exists()
+
+    import shared_config
+
+    try:
+        if not env_existed:
+            env_path.write_text("")
+
+        with patch("dotenv.load_dotenv") as mock_load:
+            importlib.reload(shared_config)
+            mock_load.assert_called_once_with(env_path)
+    finally:
+        if not env_existed:
+            env_path.unlink(missing_ok=True)
+        importlib.reload(shared_config)
+
+
 def test_fetch_n8n_credentials_none_when_missing(mocker):
     """fetch_n8n_credentials returns (None, None) when no matching creds."""
     import json
