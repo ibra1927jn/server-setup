@@ -7,10 +7,8 @@ import json
 from shared_config import get_ssh_client
 
 
-def main():
-    ssh = get_ssh_client()
-
-    # 1. Check what credentials exist
+def print_credentials(ssh):
+    """Print all n8n credentials."""
     print("=== CREDENCIALES EN N8N ===")
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:credentials --all")
     creds_raw = o.read().decode().strip()
@@ -24,27 +22,24 @@ def main():
     except Exception:
         print(f"  Raw: {creds_raw[:300]}")
 
-    # 2. Export all workflows and check telegram node credential IDs
-    print("\n=== TELEGRAM NODES EN WORKFLOWS ===")
-    _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:workflow --all")
-    raw = o.read().decode().strip()
-    all_wfs = json.loads(raw)
 
+def print_telegram_nodes(all_wfs):
+    """Print Telegram node details from all workflows."""
+    print("\n=== TELEGRAM NODES EN WORKFLOWS ===")
     for wf in all_wfs:
         name = wf.get("name", "")
         for node in wf.get("nodes", []):
             if "telegram" in node.get("type", "").lower():
-                cred = node.get("credentials", {})
                 params = node.get("parameters", {})
-                chat_id = params.get("chatId", "?")
-                text_preview = str(params.get("text", "?"))[:80]
                 print(f"\n  WF: {name}")
                 print(f"  Node: {node['name']}")
-                print(f"  ChatID: {chat_id}")
-                print(f"  Creds: {json.dumps(cred)}")
-                print(f"  Text: {text_preview}")
+                print(f"  ChatID: {params.get('chatId', '?')}")
+                print(f"  Creds: {json.dumps(node.get('credentials', {}))}")
+                print(f"  Text: {str(params.get('text', '?'))[:80]}")
 
-    # 3. Check execution history - look for errors
+
+def print_execution_history(ssh):
+    """Print recent n8n execution history from SQLite."""
     print("\n=== ULTIMAS EJECUCIONES ===")
     _, o, _ = ssh.exec_command(
         'docker exec n8n-n8n-1 sh -c "sqlite3'
@@ -55,9 +50,10 @@ def main():
     execs = o.read().decode().strip()
     print(execs if execs else "  (no sqlite3 or no data)")
 
-    # 4. Try a direct Telegram test from the server
+
+def print_telegram_creds(ssh):
+    """Print decrypted Telegram credentials and test API access."""
     print("\n=== TEST DIRECTO TELEGRAM ===")
-    # Find the Telegram bot token from credentials
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:credentials --all --decrypted 2>/dev/null")
     decrypted = o.read().decode().strip()
     try:
@@ -70,7 +66,6 @@ def main():
     except Exception:
         print("  Could not decrypt credentials (expected)")
 
-    # Try sending via curl with known bot token from previous session
     print("\n  Testing via API...")
     test_cmd = (
         "docker exec n8n-n8n-1 sh -c 'curl -s"
@@ -81,14 +76,29 @@ def main():
     _, o, _ = ssh.exec_command(test_cmd)
     print(f"  {o.read().decode().strip()[:200]}")
 
-    # 5. Check if n8n execute actually ran
+
+def print_relevant_logs(ssh):
+    """Print n8n container log lines matching error/telegram keywords."""
     print("\n=== N8N CONTAINER LOGS (last 30 lines) ===")
     _, o, _ = ssh.exec_command("docker logs n8n-n8n-1 --tail 30 2>&1")
     logs = o.read().decode().strip()
-    # Filter for relevant lines
     for line in logs.split("\n"):
         if any(kw in line.lower() for kw in ["error", "fail", "telegram", "execut", "workflow", "credential"]):
             print(f"  {line.strip()}")
+
+
+def main():
+    ssh = get_ssh_client()
+
+    print_credentials(ssh)
+
+    _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:workflow --all")
+    all_wfs = json.loads(o.read().decode().strip())
+    print_telegram_nodes(all_wfs)
+
+    print_execution_history(ssh)
+    print_telegram_creds(ssh)
+    print_relevant_logs(ssh)
 
     ssh.close()
     print("\nDone!")
