@@ -7,7 +7,7 @@ import string
 
 from shared_config import get_ssh_client
 
-FLOWS_DIR = r"C:\AgenticOS\n8n-flows"
+FLOWS_DIR = os.getenv("N8N_FLOWS_DIR", os.path.join(os.path.dirname(__file__), "..", "workflows"))
 MISSING_FILES = ["server-sentinel.json", "ai-agent-base.json"]
 
 

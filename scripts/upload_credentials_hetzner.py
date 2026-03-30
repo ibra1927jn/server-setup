@@ -1,13 +1,17 @@
 """Upload credentials to Hetzner n8n"""
 
 import json
+import os
+from pathlib import Path
 
 import requests
 from shared_config import N8N_HEADERS, N8N_URL
 
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+
 
 def main():
-    cred_file = r"C:\AgenticOS\credentials-export.json"
+    cred_file = os.getenv("N8N_CREDENTIALS_FILE", str(_SCRIPTS_DIR / "credentials-export.json"))
 
     headers = N8N_HEADERS
 
