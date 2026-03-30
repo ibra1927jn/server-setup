@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-03-30] | Heartbeat #13: 52 new tests for main() functions (export_analyze, final_pendientes, patch_workflow, upgrade_agent, telegram bots v1/v2/v3, import_workflows) via mocked SSH/requests. 461/461 passing, 99% coverage (was 88%)
 - [2026-03-30] | Heartbeat #12: 42 new tests (telegram bot builders v1/v2/v3, patch_workflow direct imports), added .coverage and .pytest_cache to .gitignore. 409/409 passing, 88% coverage (was 87%)
 - [2026-03-30] | Heartbeat #11: wrapped 33 scripts' top-level code in main() with if __name__ guard (was 31 without guards, now 0). Prevents import side effects, improves testability. 348/348 passing, 87% coverage
 - [2026-03-30] | Heartbeat #10: centralized 3 more hardcoded n8n IDs (N8N_TELEGRAM_BOT_WORKFLOW_ID, N8N_BRIEFING_WORKFLOW_ID, N8N_CRED_OPENAI) into shared_config.py, added .coverage to .gitignore. 348/348 passing, 87% coverage
