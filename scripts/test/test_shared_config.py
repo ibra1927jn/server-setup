@@ -165,3 +165,43 @@ def test_vps_ssh_key_path_is_string():
     from shared_config import VPS_SSH_KEY_PATH
 
     assert isinstance(VPS_SSH_KEY_PATH, str)
+
+
+def test_fetch_n8n_credentials_finds_both(mocker):
+    """fetch_n8n_credentials returns telegram and SSH creds when present."""
+    import json
+
+    from shared_config import fetch_n8n_credentials
+
+    creds_json = json.dumps([
+        {"id": "1", "name": "Telegram", "type": "telegramApi"},
+        {"id": "2", "name": "SSH Server", "type": "sshPassword"},
+        {"id": "3", "name": "Other", "type": "httpBasicAuth"},
+    ])
+    mock_ssh = mocker.MagicMock()
+    mock_stdout = mocker.MagicMock()
+    mock_stdout.read.return_value = creds_json.encode()
+    mock_ssh.exec_command.return_value = (None, mock_stdout, None)
+
+    tg, ssh = fetch_n8n_credentials(mock_ssh)
+
+    assert tg == {"id": "1", "name": "Telegram"}
+    assert ssh == {"id": "2", "name": "SSH Server"}
+
+
+def test_fetch_n8n_credentials_none_when_missing(mocker):
+    """fetch_n8n_credentials returns (None, None) when no matching creds."""
+    import json
+
+    from shared_config import fetch_n8n_credentials
+
+    creds_json = json.dumps([{"id": "9", "name": "Other", "type": "httpBasicAuth"}])
+    mock_ssh = mocker.MagicMock()
+    mock_stdout = mocker.MagicMock()
+    mock_stdout.read.return_value = creds_json.encode()
+    mock_ssh.exec_command.return_value = (None, mock_stdout, None)
+
+    tg, ssh = fetch_n8n_credentials(mock_ssh)
+
+    assert tg is None
+    assert ssh is None

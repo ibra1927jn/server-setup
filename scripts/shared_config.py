@@ -6,6 +6,7 @@ Si .env no existe, usa variables de entorno del sistema como fallback.
 Provee get_ssh_client() para conexion SSH reutilizable via paramiko.
 """
 
+import json
 import os
 from pathlib import Path
 
@@ -119,8 +120,6 @@ def fetch_n8n_credentials(ssh):
 
     Returns (tg_cred, ssh_cred) where each is {"id": ..., "name": ...} or None.
     """
-    import json
-
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:credentials --all")
     creds = json.loads(o.read().decode().strip())
     tg_cred = None
