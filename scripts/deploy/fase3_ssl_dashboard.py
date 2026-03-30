@@ -10,7 +10,7 @@ from shared_config import VPS_HOST, get_ssh_client
 
 
 def main():
-    HOST = VPS_HOST
+    host = VPS_HOST
     ssh = get_ssh_client()
 
     # ====================================================
@@ -23,11 +23,11 @@ def main():
     # Register agenticosvps.duckdns.org → VPS_HOST
     # DuckDNS API: just need to create a token and update
     # We'll do it via their API
-    DUCK_DOMAIN = "agenticosvps"
+    duck_domain = "agenticosvps"
 
     # First try to register via their API
     print("  Registering agenticosvps.duckdns.org...")
-    r = requests.get(f"https://www.duckdns.org/update?domains={DUCK_DOMAIN}&token=&ip={HOST}&verbose=true", timeout=30)
+    r = requests.get(f"https://www.duckdns.org/update?domains={duck_domain}&token=&ip={host}&verbose=true", timeout=30)
     print(f"  Response: {r.text.strip()}")
 
     # DuckDNS requires a token. Let's set it up on the server instead with a script
@@ -54,14 +54,14 @@ def main():
     # Since DuckDNS needs manual token creation, let's use a different approach
     # Use nip.io which doesn't need registration - it auto-resolves
     # <ip-with-dashes>.nip.io → <ip> (automatic!)
-    NIP_DOMAIN = f"{HOST.replace('.', '-')}.nip.io"
-    print(f"\n  Using nip.io instead: {NIP_DOMAIN}")
+    nip_domain = f"{host.replace('.', '-')}.nip.io"
+    print(f"\n  Using nip.io instead: {nip_domain}")
     print("  nip.io auto-resolves IPs embedded in the domain name - no registration needed!")
 
     # Verify it resolves
     _, o, _ = ssh.exec_command(
-        f"host {NIP_DOMAIN} 2>/dev/null"
-        f" || dig +short {NIP_DOMAIN} 2>/dev/null"
+        f"host {nip_domain} 2>/dev/null"
+        f" || dig +short {nip_domain} 2>/dev/null"
         " || echo 'DNS_CHECK_FAILED'"
     )
     dns_result = o.read().decode().strip()
@@ -79,7 +79,7 @@ def main():
     # n8n with SSL
     server {{
         listen 80;
-        server_name {NIP_DOMAIN} {HOST};
+        server_name {nip_domain} {host};
 
         # ACME challenge for Let's Encrypt
         location /.well-known/acme-challenge/ {{
@@ -94,7 +94,7 @@ def main():
 
     server {{
         listen 443 ssl;
-        server_name {NIP_DOMAIN} {HOST};
+        server_name {nip_domain} {host};
 
         ssl_certificate /etc/ssl/n8n/self-signed.crt;
         ssl_certificate_key /etc/ssl/n8n/self-signed.key;
@@ -154,7 +154,7 @@ def main():
         print("\n  Attempting Let's Encrypt certificate...")
         certbot_cmd = (
             f"certbot certonly --webroot -w /var/www/certbot"
-            f" -d {NIP_DOMAIN} --non-interactive --agree-tos"
+            f" -d {nip_domain} --non-interactive --agree-tos"
             " --email admin@agenticosvps.local"
             " --no-eff-email 2>&1"
         )
@@ -167,13 +167,13 @@ def main():
             # Update nginx to use real cert
             ssh.exec_command(
                 "sed -i 's|/etc/ssl/n8n/self-signed.crt"
-                f"|/etc/letsencrypt/live/{NIP_DOMAIN}"
+                f"|/etc/letsencrypt/live/{nip_domain}"
                 "/fullchain.pem|'"
                 " /etc/nginx/sites-available/n8n"
             )
             ssh.exec_command(
                 "sed -i 's|/etc/ssl/n8n/self-signed.key"
-                f"|/etc/letsencrypt/live/{NIP_DOMAIN}"
+                f"|/etc/letsencrypt/live/{nip_domain}"
                 "/privkey.pem|'"
                 " /etc/nginx/sites-available/n8n"
             )
@@ -401,7 +401,7 @@ def main():
     sftp = ssh.open_sftp()
     local_path = r"C:\Users\ibrab\Desktop\set up\scripts\dashboard.html"
     with open(local_path, "w", encoding="utf-8") as f:
-        f.write(dashboard_html.replace("__VPS_HOST__", HOST))
+        f.write(dashboard_html.replace("__VPS_HOST__", host))
 
     sftp.put(local_path, "/var/www/dashboard/index.html")
     print("  Dashboard deployed!")
@@ -443,8 +443,8 @@ def main():
     ====================================================
     COMPLETADO!
     ====================================================
-    n8n:       https://{HOST} (self-signed SSL)
-    Dashboard: https://{HOST}/dashboard/
+    n8n:       https://{host} (self-signed SSL)
+    Dashboard: https://{host}/dashboard/
     """)
 
 

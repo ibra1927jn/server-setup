@@ -26,7 +26,7 @@ def main():
     print(f"Workflow: {wf['name']}")
 
     # Fix the OpenAI Chat Model node
-    CORRECT_MODEL = "z-ai/glm-4.5-air:free"
+    correct_model = "z-ai/glm-4.5-air:free"
 
     for node in wf.get('nodes', []):
         if 'openai' in node.get('type', '').lower():
@@ -37,11 +37,11 @@ def main():
             # Set the correct model as an expression
             node['parameters']['model'] = {
                 "__rl": True,
-                "value": f"={CORRECT_MODEL}",
+                "value": f"={correct_model}",
                 "mode": "raw"
             }
 
-            print(f"  Modelo NUEVO: {CORRECT_MODEL}")
+            print(f"  Modelo NUEVO: {correct_model}")
             print(f"  Credenciales: {json.dumps(node.get('credentials', {}))}")
 
     # Save and upload

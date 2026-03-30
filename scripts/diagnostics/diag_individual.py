@@ -7,15 +7,15 @@ from shared_config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, get_ssh_client
 def main():
     ssh = get_ssh_client()
 
-    BOT = TELEGRAM_BOT_TOKEN
-    CHAT_ID = TELEGRAM_CHAT_ID
+    bot = TELEGRAM_BOT_TOKEN
+    chat_id = TELEGRAM_CHAT_ID
 
     # Test 1: Direct curl from HOST to Telegram
     print("TEST 1: Curl from Hetzner host")
     _, o, _e = ssh.exec_command(
-        f'curl -s -X POST "https://api.telegram.org/bot{BOT}/sendMessage"'
+        f'curl -s -X POST "https://api.telegram.org/bot{bot}/sendMessage"'
         ' -H "Content-Type: application/json"'
-        f" -d '{{\"chat_id\": {CHAT_ID},"
+        f" -d '{{\"chat_id\": {chat_id},"
         ' "text": "Test desde Hetzner host"}}\''
     )
     print(f"  {o.read().decode().strip()[:300]}")
@@ -32,7 +32,7 @@ def main():
     _, o, _ = ssh.exec_command(
         "docker exec n8n-n8n-1 node -e"
         " \"fetch('https://api.telegram.org/bot"
-        + BOT
+        + bot
         + "/getMe').then(r=>r.json())"
         ".then(d=>console.log(JSON.stringify(d)))\""
         " 2>&1"

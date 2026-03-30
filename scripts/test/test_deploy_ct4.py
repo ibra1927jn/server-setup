@@ -28,7 +28,7 @@ def test_skip_set_excludes_sensitive_dirs():
 @patch("deploy.deploy_ct4.os.path.getsize", return_value=100)
 @patch("deploy.deploy_ct4.os.walk")
 @patch("deploy.deploy_ct4.get_ssh_client")
-def test_deploy_creates_remote_dir_if_missing(mock_get_ssh, mock_walk, mock_size):
+def test_deploy_creates_remote_dir_if_missing(mock_get_ssh, mock_walk, _mock_size):
     """deploy() should create REMOTE_DIR if it doesn't exist."""
     from deploy.deploy_ct4 import deploy
 
@@ -47,7 +47,7 @@ def test_deploy_creates_remote_dir_if_missing(mock_get_ssh, mock_walk, mock_size
 @patch("deploy.deploy_ct4.os.path.getsize", return_value=100)
 @patch("deploy.deploy_ct4.os.walk")
 @patch("deploy.deploy_ct4.get_ssh_client")
-def test_deploy_skips_mkdir_if_exists(mock_get_ssh, mock_walk, mock_size):
+def test_deploy_skips_mkdir_if_exists(mock_get_ssh, mock_walk, _mock_size):
     """deploy() should not create REMOTE_DIR if it already exists."""
     from deploy.deploy_ct4 import deploy
 

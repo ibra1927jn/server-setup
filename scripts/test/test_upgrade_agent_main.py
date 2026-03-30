@@ -19,7 +19,7 @@ def _make_wf():
     }
 
 
-def _make_mock_ssh(wf=None, as_list=False):
+def _make_mock_ssh(wf=None, *, as_list=False):
     if wf is None:
         wf = _make_wf()
     export_data = [wf] if as_list else wf
