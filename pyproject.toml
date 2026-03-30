@@ -1,3 +1,45 @@
 [tool.pytest.ini_options]
 testpaths = ["scripts/test"]
 python_files = ["test_*.py"]
+
+[tool.coverage.run]
+source = ["scripts"]
+omit = [
+    # Operational scripts that run against live servers (SSH/HTTP)
+    "scripts/debug_*.py",
+    "scripts/dump_*.py",
+    "scripts/download_*.py",
+    "scripts/fetch_*.py",
+    "scripts/find_*.py",
+    "scripts/get_*.py",
+    "scripts/grep_*.py",
+    "scripts/kill_*.py",
+    "scripts/isolate_*.py",
+    "scripts/mejoras_*.py",
+    "scripts/patch_sqlite_cred.py",
+    "scripts/query_*.py",
+    "scripts/read_*.py",
+    "scripts/rebuild_*.py",
+    "scripts/reset_pw_v3.py",
+    "scripts/restart_*.py",
+    "scripts/setup_*.py",
+    "scripts/start_*.py",
+    "scripts/trigger_*.py",
+    "scripts/upload_*.py",
+    # Integration test scripts (run against live server, not pytest)
+    "scripts/test/test_after_*.py",
+    "scripts/test/test_ai_agent.py",
+    "scripts/test/test_e2e_*.py",
+    "scripts/test/test_each_*.py",
+    "scripts/test/test_explicit_*.py",
+    "scripts/test/test_nginx_*.py",
+    "scripts/test/test_openrouter_*.py",
+    "scripts/test/test_telegram_*.py",
+    "scripts/test/test_webhook_*.py",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "if __name__",
+    "pragma: no cover",
+]
