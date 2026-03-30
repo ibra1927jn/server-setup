@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-03-30] | Heartbeat #31: applied ruff formatter to 122 files for consistent code style, added *.bak to .gitignore, added ruff format config (double-quote, space-indent) to pyproject.toml. 487/487 passing, 99% coverage, 0 lint errors. Codebase fully formatted and all meaningful lint rules enforced
 - [2026-03-30] | Heartbeat #30: extracted exception string literal to variable in shared_config.py (EM101/TRY003), enabled EM (flake8-errmsg) and TRY (tryceratops) rule sets. 487/487 passing, 99% coverage, 0 lint errors. Ruff config now has 54 rule sets — remaining unenabled (D, ANN, COM, Q, T20, INP) are stylistic or inapplicable to this project
 - [2026-03-30] | Heartbeat #29: enabled BLE (blind-except) and PTH (pathlib) rule sets with per-file-ignores for operational scripts, removed stale E402/S113 global ignores (now enforced). 487/487 passing, 99% coverage, 0 lint errors. Ruff config now has 52 rule sets — all meaningful rules enabled, remaining (D, ANN, COM, Q, T20, EM, TRY, INP) are stylistic or inapplicable
 - [2026-03-30] | Heartbeat #28: fixed N806 uppercase local vars in 4 files, unused mock args (ARG001) in test_deploy_ct4, boolean trap (FBT002) in test_upgrade_agent_main, enabled 14 new ruff rule sets (T10, A, PT, DTZ, TC, ASYNC, SLF, N, ARG, FBT, FIX, ERA, ICN). 487/487 passing, 99% coverage, 0 lint errors
