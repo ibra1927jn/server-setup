@@ -15,6 +15,7 @@ select = [
     "RET",    # flake8-return
     "PERF",   # perflint
     "I",      # isort (import sorting)
+    "RUF",    # Ruff-specific rules
 ]
 ignore = [
     "S603",   # subprocess-without-shell-check (false positives)
@@ -34,6 +35,7 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/test/*.py" = ["S106"]  # test passwords are not real secrets
+"scripts/test/test_gen_id.py" = ["E402"]  # imports after mock setup (intentional)
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10

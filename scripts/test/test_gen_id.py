@@ -14,12 +14,12 @@ mock_stderr = MagicMock()
 mock_stderr.read.return_value = b""
 mock_ssh.exec_command.return_value = (MagicMock(), mock_stdout, mock_stderr)
 
-import shared_config  # noqa: E402
+import shared_config
 
 _original_get_ssh = shared_config.get_ssh_client
 shared_config.get_ssh_client = MagicMock(return_value=mock_ssh)
 
-from deploy.fase2_deploy import gen_id  # noqa: E402
+from deploy.fase2_deploy import gen_id
 
 # Restore original so other tests are not affected
 shared_config.get_ssh_client = _original_get_ssh

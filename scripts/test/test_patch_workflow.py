@@ -49,8 +49,7 @@ def test_filter_noop_when_not_present():
 def test_connection_rebuild():
     """After deleting old connection, new one should be created."""
     conns = {"OpenAI Chat Model": {"old": "data"}, "Trigger": {"main": []}}
-    if "OpenAI Chat Model" in conns:
-        del conns["OpenAI Chat Model"]
+    conns.pop("OpenAI Chat Model", None)
     assert "OpenAI Chat Model" not in conns
     assert "Trigger" in conns  # other connections preserved
 
