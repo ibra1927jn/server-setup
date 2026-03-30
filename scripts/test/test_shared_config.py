@@ -31,9 +31,8 @@ def test_get_ssh_client_requires_host():
     """get_ssh_client raises ValueError when no host is configured."""
     from shared_config import get_ssh_client
 
-    with patch.dict(os.environ, {}, clear=False):
-        with pytest.raises(ValueError, match="VPS_HOST"):
-            get_ssh_client(host="", password="fake")
+    with patch.dict(os.environ, {}, clear=False), pytest.raises(ValueError, match="VPS_HOST"):
+        get_ssh_client(host="", password="fake")
 
 
 def test_config_values_are_strings():
