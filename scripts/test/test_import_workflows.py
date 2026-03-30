@@ -1,5 +1,5 @@
 """Tests for import_workflows_hetzner.py JSON manipulation logic"""
-from unittest.mock import patch, MagicMock
+from unittest.mock import MagicMock
 
 
 def _make_workflow(name="Test WF", wf_id="abc123", nodes=None):
