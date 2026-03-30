@@ -13,17 +13,54 @@ REAL_CHAT_ID = TELEGRAM_CHAT_ID
 WRONG_CHAT_ID = "6915862027"
 
 
-def main():
-    # TEST 1: Send directly from this PC
-    print("=== TEST LOCAL: Enviar mensaje directo ===")
-    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
-    r = requests.post(url, json={
-        "chat_id": REAL_CHAT_ID,
-        "text": "🧪 Test AgenticOS - Chat ID CORRECTO (5822131920). Si ves esto, Telegram funciona!",
-        "parse_mode": "Markdown"
-    })
+def test_send_message(url, chat_id, text):
+    """Send a test message and print result."""
+    r = requests.post(url, json={"chat_id": chat_id, "text": text, "parse_mode": "Markdown"})
     print(f"  Status: {r.status_code}")
     print(f"  Response: {r.text[:300]}")
+    return r
+
+
+def fix_workflow_chat_ids(wf):
+    """Replace WRONG_CHAT_ID with REAL_CHAT_ID in all nodes. Returns True if changed."""
+    changed = False
+    name = wf.get("name", "")
+    for node in wf.get("nodes", []):
+        params = node.get("parameters", {})
+        if "chatId" in params and params["chatId"] == WRONG_CHAT_ID:
+            print(f"  [{name}] {node['name']}: chatId {params['chatId']} -> {REAL_CHAT_ID}")
+            params["chatId"] = REAL_CHAT_ID
+            changed = True
+        text = params.get("text", "")
+        if WRONG_CHAT_ID in str(text):
+            params["text"] = str(text).replace(WRONG_CHAT_ID, REAL_CHAT_ID)
+            changed = True
+    return changed
+
+
+def upload_and_import_fix(ssh, sftp, wf, name):
+    """Upload fixed workflow and import into n8n."""
+    fname = f"fix_{name.lower().replace(' ', '_')}.json"
+    local_path = f"C:\\Users\\ibrab\\Desktop\\set up\\scripts\\{fname}"
+    remote_path = f"/tmp/{fname}"
+
+    with open(local_path, "w", encoding="utf-8") as f:
+        json.dump(wf, f)
+
+    sftp.put(local_path, remote_path)
+    ssh.exec_command(f"docker cp {remote_path} n8n-n8n-1:/tmp/{fname}")
+    time.sleep(1)
+    _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/{fname}")
+    print(f"    Import: {o.read().decode().strip()}")
+
+
+def main():
+    print("=== TEST LOCAL: Enviar mensaje directo ===")
+    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+    r = test_send_message(
+        url, REAL_CHAT_ID,
+        "🧪 Test AgenticOS - Chat ID CORRECTO (5822131920). Si ves esto, Telegram funciona!",
+    )
 
     if r.status_code == 200 and r.json().get("ok"):
         print("  ✅ MENSAJE ENVIADO! El chatID correcto es 5822131920")
@@ -32,64 +69,22 @@ def main():
         r2 = requests.get(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates?limit=5")
         print(f"  Updates: {r2.text[:500]}")
 
-    # TEST 2: Also test with wrong chatID to confirm it's the issue
     print(f"\n=== TEST: chatID incorrecto ({WRONG_CHAT_ID}) ===")
-    r3 = requests.post(url, json={
-        "chat_id": WRONG_CHAT_ID,
-        "text": "Test con ID incorrecto"
-    })
-    print(f"  Status: {r3.status_code}")
-    print(f"  Response: {r3.text[:200]}")
+    test_send_message(url, WRONG_CHAT_ID, "Test con ID incorrecto")
 
-    # NOW FIX ALL WORKFLOWS
     print("\n=== PARCHANDO TODOS LOS WORKFLOWS ===")
     ssh = get_ssh_client()
-
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:workflow --all")
     all_wfs = json.loads(o.read().decode().strip())
 
     sftp = ssh.open_sftp()
     fixed_count = 0
-
     for wf in all_wfs:
-        name = wf.get("name", "")
-        changed = False
-
-        for node in wf.get("nodes", []):
-            params = node.get("parameters", {})
-
-            # Fix chatId wherever it appears
-            if "chatId" in params:
-                old_id = params["chatId"]
-                if old_id == WRONG_CHAT_ID:
-                    params["chatId"] = REAL_CHAT_ID
-                    print(f"  [{name}] {node['name']}: chatId {old_id} -> {REAL_CHAT_ID}")
-                    changed = True
-
-            # Also check in text field for hardcoded references
-            text = params.get("text", "")
-            if WRONG_CHAT_ID in str(text):
-                params["text"] = str(text).replace(WRONG_CHAT_ID, REAL_CHAT_ID)
-                changed = True
-
-        if changed:
-            fname = f"fix_{name.lower().replace(' ', '_')}.json"
-            local_path = f"C:\\Users\\ibrab\\Desktop\\set up\\scripts\\{fname}"
-            remote_path = f"/tmp/{fname}"
-
-            with open(local_path, "w", encoding="utf-8") as f:
-                json.dump(wf, f)
-
-            sftp.put(local_path, remote_path)
-            ssh.exec_command(f"docker cp {remote_path} n8n-n8n-1:/tmp/{fname}")
-            time.sleep(1)
-            _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/{fname}")
-            print(f"    Import: {o.read().decode().strip()}")
+        if fix_workflow_chat_ids(wf):
+            upload_and_import_fix(ssh, sftp, wf, wf.get("name", ""))
             fixed_count += 1
-
     print(f"\n  Workflows parcheados: {fixed_count}")
 
-    # Restart
     print("\n=== RESTART ===")
     ssh.exec_command("docker restart n8n-n8n-1")
     time.sleep(12)
@@ -97,7 +92,6 @@ def main():
     o.read()
     print("  Reiniciado y activado!")
 
-    # Final test: Execute Crypto Portfolio Alerts
     print("\n=== TEST FINAL: Ejecutar Crypto Portfolio Alerts ===")
     for wf in all_wfs:
         if "Crypto" in wf.get("name", ""):
