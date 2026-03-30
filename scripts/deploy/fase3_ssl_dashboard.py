@@ -390,7 +390,7 @@ def _deploy_dashboard(ssh, host):
     ssh.exec_command("mkdir -p /var/www/dashboard")
 
     sftp = ssh.open_sftp()
-    local_path = r"C:\Users\ibrab\Desktop\set up\scripts\dashboard.html"
+    local_path = "/tmp/dashboard.html"
     with open(local_path, "w", encoding="utf-8") as f:
         f.write(dashboard_html.replace("__VPS_HOST__", host))
 

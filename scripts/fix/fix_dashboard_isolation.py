@@ -84,7 +84,7 @@ def main():
     ssh = get_ssh_client()
 
     sftp = ssh.open_sftp()
-    local_path = r"C:\Users\ibrab\Desktop\set up\scripts\dashboard_service"
+    local_path = "/tmp/dashboard_service"
     with open(local_path, "w", encoding="utf-8") as f:
         f.write(_build_systemd_service())
     sftp.put(local_path, "/etc/systemd/system/dashboard.service")
@@ -95,7 +95,7 @@ def main():
     ssh.exec_command("systemctl restart dashboard")
 
     sftp = ssh.open_sftp()
-    local_path = r"C:\Users\ibrab\Desktop\set up\scripts\temp_nginx6"
+    local_path = "/tmp/temp_nginx6"
     with open(local_path, "w", encoding="utf-8") as f:
         f.write(_build_nginx_config())
     sftp.put(local_path, "/etc/nginx/sites-available/n8n")

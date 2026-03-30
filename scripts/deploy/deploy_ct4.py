@@ -4,7 +4,7 @@ import os
 
 from shared_config import VPS_HOST, get_ssh_client
 
-LOCAL_DIR = r"C:\Users\ibrab\Desktop\Crypto-Trading-Bot4"
+LOCAL_DIR = os.environ.get("CT4_LOCAL_DIR", os.path.join(os.path.expanduser("~"), "Crypto-Trading-Bot4"))
 REMOTE_DIR = "/root/Crypto-Trading-Bot4"
 
 # Files/dirs to SKIP (not needed on server)

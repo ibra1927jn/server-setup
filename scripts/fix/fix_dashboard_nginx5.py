@@ -59,7 +59,7 @@ server {
 """.replace("__NIP__", _NIP_HOST).replace("__VPS__", VPS_HOST)
 
     sftp = ssh.open_sftp()
-    local_path = r"C:\Users\ibrab\Desktop\set up\scripts\temp_nginx5"
+    local_path = "/tmp/temp_nginx5"
     with open(local_path, "w", encoding="utf-8") as f:
         f.write(nginx_config)
     sftp.put(local_path, "/etc/nginx/sites-available/n8n")

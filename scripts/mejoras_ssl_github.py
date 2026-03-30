@@ -128,7 +128,7 @@ def update_github_workflow_token(ssh, github_token):
 
                     print("    Headers added with GitHub token")
 
-            local_path = r"C:\Users\ibrab\Desktop\set up\scripts\github_backup_fixed.json"
+            local_path = "/tmp/github_backup_fixed.json"
             with open(local_path, "w", encoding="utf-8") as f:
                 json.dump(wf, f)
 

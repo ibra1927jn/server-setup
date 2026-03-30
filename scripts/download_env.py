@@ -13,7 +13,7 @@ def main():
 
     # Download it
     sftp = ssh.open_sftp()
-    local_path = r"C:\Users\ibrab\Desktop\set up\scripts\n8n_env.txt"
+    local_path = "/tmp/n8n_env.txt"
     sftp.get("/root/n8n_env.txt", local_path)
     sftp.close()
 
