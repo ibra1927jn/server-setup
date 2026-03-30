@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-03-30] | Heartbeat #9: 4 late imports moved to top (fix scripts), 19 lint errors fixed across 17 files (E401 multi-import, E701/E702 multi-statement lines, E402 late imports, F541 extraneous f-string, F401 unused imports). Ruff now reports 0 errors (was 20, excluding 1 unfixable false positive). 235/235 passing, 49% coverage
 - [2026-03-29] | Heartbeat #8: 3 unused imports removed (test files), 43 new tests (credential extraction, workflow structures, node filtering, connection management, line parsing, template injection). 235/235 passing, 49% coverage (was 43%)
 - [2026-03-29] | Heartbeat #7: late imports moved to top of file in 3 telegram bot scripts, 32 new tests (workflow JSON manipulation, node filtering, version patching, import preparation, fase2 data structures). 190/190 passing, coverage improved (was 38%)
 - [2026-03-29] | Heartbeat #6: hardcoded password removed from deploy_n8n_hetzner.py (moved to .env via shared_config), 2 unused imports removed (test files), 15 new tests (8 deploy_n8n main/templates + 7 deploy_ct4 deploy function). 154/154 passing, 38% coverage (was 26%)
