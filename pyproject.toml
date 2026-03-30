@@ -47,6 +47,8 @@ select = [
     "FIX",    # flake8-fixme (no TODO/FIXME/HACK markers)
     "ERA",    # eradicate (no commented-out code)
     "ICN",    # flake8-import-conventions
+    "BLE",    # flake8-blind-except (no bare Exception catches)
+    "PTH",    # flake8-use-pathlib (prefer pathlib over os.path)
 ]
 ignore = [
     "S603",   # subprocess-without-shell-check (false positives)
@@ -70,6 +72,28 @@ ignore = [
 [tool.ruff.lint.per-file-ignores]
 "scripts/test/*.py" = ["S106", "ARG001", "ARG002", "ARG005", "PT019"]  # test passwords, unused mock/lambda args from @patch, pytest fixture style
 "scripts/test/test_gen_id.py" = ["E402"]  # imports after mock setup (intentional)
+"scripts/test/test_deploy_ct4.py" = ["PTH118"]  # os.path.join in assertions matching production code
+"scripts/test/test_ai_agent.py" = ["BLE001"]  # operational test, broad catch is intentional
+"scripts/test/test_e2e_workflows.py" = ["BLE001"]  # operational test
+"scripts/test/test_each_workflow.py" = ["BLE001"]  # operational test
+"scripts/test/test_telegram_direct.py" = ["BLE001"]  # operational test
+"scripts/test/verify_execution.py" = ["BLE001"]  # operational test
+# Operational scripts (run against live servers) — grandfathered PTH/BLE violations
+"scripts/fix/*.py" = ["BLE001", "PTH"]  # operational fix scripts
+"scripts/diagnostics/*.py" = ["BLE001"]  # diagnostic scripts
+"scripts/debug_*.py" = ["BLE001"]  # debug scripts
+"scripts/get_*.py" = ["BLE001", "PTH123"]  # getter scripts
+"scripts/fetch_*.py" = ["PTH123"]  # fetch scripts
+"scripts/upload_*.py" = ["PTH123"]  # upload scripts
+"scripts/rebuild_*.py" = ["BLE001", "PTH123"]  # rebuild scripts
+"scripts/mejoras_*.py" = ["BLE001", "PTH"]  # mejoras scripts
+"scripts/execute_daily_briefing.py" = ["BLE001"]  # operational
+"scripts/patch_workflow.py" = ["BLE001"]  # operational
+"scripts/import_workflows_hetzner.py" = ["PTH"]  # os.path used with test mocks
+"scripts/upgrade_agent_node.py" = ["PTH123"]  # operational
+"scripts/deploy/deploy_ct4.py" = ["PTH"]  # os.path used with test mocks
+"scripts/deploy/fase2_deploy.py" = ["PTH123"]  # open() in deploy context
+"scripts/deploy/fase3_ssl_dashboard.py" = ["PTH123"]  # operational
 
 [tool.ruff.lint.mccabe]
 max-complexity = 10
