@@ -6,7 +6,7 @@ import json
 import time
 import random
 import string
-from shared_config import get_ssh_client, N8N_CRED_SSH, N8N_CRED_TELEGRAM_BOT
+from shared_config import get_ssh_client, N8N_CRED_SSH, N8N_CRED_TELEGRAM_BOT, VPS_HOST
 
 
 def gen_id():
@@ -151,7 +151,7 @@ def main():
             {
                 "parameters": {
                     "command": (
-                        "services='95.217.158.7:5678 alz.agency'\n"
+                        f"services='{VPS_HOST}:5678 alz.agency'\n"
                         "result=''\nfailed=0\n"
                         "for svc in $services; do\n"
                         "  host=$(echo $svc | cut -d: -f1)\n"
