@@ -142,12 +142,12 @@ if not github_token:
 
 if github_token:
     print(f"  Token found: {github_token[:10]}...")
-    
+
     # Update the GitHub Auto-Backup workflow to include the auth header
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:workflow --all")
     raw = o.read().decode().strip()
     all_wfs = json.loads(raw)
-    
+
     for wf in all_wfs:
         if "GitHub" in wf.get("name", ""):
             print(f"  Updating workflow: {wf['name']}")
@@ -175,14 +175,14 @@ if github_token:
                         node["parameters"]["authentication"] = "none"
                     if "genericAuthType" in node["parameters"]:
                         del node["parameters"]["genericAuthType"]
-                    
+
                     print("    Headers added with GitHub token")
-            
+
             # Save and reimport
             local_path = r"C:\Users\ibrab\Desktop\set up\scripts\github_backup_fixed.json"
             with open(local_path, "w", encoding="utf-8") as f:
                 json.dump(wf, f)
-            
+
             sftp = ssh.open_sftp()
             sftp.put(local_path, "/tmp/github_backup_fixed.json")
             ssh.exec_command("docker cp /tmp/github_backup_fixed.json n8n-n8n-1:/tmp/github_backup_fixed.json")

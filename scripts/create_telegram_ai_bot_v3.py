@@ -110,7 +110,7 @@ print("STDERR:", stderr)
 if "error" not in stdout.lower():
     print(f"\nSUCCESS! Workflow ID: {wf_id}")
     print("Now activating the workflow...")
-    # Activate it via n8n CLI update 
+    # Activate it via n8n CLI update
     _, o2, e2 = ssh.exec_command(f"docker exec n8n-n8n-1 n8n update:workflow --id={wf_id} --active=true")
     print("ACTIVATE:", o2.read().decode(), e2.read().decode())
 

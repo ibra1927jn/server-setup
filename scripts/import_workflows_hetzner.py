@@ -29,25 +29,25 @@ created = []
 for f in FLOW_FILES:
     filepath = os.path.join(FLOWS_DIR, f)
     print(f"\n=== Importing {f} ===")
-    
+
     with open(filepath, 'r', encoding='utf-8') as fh:
         workflow_data = json.load(fh)
-    
+
     # Remove id (let n8n assign new one)
     workflow_data.pop('id', None)
-    
+
     # Ensure name is set
     name = workflow_data.get('name', f.replace('.json', ''))
     print(f"  Name: {name}")
     print(f"  Nodes: {len(workflow_data.get('nodes', []))}")
-    
+
     resp = requests.post(
         f"{N8N_URL}/api/v1/workflows",
         headers=headers,
         json=workflow_data
     )
     print(f"  Status: {resp.status_code}")
-    
+
     if resp.status_code in [200, 201]:
         result = resp.json()
         wf_id = result.get('id', 'unknown')
