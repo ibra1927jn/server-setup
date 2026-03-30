@@ -53,8 +53,8 @@ def main():
 
     # Since DuckDNS needs manual token creation, let's use a different approach
     # Use nip.io which doesn't need registration - it auto-resolves
-    # 95-217-158-7.nip.io → 95.217.158.7 (automatic!)
-    NIP_DOMAIN = "95-217-158-7.nip.io"
+    # <ip-with-dashes>.nip.io → <ip> (automatic!)
+    NIP_DOMAIN = f"{HOST.replace('.', '-')}.nip.io"
     print(f"\n  Using nip.io instead: {NIP_DOMAIN}")
     print("  nip.io auto-resolves IPs embedded in the domain name - no registration needed!")
 
@@ -360,7 +360,7 @@ def main():
 
             <div class="section-title">🖥️ Servidor</div>
             <div class="server-info" id="server-info">
-                <div class="info-row"><span class="key">IP</span><span class="val">95.217.158.7</span></div>
+                <div class="info-row"><span class="key">IP</span><span class="val">__VPS_HOST__</span></div>
                 <div class="info-row"><span class="key">Provider</span><span class="val">Hetzner Cloud</span></div>
                 <div class="info-row"><span class="key">OS</span><span class="val">Ubuntu 22.04</span></div>
                 <div class="info-row"><span class="key">n8n</span><span class="val">Docker Container</span></div>
@@ -401,7 +401,7 @@ def main():
     sftp = ssh.open_sftp()
     local_path = r"C:\Users\ibrab\Desktop\set up\scripts\dashboard.html"
     with open(local_path, "w", encoding="utf-8") as f:
-        f.write(dashboard_html)
+        f.write(dashboard_html.replace("__VPS_HOST__", HOST))
 
     sftp.put(local_path, "/var/www/dashboard/index.html")
     print("  Dashboard deployed!")
