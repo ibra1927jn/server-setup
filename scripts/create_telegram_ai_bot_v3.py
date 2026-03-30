@@ -1,7 +1,7 @@
 import json
 import time
 import uuid
-from shared_config import get_ssh_client
+from shared_config import get_ssh_client, N8N_CRED_TELEGRAM, N8N_CRED_OPENROUTER
 
 ssh = get_ssh_client()
 
@@ -23,7 +23,7 @@ telegram_ai_workflow = {
             "name": "Telegram Trigger",
             "credentials": {
                 "telegramApi": {
-                    "id": "GoCsBqVPx05691Ng",
+                    "id": N8N_CRED_TELEGRAM,
                     "name": "Telegram account"
                 }
             }
@@ -59,7 +59,7 @@ telegram_ai_workflow = {
             "name": "GLM-4.5 Air",
             "credentials": {
                 "openAiApi": {
-                    "id": "KViDucLPeGURRcAd",
+                    "id": N8N_CRED_OPENROUTER,
                     "name": "OpenRouter Account"
                 }
             }

@@ -1,6 +1,6 @@
 import json
 import time
-from shared_config import get_ssh_client, N8N_AI_WORKFLOW_ID
+from shared_config import get_ssh_client, N8N_AI_WORKFLOW_ID, N8N_CRED_OPENROUTER
 
 ssh = get_ssh_client()
 
@@ -59,7 +59,7 @@ fixed_workflow = {
             "name": "OpenAI Chat Model",
             "credentials": {
                 "openAiApi": {
-                    "id": "KViDucLPeGURRcAd",
+                    "id": N8N_CRED_OPENROUTER,
                     "name": "OpenRouter Account"
                 }
             }

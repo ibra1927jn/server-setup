@@ -1,11 +1,11 @@
 import time
-from shared_config import get_ssh_client
+from shared_config import get_ssh_client, N8N_CRED_TELEGRAM_BOT, N8N_CRED_TELEGRAM
 
 ssh = get_ssh_client()
 
 w_id = '07a5ed10579849f6'
-old_cred = 'nN6e7Ap905UGCGqB'
-new_cred = 'GoCsBqVPx05691Ng'
+old_cred = N8N_CRED_TELEGRAM_BOT
+new_cred = N8N_CRED_TELEGRAM
 
 print("=== PATCHING SQLITE DIRECTLY ===")
 patch_cmd = f'''docker exec n8n-n8n-1 sqlite3 /home/node/.n8n/database.sqlite \

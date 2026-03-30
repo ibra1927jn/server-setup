@@ -5,7 +5,7 @@ The working Server Sentinel uses n8n-nodes-base.ssh for remote commands.
 """
 import json
 import time
-from shared_config import get_ssh_client
+from shared_config import get_ssh_client, N8N_CRED_SSH
 
 ssh = get_ssh_client()
 
@@ -50,7 +50,7 @@ for wf in all_wfs:
             }
             node["credentials"] = {
                 "sshPassword": {
-                    "id": "qdPHiEwKzTqUvpSe",
+                    "id": N8N_CRED_SSH,
                     "name": "Hetzner Root SSH"
                 }
             }

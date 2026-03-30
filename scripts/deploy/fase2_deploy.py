@@ -6,7 +6,7 @@ import json
 import time
 import random
 import string
-from shared_config import get_ssh_client
+from shared_config import get_ssh_client, N8N_CRED_SSH, N8N_CRED_TELEGRAM_BOT
 
 ssh = get_ssh_client()
 
@@ -95,7 +95,7 @@ daily_briefing = {
             "position": [470, 300],
             "credentials": {
                 "sshPassword": {
-                    "id": "qdPHiEwKzTqUvpSe",
+                    "id": N8N_CRED_SSH,
                     "name": "Hetzner Root SSH"
                 }
             }
@@ -117,7 +117,7 @@ daily_briefing = {
             "position": [690, 300],
             "credentials": {
                 "telegramApi": {
-                    "id": "nN6e7Ap905UGCGqB",
+                    "id": N8N_CRED_TELEGRAM_BOT,
                     "name": "AgenticOS Bot"
                 }
             }
@@ -175,7 +175,7 @@ uptime_monitor = {
             "position": [470, 300],
             "credentials": {
                 "sshPassword": {
-                    "id": "qdPHiEwKzTqUvpSe",
+                    "id": N8N_CRED_SSH,
                     "name": "Hetzner Root SSH"
                 }
             }
@@ -217,7 +217,7 @@ uptime_monitor = {
             "position": [910, 200],
             "credentials": {
                 "telegramApi": {
-                    "id": "nN6e7Ap905UGCGqB",
+                    "id": N8N_CRED_TELEGRAM_BOT,
                     "name": "AgenticOS Bot"
                 }
             }
@@ -335,7 +335,7 @@ crypto_alerts = {
             "position": [910, 300],
             "credentials": {
                 "telegramApi": {
-                    "id": "nN6e7Ap905UGCGqB",
+                    "id": N8N_CRED_TELEGRAM_BOT,
                     "name": "AgenticOS Bot"
                 }
             }
@@ -446,7 +446,7 @@ github_backup = {
             "position": [910, 300],
             "credentials": {
                 "telegramApi": {
-                    "id": "nN6e7Ap905UGCGqB",
+                    "id": N8N_CRED_TELEGRAM_BOT,
                     "name": "AgenticOS Bot"
                 }
             }
