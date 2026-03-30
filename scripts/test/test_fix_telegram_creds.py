@@ -1,10 +1,5 @@
 """Tests for pure functions extracted from fix_telegram_creds.py"""
 
-import sys
-from pathlib import Path
-
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from fix.fix_telegram_creds import index_credentials_by_type, patch_workflow_credentials
 
 

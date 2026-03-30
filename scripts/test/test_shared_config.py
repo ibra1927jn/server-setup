@@ -173,11 +173,13 @@ def test_fetch_n8n_credentials_finds_both(mocker):
 
     from shared_config import fetch_n8n_credentials
 
-    creds_json = json.dumps([
-        {"id": "1", "name": "Telegram", "type": "telegramApi"},
-        {"id": "2", "name": "SSH Server", "type": "sshPassword"},
-        {"id": "3", "name": "Other", "type": "httpBasicAuth"},
-    ])
+    creds_json = json.dumps(
+        [
+            {"id": "1", "name": "Telegram", "type": "telegramApi"},
+            {"id": "2", "name": "SSH Server", "type": "sshPassword"},
+            {"id": "3", "name": "Other", "type": "httpBasicAuth"},
+        ]
+    )
     mock_ssh = mocker.MagicMock()
     mock_stdout = mocker.MagicMock()
     mock_stdout.read.return_value = creds_json.encode()
