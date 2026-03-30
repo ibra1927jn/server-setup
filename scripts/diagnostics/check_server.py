@@ -1,5 +1,5 @@
 """Diagnostico del VPS: disco, RAM, Docker, Nginx, puertos"""
-from shared_config import get_ssh_client, VPS_HOST
+from shared_config import VPS_HOST, get_ssh_client
 
 
 def run(ssh, cmd, label=""):

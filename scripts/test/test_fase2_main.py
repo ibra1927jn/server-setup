@@ -1,6 +1,6 @@
 """Tests for fase2_deploy.py main() with mocked SSH."""
-from unittest.mock import MagicMock, patch, mock_open
 import json
+from unittest.mock import MagicMock, mock_open, patch
 
 
 def _mock_ssh(stdout="", stderr=""):

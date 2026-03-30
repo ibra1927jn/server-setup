@@ -5,7 +5,8 @@ The working Server Sentinel uses n8n-nodes-base.ssh for remote commands.
 """
 import json
 import time
-from shared_config import get_ssh_client, N8N_CRED_SSH
+
+from shared_config import N8N_CRED_SSH, get_ssh_client
 
 
 def main():

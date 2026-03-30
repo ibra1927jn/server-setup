@@ -1,5 +1,6 @@
 """Tests for diagnostics/check_server.py run() helper and main()"""
 from unittest.mock import MagicMock, patch
+
 from diagnostics.check_server import run
 
 

@@ -1,7 +1,6 @@
 """Tests for rebuild_v2.py credential extraction, workflow structures, and line parsing."""
 import json
 
-
 # --- Credential extraction logic (mirrors rebuild_v2.py lines 17-21) ---
 
 def _extract_credentials(creds):

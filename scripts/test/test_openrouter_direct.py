@@ -1,5 +1,6 @@
 import time
-from shared_config import get_ssh_client, OPENROUTER_API_KEY
+
+from shared_config import OPENROUTER_API_KEY, get_ssh_client
 
 
 def main():

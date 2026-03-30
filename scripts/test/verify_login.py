@@ -1,5 +1,6 @@
 import time
-from shared_config import get_ssh_client, N8N_EMAIL, N8N_PASSWORD
+
+from shared_config import N8N_EMAIL, N8N_PASSWORD, get_ssh_client
 
 ssh = get_ssh_client()
 

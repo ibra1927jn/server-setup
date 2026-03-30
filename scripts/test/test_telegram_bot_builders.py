@@ -3,7 +3,6 @@ import scripts.create_telegram_ai_bot as bot_v1
 import scripts.create_telegram_ai_bot_v2 as bot_v2
 import scripts.create_telegram_ai_bot_v3 as bot_v3
 
-
 # ---------- v1: create_telegram_ai_bot ----------
 
 class TestBotV1:

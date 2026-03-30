@@ -1,6 +1,7 @@
 """Verify all Python scripts in the repo parse without syntax errors."""
 import ast
 import os
+
 import pytest
 
 SCRIPTS_DIR = os.path.join(os.path.dirname(__file__), "..")

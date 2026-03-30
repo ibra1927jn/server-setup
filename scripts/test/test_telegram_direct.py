@@ -3,7 +3,8 @@ Test directo: enviar mensaje a Telegram usando la API del bot.
 Si esto no funciona, el problema es el token o el chatID.
 """
 import json
-from shared_config import get_ssh_client, TELEGRAM_CHAT_ID
+
+from shared_config import TELEGRAM_CHAT_ID, get_ssh_client
 
 
 def main():

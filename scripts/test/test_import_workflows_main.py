@@ -1,5 +1,5 @@
 """Tests for import_workflows_hetzner.py main() with mocked requests."""
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import MagicMock, mock_open, patch
 
 from import_workflows_hetzner import main
 

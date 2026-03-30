@@ -5,7 +5,7 @@ los workflows existentes con los nodos correctos.
 import json
 import time
 
-from shared_config import get_ssh_client, TELEGRAM_CHAT_ID, GITHUB_PAT, VPS_HOST
+from shared_config import GITHUB_PAT, TELEGRAM_CHAT_ID, VPS_HOST, get_ssh_client
 
 
 def fetch_credentials(ssh):

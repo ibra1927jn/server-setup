@@ -1,7 +1,7 @@
 """Tests for final_pendientes.py main() and BACKUP_SCRIPT with mocked SSH."""
 from unittest.mock import MagicMock, patch
 
-from final_pendientes import main, BACKUP_SCRIPT
+from final_pendientes import BACKUP_SCRIPT, main
 
 
 class TestBackupScript:

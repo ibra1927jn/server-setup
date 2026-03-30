@@ -2,7 +2,7 @@
 import json
 
 import requests
-from shared_config import N8N_URL, N8N_HEADERS
+from shared_config import N8N_HEADERS, N8N_URL
 
 
 def main():

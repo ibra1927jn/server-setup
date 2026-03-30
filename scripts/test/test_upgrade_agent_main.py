@@ -1,6 +1,6 @@
 """Tests for upgrade_agent_node.py main() with mocked SSH."""
 import json
-from unittest.mock import MagicMock, patch, mock_open
+from unittest.mock import MagicMock, mock_open, patch
 
 from upgrade_agent_node import main
 

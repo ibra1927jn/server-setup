@@ -1,6 +1,7 @@
 import json
 import time
-from shared_config import get_ssh_client, N8N_AI_WORKFLOW_ID, N8N_CRED_OPENROUTER
+
+from shared_config import N8N_AI_WORKFLOW_ID, N8N_CRED_OPENROUTER, get_ssh_client
 
 
 def main():

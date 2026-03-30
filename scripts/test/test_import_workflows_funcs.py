@@ -1,7 +1,11 @@
 """Tests for import_workflows_hetzner.py pure functions"""
 from unittest.mock import MagicMock, patch
 
-from import_workflows_hetzner import prepare_workflow, import_workflow, activate_workflow
+from import_workflows_hetzner import (
+    activate_workflow,
+    import_workflow,
+    prepare_workflow,
+)
 
 
 class TestPrepareWorkflow:

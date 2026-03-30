@@ -1,7 +1,11 @@
-import time
 import json
+import time
+
 from shared_config import (
-    get_ssh_client, N8N_EMAIL, N8N_PASSWORD, N8N_AI_WORKFLOW_ID,
+    N8N_AI_WORKFLOW_ID,
+    N8N_EMAIL,
+    N8N_PASSWORD,
+    get_ssh_client,
 )
 
 

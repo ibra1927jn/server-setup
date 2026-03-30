@@ -1,4 +1,4 @@
-from shared_config import get_ssh_client, N8N_BRIEFING_WORKFLOW_ID
+from shared_config import N8N_BRIEFING_WORKFLOW_ID, get_ssh_client
 
 
 def main():

@@ -7,7 +7,7 @@ Step 2: If yes, rebuild each workflow as minimal working versions.
 import json
 import time
 
-from shared_config import get_ssh_client, TELEGRAM_CHAT_ID, GITHUB_PAT
+from shared_config import GITHUB_PAT, TELEGRAM_CHAT_ID, get_ssh_client
 
 
 def fetch_credentials(ssh):

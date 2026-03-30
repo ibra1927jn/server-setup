@@ -3,7 +3,8 @@ Upgrade AI Agent node - Fixed version handling list/dict JSON format.
 """
 import json
 import time
-from shared_config import get_ssh_client, N8N_AI_WORKFLOW_ID
+
+from shared_config import N8N_AI_WORKFLOW_ID, get_ssh_client
 
 
 def parse_workflow(raw):

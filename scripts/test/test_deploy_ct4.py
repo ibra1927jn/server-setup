@@ -1,6 +1,6 @@
 """Tests for deploy/deploy_ct4.py deploy() function"""
-from unittest.mock import MagicMock, patch
 import os
+from unittest.mock import MagicMock, patch
 
 
 def _mock_ssh(stdout="", stderr=""):

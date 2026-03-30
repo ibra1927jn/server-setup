@@ -1,6 +1,6 @@
 """Activate all workflows and test the AI Agent webhook"""
 import requests
-from shared_config import get_ssh_client, VPS_HOST
+from shared_config import VPS_HOST, get_ssh_client
 
 
 def main():

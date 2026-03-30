@@ -6,7 +6,7 @@ Fase 3: SSL Let's Encrypt + Dashboard de Monitoreo
 4. Dashboard HTML de monitoreo
 """
 import requests
-from shared_config import get_ssh_client, VPS_HOST
+from shared_config import VPS_HOST, get_ssh_client
 
 
 def main():

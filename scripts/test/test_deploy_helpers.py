@@ -1,5 +1,6 @@
 """Tests for helper functions in deploy scripts"""
 from unittest.mock import MagicMock
+
 from deploy.deploy_n8n_hetzner import run
 
 

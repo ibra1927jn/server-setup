@@ -1,8 +1,9 @@
 """Fix and import the missing workflows into Hetzner n8n"""
-import requests
 import json
 import os
-from shared_config import N8N_URL, N8N_HEADERS
+
+import requests
+from shared_config import N8N_HEADERS, N8N_URL
 
 FLOWS_DIR = r"C:\AgenticOS\n8n-flows"
 MISSING_FILES = ["server-sentinel.json", "ai-agent-base.json"]

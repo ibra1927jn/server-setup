@@ -1,7 +1,6 @@
 """Tests that directly import and test patch_workflow.py functions."""
 import scripts.patch_workflow as pw
 
-
 # ---------- filter_and_replace_model_node ----------
 
 class TestFilterAndReplace:

@@ -1,5 +1,6 @@
 """Stop old ultra_n8n and restart with fixed config"""
 import time
+
 from shared_config import get_ssh_client
 
 

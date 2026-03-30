@@ -3,10 +3,11 @@ Fase 2 — Paso 1: Configurar Firewall en Hetzner
 Paso 2: Crear e importar los 4 workflows avanzados
 """
 import json
-import time
 import random
 import string
-from shared_config import get_ssh_client, N8N_CRED_SSH, N8N_CRED_TELEGRAM_BOT, VPS_HOST
+import time
+
+from shared_config import N8N_CRED_SSH, N8N_CRED_TELEGRAM_BOT, VPS_HOST, get_ssh_client
 
 
 def gen_id():

@@ -1,7 +1,6 @@
 """Tests for chat ID replacement logic used in fix_chatid.py"""
 import json
 
-
 WRONG_CHAT_ID = "6915862027"
 REAL_CHAT_ID = "5822131920"
 

@@ -1,8 +1,8 @@
 """Tests for patch_workflow.py extracted functions"""
 from patch_workflow import (
+    build_chat_model_node,
     filter_and_replace_model_node,
     fix_model_connections,
-    build_chat_model_node,
 )
 
 

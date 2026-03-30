@@ -2,7 +2,7 @@ import json
 import time
 import uuid
 
-from shared_config import get_ssh_client, N8N_CRED_TELEGRAM, N8N_CRED_OPENROUTER
+from shared_config import N8N_CRED_OPENROUTER, N8N_CRED_TELEGRAM, get_ssh_client
 
 
 def build_telegram_ai_workflow():

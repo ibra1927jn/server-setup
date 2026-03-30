@@ -1,7 +1,6 @@
 """Tests for patch_workflow.py node filtering, construction, and connection logic."""
 import json
 
-
 # --- Node filtering (mirrors patch_workflow.py line 24) ---
 
 def _filter_node(nodes, exclude_name):

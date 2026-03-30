@@ -6,7 +6,7 @@ import json
 import time
 
 import requests
-from shared_config import get_ssh_client, VPS_HOST, N8N_AI_WORKFLOW_ID
+from shared_config import N8N_AI_WORKFLOW_ID, VPS_HOST, get_ssh_client
 
 
 def main():

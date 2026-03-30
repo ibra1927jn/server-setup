@@ -1,5 +1,6 @@
 """Fix n8n secure cookie issue on Hetzner"""
 import time
+
 from shared_config import get_ssh_client
 
 DOCKER_COMPOSE = """version: '3.8'
