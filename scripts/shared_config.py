@@ -81,7 +81,8 @@ def get_ssh_client(
     key_path = key_path or VPS_SSH_KEY_PATH
 
     if not host:
-        raise ValueError("VPS_HOST no configurado. Revisa .env o variables de entorno.")
+        msg = "VPS_HOST no configurado. Revisa .env o variables de entorno."
+        raise ValueError(msg)
 
     client = paramiko.SSHClient()
     # Aceptar hosts desconocidos automaticamente (entorno controlado)

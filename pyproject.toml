@@ -49,6 +49,8 @@ select = [
     "ICN",    # flake8-import-conventions
     "BLE",    # flake8-blind-except (no bare Exception catches)
     "PTH",    # flake8-use-pathlib (prefer pathlib over os.path)
+    "EM",     # flake8-errmsg (no string literals in exceptions)
+    "TRY",    # tryceratops (exception best practices)
 ]
 ignore = [
     "S603",   # subprocess-without-shell-check (false positives)
