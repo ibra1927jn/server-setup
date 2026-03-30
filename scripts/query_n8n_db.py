@@ -25,7 +25,7 @@ def main():
         ' (SELECT id FROM execution_entity'
         ' ORDER BY id DESC LIMIT 1);"'
     )
-    _, o2, e2 = ssh.exec_command(cmd2)
+    _, o2, _ = ssh.exec_command(cmd2)
     time.sleep(2)
     print("\n=== LAST EXECUTION DATA ===")
     output = o2.read().decode()

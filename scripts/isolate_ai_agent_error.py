@@ -6,8 +6,6 @@ from shared_config import get_ssh_client, N8N_AI_WORKFLOW_ID, N8N_TELEGRAM_BOT_W
 def main():
     ssh = get_ssh_client()
 
-    w_id = N8N_AI_WORKFLOW_ID
-
     print("=== DEACTIVATING TELEGRAM BOT ===")
     sqlite_cmd = (
         'docker exec n8n-n8n-1 sqlite3'
@@ -22,7 +20,7 @@ def main():
         "docker exec n8n-n8n-1 sqlite3"
         " /home/node/.n8n/database.sqlite"
         f" \"UPDATE workflow_entity SET active = 1"
-        f" WHERE id = '{w_id}';\""
+        f" WHERE id = '{N8N_AI_WORKFLOW_ID}';\""
     )
     ssh.exec_command(sqlite_cmd2)
 
