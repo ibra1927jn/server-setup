@@ -8,87 +8,93 @@ import time
 import requests
 from shared_config import get_ssh_client, VPS_HOST, N8N_AI_WORKFLOW_ID
 
-ssh = get_ssh_client()
 
-# Export workflow
-print("=== Exportando workflow ===")
-_, o, _ = ssh.exec_command(f'docker exec n8n-n8n-1 n8n export:workflow --id={N8N_AI_WORKFLOW_ID}')
-raw = o.read().decode().strip()
-data = json.loads(raw)
-wf = data[0] if isinstance(data, list) else data
+def main():
+    ssh = get_ssh_client()
 
-print(f"Workflow: {wf['name']}")
+    # Export workflow
+    print("=== Exportando workflow ===")
+    _, o, _ = ssh.exec_command(f'docker exec n8n-n8n-1 n8n export:workflow --id={N8N_AI_WORKFLOW_ID}')
+    raw = o.read().decode().strip()
+    data = json.loads(raw)
+    wf = data[0] if isinstance(data, list) else data
 
-# Fix the OpenAI Chat Model node
-CORRECT_MODEL = "z-ai/glm-4.5-air:free"
+    print(f"Workflow: {wf['name']}")
 
-for node in wf.get('nodes', []):
-    if 'openai' in node.get('type', '').lower():
-        old_model = node['parameters'].get('model', {})
-        print(f"\nNodo: {node['name']}")
-        print(f"  Modelo ANTERIOR: {json.dumps(old_model)}")
+    # Fix the OpenAI Chat Model node
+    CORRECT_MODEL = "z-ai/glm-4.5-air:free"
 
-        # Set the correct model as an expression
-        node['parameters']['model'] = {
-            "__rl": True,
-            "value": f"={CORRECT_MODEL}",
-            "mode": "raw"
-        }
+    for node in wf.get('nodes', []):
+        if 'openai' in node.get('type', '').lower():
+            old_model = node['parameters'].get('model', {})
+            print(f"\nNodo: {node['name']}")
+            print(f"  Modelo ANTERIOR: {json.dumps(old_model)}")
 
-        print(f"  Modelo NUEVO: {CORRECT_MODEL}")
-        print(f"  Credenciales: {json.dumps(node.get('credentials', {}))}")
+            # Set the correct model as an expression
+            node['parameters']['model'] = {
+                "__rl": True,
+                "value": f"={CORRECT_MODEL}",
+                "mode": "raw"
+            }
 
-# Save and upload
-patched_json = json.dumps(wf)
-local_path = r"C:\Users\ibrab\Desktop\set up\scripts\patched_glm45.json"
-with open(local_path, 'w', encoding='utf-8') as f:
-    f.write(patched_json)
+            print(f"  Modelo NUEVO: {CORRECT_MODEL}")
+            print(f"  Credenciales: {json.dumps(node.get('credentials', {}))}")
 
-sftp = ssh.open_sftp()
-sftp.put(local_path, "/tmp/patched_glm45.json")
-ssh.exec_command("docker cp /tmp/patched_glm45.json n8n-n8n-1:/tmp/patched_glm45.json")
+    # Save and upload
+    patched_json = json.dumps(wf)
+    local_path = "/tmp/patched_glm45.json"
+    with open(local_path, 'w', encoding='utf-8') as f:
+        f.write(patched_json)
 
-# Import
-print("\n=== Importando workflow corregido ===")
-_, o, e = ssh.exec_command("docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/patched_glm45.json")
-print("OUT:", o.read().decode().strip())
-print("ERR:", e.read().decode().strip())
+    sftp = ssh.open_sftp()
+    sftp.put(local_path, "/tmp/patched_glm45.json")
+    ssh.exec_command("docker cp /tmp/patched_glm45.json n8n-n8n-1:/tmp/patched_glm45.json")
 
-# Activate
-print("\n=== Activando workflow ===")
-_, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n update:workflow --id={N8N_AI_WORKFLOW_ID} --active=true")
-print("OUT:", o.read().decode().strip())
+    # Import
+    print("\n=== Importando workflow corregido ===")
+    _, o, e = ssh.exec_command("docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/patched_glm45.json")
+    print("OUT:", o.read().decode().strip())
+    print("ERR:", e.read().decode().strip())
 
-# Restart n8n
-print("\n=== Reiniciando n8n ===")
-ssh.exec_command("docker restart n8n-n8n-1")
-time.sleep(15)
-print("n8n reiniciado!")
+    # Activate
+    print("\n=== Activando workflow ===")
+    _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n update:workflow --id={N8N_AI_WORKFLOW_ID} --active=true")
+    print("OUT:", o.read().decode().strip())
 
-# Verify the fix
-print("\n=== VERIFICACION: Modelo actual ===")
-_, o, _ = ssh.exec_command(f'docker exec n8n-n8n-1 n8n export:workflow --id={N8N_AI_WORKFLOW_ID}')
-raw2 = o.read().decode().strip()
-data2 = json.loads(raw2)
-wf2 = data2[0] if isinstance(data2, list) else data2
-for node in wf2.get('nodes', []):
-    if 'openai' in node.get('type', '').lower():
-        model = node['parameters'].get('model', {})
-        print(f"  {node['name']}: modelo = {json.dumps(model)}")
+    # Restart n8n
+    print("\n=== Reiniciando n8n ===")
+    ssh.exec_command("docker restart n8n-n8n-1")
+    time.sleep(15)
+    print("n8n reiniciado!")
 
-sftp.close()
-ssh.close()
+    # Verify the fix
+    print("\n=== VERIFICACION: Modelo actual ===")
+    _, o, _ = ssh.exec_command(f'docker exec n8n-n8n-1 n8n export:workflow --id={N8N_AI_WORKFLOW_ID}')
+    raw2 = o.read().decode().strip()
+    data2 = json.loads(raw2)
+    wf2 = data2[0] if isinstance(data2, list) else data2
+    for node in wf2.get('nodes', []):
+        if 'openai' in node.get('type', '').lower():
+            model = node['parameters'].get('model', {})
+            print(f"  {node['name']}: modelo = {json.dumps(model)}")
 
-# Test webhook
-print("\n=== TESTING WEBHOOK ===")
-try:
-    r = requests.post(
-        f'http://{VPS_HOST}:5678/webhook/ai-agent',
-        json={'chatInput': 'Hola! Dime que modelo de IA eres y confirma que estas online.'},
-        timeout=60)
-    print(f"Status: {r.status_code}")
-    print(f"Response: {r.text[:500]}")
-except Exception as ex:
-    print(f"Error: {ex}")
+    sftp.close()
+    ssh.close()
 
-print("\n=== LISTO ===")
+    # Test webhook
+    print("\n=== TESTING WEBHOOK ===")
+    try:
+        r = requests.post(
+            f'http://{VPS_HOST}:5678/webhook/ai-agent',
+            json={'chatInput': 'Hola! Dime que modelo de IA eres y confirma que estas online.'},
+            timeout=60)
+        print(f"Status: {r.status_code}")
+        print(f"Response: {r.text[:500]}")
+    except Exception as ex:
+        print(f"Error: {ex}")
+
+    print("\n=== LISTO ===")
+
+
+if __name__ == "__main__":
+    main()
