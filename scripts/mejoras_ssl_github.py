@@ -139,8 +139,8 @@ def update_github_workflow_token(ssh, github_token):
             for node in wf.get("nodes", []):
                 if node.get("name") == "Get Repos":
                     print(f"    Fixing node: {node['name']}")
-                    node["parameters"]["authentication"] = "genericCredentialType"
-                    node["parameters"]["genericAuthType"] = "httpHeaderAuth"
+                    node["parameters"]["authentication"] = "none"
+                    node["parameters"].pop("genericAuthType", None)
                     node["parameters"]["sendHeaders"] = True
                     node["parameters"]["headerParameters"] = {
                         "parameters": [
@@ -148,10 +148,6 @@ def update_github_workflow_token(ssh, github_token):
                             {"name": "User-Agent", "value": "AgenticOS-Backup"},
                         ]
                     }
-                    if "authentication" in node["parameters"]:
-                        node["parameters"]["authentication"] = "none"
-                    if "genericAuthType" in node["parameters"]:
-                        del node["parameters"]["genericAuthType"]
 
                     print("    Headers added with GitHub token")
 
