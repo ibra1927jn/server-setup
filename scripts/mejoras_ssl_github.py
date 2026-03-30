@@ -220,7 +220,7 @@ def verify_e2e_executions(ssh):
     code = o.read().decode().strip()
     print(f"  HTTPS localhost -> {code}")
 
-    if code == "200" or code == "301":
+    if code in {"200", "301"}:
         print("  SSL reverse proxy WORKING!")
     else:
         print(f"  Status: {code}")

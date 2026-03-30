@@ -16,6 +16,10 @@ select = [
     "PERF",   # perflint
     "I",      # isort (import sorting)
     "RUF",    # Ruff-specific rules
+    "PLC",    # pylint convention
+    "PLE",    # pylint error
+    "PLW",    # pylint warning
+    "PLR",    # pylint refactor
 ]
 ignore = [
     "S603",   # subprocess-without-shell-check (false positives)
@@ -31,6 +35,9 @@ ignore = [
     "S608",   # possible-sql-injection (config constants, not user input)
     "S507",   # paramiko-auto-add-policy (controlled environment, single VPS)
     "E402",   # module-import-not-at-top (required for sys.path setup)
+    "PLR2004", # magic-value-comparison (HTTP status codes etc. are clear in context)
+    "PLR0915", # too-many-statements (operational deploy scripts have long main())
+    "PLC0415", # import-outside-top-level (conditional imports in operational scripts)
 ]
 
 [tool.ruff.lint.per-file-ignores]

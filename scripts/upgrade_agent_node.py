@@ -2,6 +2,7 @@
 Upgrade AI Agent node - Fixed version handling list/dict JSON format.
 """
 import json
+import sys
 import time
 
 from shared_config import N8N_AI_WORKFLOW_ID, get_ssh_client
@@ -51,7 +52,7 @@ def main():
     if not patch_agent_nodes(wf):
         print("ERROR: No agent node found!")
         ssh.close()
-        exit(1)
+        sys.exit(1)
 
     # Save patched workflow to server
     patched_json = json.dumps(wf)

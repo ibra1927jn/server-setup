@@ -134,7 +134,7 @@ def test_main_defaults_user_to_admin(mock_get_ssh, mock_time):
     mock_file.__enter__ = MagicMock(return_value=mock_file)
     mock_file.__exit__ = MagicMock(return_value=False)
     written = []
-    mock_file.write = lambda data: written.append(data)
+    mock_file.write = written.append
     sftp = MagicMock()
     sftp.open.return_value = mock_file
     ssh.open_sftp.return_value = sftp
