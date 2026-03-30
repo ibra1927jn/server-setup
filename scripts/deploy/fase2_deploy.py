@@ -14,56 +14,9 @@ def gen_id():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=16))
 
 
-def main():
-    ssh = get_ssh_client()
-
-    # =====================================================
-    # PASO 1: FIREWALL
-    # =====================================================
-    print("=" * 60)
-    print("PASO 1: CONFIGURANDO FIREWALL")
-    print("=" * 60)
-
-    firewall_commands = [
-        # Reset UFW
-        "apt-get install -y ufw",
-        # Default policies
-        "ufw default deny incoming",
-        "ufw default allow outgoing",
-        # Allow SSH
-        "ufw allow 22/tcp comment 'SSH'",
-        # Allow n8n
-        "ufw allow 5678/tcp comment 'n8n'",
-        # Allow HTTP/HTTPS (para futuro Nginx)
-        "ufw allow 80/tcp comment 'HTTP'",
-        "ufw allow 443/tcp comment 'HTTPS'",
-        # Enable
-        "echo 'y' | ufw enable",
-        # Status
-        "ufw status verbose",
-    ]
-
-    for cmd in firewall_commands:
-        print(f"\n>>> {cmd}")
-        _, o, e = ssh.exec_command(cmd)
-        out = o.read().decode().strip()
-        err = e.read().decode().strip()
-        if out:
-            print(out)
-        if err and 'WARNING' not in err:
-            print(f"  ERR: {err}")
-
-    print("\n✅ Firewall configurado!")
-
-    # =====================================================
-    # PASO 2: CREAR WORKFLOWS AVANZADOS
-    # =====================================================
-    print("\n" + "=" * 60)
-    print("PASO 2: CREANDO WORKFLOWS AVANZADOS")
-    print("=" * 60)
-
-    # --- WORKFLOW 1: Daily Briefing ---
-    daily_briefing = {
+def build_daily_briefing():
+    """Build the Daily Briefing workflow definition."""
+    return {
         "id": gen_id(),
         "name": "Daily Briefing",
         "nodes": [
@@ -138,8 +91,10 @@ def main():
         "meta": {"templateCredsSetupCompleted": True}
     }
 
-    # --- WORKFLOW 2: Uptime Monitor ---
-    uptime_monitor = {
+
+def build_uptime_monitor():
+    """Build the Uptime Monitor workflow definition."""
+    return {
         "id": gen_id(),
         "name": "Uptime Monitor",
         "nodes": [
@@ -263,8 +218,10 @@ def main():
         "meta": {"templateCredsSetupCompleted": True}
     }
 
-    # --- WORKFLOW 3: Crypto Portfolio Alerts ---
-    crypto_alerts = {
+
+def build_crypto_alerts():
+    """Build the Crypto Portfolio Alerts workflow definition."""
+    return {
         "id": gen_id(),
         "name": "Crypto Portfolio Alerts",
         "nodes": [
@@ -374,8 +331,10 @@ def main():
         "meta": {"templateCredsSetupCompleted": True}
     }
 
-    # --- WORKFLOW 4: GitHub Auto-Backup ---
-    github_backup = {
+
+def build_github_backup():
+    """Build the GitHub Auto-Backup workflow definition."""
+    return {
         "id": gen_id(),
         "name": "GitHub Auto-Backup",
         "nodes": [
@@ -490,6 +449,53 @@ def main():
         "settings": {"executionOrder": "v1"},
         "meta": {"templateCredsSetupCompleted": True}
     }
+
+
+def main():
+    ssh = get_ssh_client()
+
+    # =====================================================
+    # PASO 1: FIREWALL
+    # =====================================================
+    print("=" * 60)
+    print("PASO 1: CONFIGURANDO FIREWALL")
+    print("=" * 60)
+
+    firewall_commands = [
+        "apt-get install -y ufw",
+        "ufw default deny incoming",
+        "ufw default allow outgoing",
+        "ufw allow 22/tcp comment 'SSH'",
+        "ufw allow 5678/tcp comment 'n8n'",
+        "ufw allow 80/tcp comment 'HTTP'",
+        "ufw allow 443/tcp comment 'HTTPS'",
+        "echo 'y' | ufw enable",
+        "ufw status verbose",
+    ]
+
+    for cmd in firewall_commands:
+        print(f"\n>>> {cmd}")
+        _, o, e = ssh.exec_command(cmd)
+        out = o.read().decode().strip()
+        err = e.read().decode().strip()
+        if out:
+            print(out)
+        if err and 'WARNING' not in err:
+            print(f"  ERR: {err}")
+
+    print("\n✅ Firewall configurado!")
+
+    # =====================================================
+    # PASO 2: CREAR WORKFLOWS AVANZADOS
+    # =====================================================
+    print("\n" + "=" * 60)
+    print("PASO 2: CREANDO WORKFLOWS AVANZADOS")
+    print("=" * 60)
+
+    daily_briefing = build_daily_briefing()
+    uptime_monitor = build_uptime_monitor()
+    crypto_alerts = build_crypto_alerts()
+    github_backup = build_github_backup()
 
     # =====================================================
     # IMPORTAR TODOS LOS WORKFLOWS
