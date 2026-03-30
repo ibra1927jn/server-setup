@@ -130,7 +130,7 @@ def test_main_writes_valid_workflow_json(mock_get_ssh, mock_time):
         main()
 
     assert len(written_data) == 4
-    for path, data in written_data.items():
+    for _path, data in written_data.items():
         wf = json.loads(data)
         assert "name" in wf
         assert "nodes" in wf
