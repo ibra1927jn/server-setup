@@ -7,7 +7,7 @@ import random
 import string
 import time
 
-from shared_config import N8N_CRED_SSH, N8N_CRED_TELEGRAM_BOT, VPS_HOST, get_ssh_client
+from shared_config import N8N_CRED_SSH, N8N_CRED_TELEGRAM_BOT, TELEGRAM_CHAT_ID, VPS_HOST, get_ssh_client
 
 
 def gen_id():
@@ -104,7 +104,7 @@ def main():
             },
             {
                 "parameters": {
-                    "chatId": "6915862027",
+                    "chatId": TELEGRAM_CHAT_ID,
                     "text": (
                         "=🌅 **DAILY BRIEFING — AgenticOS**\n"
                         "📅 {{ $now.format('dd/MM/yyyy HH:mm') }}"
@@ -215,7 +215,7 @@ def main():
             },
             {
                 "parameters": {
-                    "chatId": "6915862027",
+                    "chatId": TELEGRAM_CHAT_ID,
                     "text": (
                         "=🚨 **ALERTA UPTIME — AgenticOS**\n"
                         "⏰ {{ $now.format('HH:mm') }}\n\n"
@@ -341,7 +341,7 @@ def main():
             },
             {
                 "parameters": {
-                    "chatId": "6915862027",
+                    "chatId": TELEGRAM_CHAT_ID,
                     "text": "={{ $json.report }}",
                     "additionalFields": {"parse_mode": "Markdown"}
                 },
@@ -458,7 +458,7 @@ def main():
             },
             {
                 "parameters": {
-                    "chatId": "6915862027",
+                    "chatId": TELEGRAM_CHAT_ID,
                     "text": "={{ $json.report }}",
                     "additionalFields": {"parse_mode": "Markdown"}
                 },
