@@ -8,12 +8,9 @@ from shared_config import (
 )
 
 
-def main():
-    ssh = get_ssh_client()
-
-    # Replace the AI Agent Base workflow with a simpler version that uses typeVersion 1.7
-    # This avoids the Python task runner requirement
-    fixed_workflow = {
+def _build_fixed_workflow():
+    """Build simplified AI Agent workflow using typeVersion 1.7 (no Python task runner)."""
+    return {
         "id": N8N_AI_WORKFLOW_ID,
         "name": "AI Agent Base - Template con Memoria",
         "active": True,
@@ -76,6 +73,11 @@ def main():
         "settings": {"executionOrder": "v1"},
     }
 
+
+def main():
+    ssh = get_ssh_client()
+
+    fixed_workflow = _build_fixed_workflow()
     workflow_json = json.dumps([fixed_workflow])
 
     with ssh.open_sftp() as sftp, sftp.file("/tmp/fixed_ai_agent.json", "w") as f:
