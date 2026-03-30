@@ -14,7 +14,11 @@ def main():
 
     # Export workflow
     print("=== Exportando workflow ===")
-    _, o, _ = ssh.exec_command(f'docker exec n8n-n8n-1 n8n export:workflow --id={N8N_AI_WORKFLOW_ID}')
+    cmd = (
+        "docker exec n8n-n8n-1 n8n export:workflow"
+        f" --id={N8N_AI_WORKFLOW_ID}"
+    )
+    _, o, _ = ssh.exec_command(cmd)
     raw = o.read().decode().strip()
     data = json.loads(raw)
     wf = data[0] if isinstance(data, list) else data
@@ -48,17 +52,28 @@ def main():
 
     sftp = ssh.open_sftp()
     sftp.put(local_path, "/tmp/patched_glm45.json")
-    ssh.exec_command("docker cp /tmp/patched_glm45.json n8n-n8n-1:/tmp/patched_glm45.json")
+    ssh.exec_command(
+        "docker cp /tmp/patched_glm45.json"
+        " n8n-n8n-1:/tmp/patched_glm45.json"
+    )
 
     # Import
     print("\n=== Importando workflow corregido ===")
-    _, o, e = ssh.exec_command("docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/patched_glm45.json")
+    cmd = (
+        "docker exec n8n-n8n-1 n8n import:workflow"
+        " --input=/tmp/patched_glm45.json"
+    )
+    _, o, e = ssh.exec_command(cmd)
     print("OUT:", o.read().decode().strip())
     print("ERR:", e.read().decode().strip())
 
     # Activate
     print("\n=== Activando workflow ===")
-    _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n update:workflow --id={N8N_AI_WORKFLOW_ID} --active=true")
+    cmd = (
+        "docker exec n8n-n8n-1 n8n update:workflow"
+        f" --id={N8N_AI_WORKFLOW_ID} --active=true"
+    )
+    _, o, e = ssh.exec_command(cmd)
     print("OUT:", o.read().decode().strip())
 
     # Restart n8n
@@ -69,7 +84,11 @@ def main():
 
     # Verify the fix
     print("\n=== VERIFICACION: Modelo actual ===")
-    _, o, _ = ssh.exec_command(f'docker exec n8n-n8n-1 n8n export:workflow --id={N8N_AI_WORKFLOW_ID}')
+    cmd = (
+        "docker exec n8n-n8n-1 n8n export:workflow"
+        f" --id={N8N_AI_WORKFLOW_ID}"
+    )
+    _, o, _ = ssh.exec_command(cmd)
     raw2 = o.read().decode().strip()
     data2 = json.loads(raw2)
     wf2 = data2[0] if isinstance(data2, list) else data2
@@ -86,7 +105,10 @@ def main():
     try:
         r = requests.post(
             f'http://{VPS_HOST}:5678/webhook/ai-agent',
-            json={'chatInput': 'Hola! Dime que modelo de IA eres y confirma que estas online.'},
+            json={
+                'chatInput': 'Hola! Dime que modelo de IA eres'
+                ' y confirma que estas online.'
+            },
             timeout=60)
         print(f"Status: {r.status_code}")
         print(f"Response: {r.text[:500]}")

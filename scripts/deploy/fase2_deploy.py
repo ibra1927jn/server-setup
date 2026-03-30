@@ -126,8 +126,12 @@ def main():
             }
         ],
         "connections": {
-            "Cron 8AM": {"main": [[{"node": "Check Server", "type": "main", "index": 0}]]},
-            "Check Server": {"main": [[{"node": "Telegram Briefing", "type": "main", "index": 0}]]}
+            "Cron 8AM": {
+                "main": [[{"node": "Check Server", "type": "main", "index": 0}]]
+            },
+            "Check Server": {
+                "main": [[{"node": "Telegram Briefing", "type": "main", "index": 0}]]
+            }
         },
         "active": True,
         "settings": {"executionOrder": "v1"},
@@ -185,13 +189,20 @@ def main():
             {
                 "parameters": {
                     "conditions": {
-                        "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict"},
+                        "options": {
+                            "caseSensitive": True,
+                            "leftValue": "",
+                            "typeValidation": "strict",
+                        },
                         "conditions": [
                             {
                                 "id": gen_id(),
                                 "leftValue": "={{ $json.stdout }}",
                                 "rightValue": "FAILED=0",
-                                "operator": {"type": "string", "operation": "notContains"}
+                                "operator": {
+                                    "type": "string",
+                                    "operation": "notContains",
+                                }
                             }
                         ]
                     }
@@ -234,8 +245,12 @@ def main():
             }
         ],
         "connections": {
-            "Every 5min": {"main": [[{"node": "Ping Services", "type": "main", "index": 0}]]},
-            "Ping Services": {"main": [[{"node": "Any Failed?", "type": "main", "index": 0}]]},
+            "Every 5min": {
+                "main": [[{"node": "Ping Services", "type": "main", "index": 0}]]
+            },
+            "Ping Services": {
+                "main": [[{"node": "Any Failed?", "type": "main", "index": 0}]]
+            },
             "Any Failed?": {
                 "main": [
                     [{"node": "Alert Telegram", "type": "main", "index": 0}],
@@ -344,9 +359,15 @@ def main():
             }
         ],
         "connections": {
-            "Every 1h": {"main": [[{"node": "Get Prices", "type": "main", "index": 0}]]},
-            "Get Prices": {"main": [[{"node": "Format Prices", "type": "main", "index": 0}]]},
-            "Format Prices": {"main": [[{"node": "Send Report", "type": "main", "index": 0}]]}
+            "Every 1h": {
+                "main": [[{"node": "Get Prices", "type": "main", "index": 0}]]
+            },
+            "Get Prices": {
+                "main": [[{"node": "Format Prices", "type": "main", "index": 0}]]
+            },
+            "Format Prices": {
+                "main": [[{"node": "Send Report", "type": "main", "index": 0}]]
+            }
         },
         "active": True,
         "settings": {"executionOrder": "v1"},
@@ -455,9 +476,15 @@ def main():
             }
         ],
         "connections": {
-            "Every 12h": {"main": [[{"node": "Get Repos", "type": "main", "index": 0}]]},
-            "Get Repos": {"main": [[{"node": "Analyze Repos", "type": "main", "index": 0}]]},
-            "Analyze Repos": {"main": [[{"node": "Send Report", "type": "main", "index": 0}]]}
+            "Every 12h": {
+                "main": [[{"node": "Get Repos", "type": "main", "index": 0}]]
+            },
+            "Get Repos": {
+                "main": [[{"node": "Analyze Repos", "type": "main", "index": 0}]]
+            },
+            "Analyze Repos": {
+                "main": [[{"node": "Send Report", "type": "main", "index": 0}]]
+            }
         },
         "active": True,
         "settings": {"executionOrder": "v1"},
@@ -488,10 +515,18 @@ def main():
             json.dump(wf_data, f)
 
         sftp.put(local_path, remote_path)
-        ssh.exec_command(f"docker cp {remote_path} n8n-n8n-1:/tmp/n8n-import/{filename}")
+        cp_cmd = (
+            f"docker cp {remote_path}"
+            f" n8n-n8n-1:/tmp/n8n-import/{filename}"
+        )
+        ssh.exec_command(cp_cmd)
         time.sleep(1)
 
-        _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/n8n-import/{filename}")
+        import_cmd = (
+            "docker exec n8n-n8n-1 n8n import:workflow"
+            f" --input=/tmp/n8n-import/{filename}"
+        )
+        _, o, e = ssh.exec_command(import_cmd)
         out = o.read().decode().strip()
         err = e.read().decode().strip()
         print(f"  OUT: {out}")
@@ -500,7 +535,11 @@ def main():
 
     # Activate all
     print("\n--- Activando todos ---")
-    _, o, e = ssh.exec_command("docker exec n8n-n8n-1 n8n update:workflow --all --active=true")
+    cmd = (
+        "docker exec n8n-n8n-1 n8n update:workflow"
+        " --all --active=true"
+    )
+    _, o, e = ssh.exec_command(cmd)
     out = o.read().decode().strip()
     print(out)
 

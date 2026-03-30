@@ -32,7 +32,12 @@ def main():
         "COMPOSE",
     )
     run(ssh, "nginx -v 2>&1 || echo 'NO_NGINX'", "NGINX")
-    run(ssh, "ss -tlnp | grep -E ':(80|443|5678) ' || echo 'Ports 80/443/5678 free'", "PORTS")
+    run(
+        ssh,
+        "ss -tlnp | grep -E ':(80|443|5678) '"
+        " || echo 'Ports 80/443/5678 free'",
+        "PORTS",
+    )
 
     ssh.close()
     print("\n=== DONE ===")

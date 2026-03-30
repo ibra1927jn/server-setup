@@ -16,7 +16,11 @@ def print_credentials(ssh):
         creds = json.loads(creds_raw)
         if isinstance(creds, list):
             for c in creds:
-                print(f"  ID: {c.get('id')} | Name: {c.get('name')} | Type: {c.get('type')}")
+                print(
+                    f"  ID: {c.get('id')}"
+                    f" | Name: {c.get('name')}"
+                    f" | Type: {c.get('type')}"
+                )
         else:
             print(f"  {creds_raw[:300]}")
     except Exception:
@@ -54,7 +58,11 @@ def print_execution_history(ssh):
 def print_telegram_creds(ssh):
     """Print decrypted Telegram credentials and test API access."""
     print("\n=== TEST DIRECTO TELEGRAM ===")
-    _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:credentials --all --decrypted 2>/dev/null")
+    cmd = (
+        "docker exec n8n-n8n-1 n8n export:credentials"
+        " --all --decrypted 2>/dev/null"
+    )
+    _, o, _ = ssh.exec_command(cmd)
     decrypted = o.read().decode().strip()
     try:
         all_creds = json.loads(decrypted)
@@ -83,7 +91,11 @@ def print_relevant_logs(ssh):
     _, o, _ = ssh.exec_command("docker logs n8n-n8n-1 --tail 30 2>&1")
     logs = o.read().decode().strip()
     for line in logs.split("\n"):
-        if any(kw in line.lower() for kw in ["error", "fail", "telegram", "execut", "workflow", "credential"]):
+        keywords = [
+            "error", "fail", "telegram",
+            "execut", "workflow", "credential",
+        ]
+        if any(kw in line.lower() for kw in keywords):
             print(f"  {line.strip()}")
 
 

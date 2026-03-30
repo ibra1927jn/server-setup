@@ -33,15 +33,20 @@ TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 mkdir -p $BACKUP_DIR
 
 # Copy the n8n data volume
-docker cp n8n-n8n-1:/home/node/.n8n/database.sqlite $BACKUP_DIR/n8n_db_$TIMESTAMP.sqlite 2>/dev/null
+docker cp n8n-n8n-1:/home/node/.n8n/database.sqlite \
+  $BACKUP_DIR/n8n_db_$TIMESTAMP.sqlite 2>/dev/null
 
 # Also export all workflows as JSON
-docker exec n8n-n8n-1 n8n export:workflow --all --output=/tmp/n8n_workflows_backup.json 2>/dev/null
-docker cp n8n-n8n-1:/tmp/n8n_workflows_backup.json $BACKUP_DIR/workflows_$TIMESTAMP.json 2>/dev/null
+docker exec n8n-n8n-1 n8n export:workflow --all \
+  --output=/tmp/n8n_workflows_backup.json 2>/dev/null
+docker cp n8n-n8n-1:/tmp/n8n_workflows_backup.json \
+  $BACKUP_DIR/workflows_$TIMESTAMP.json 2>/dev/null
 
 # Export credentials (encrypted)
-docker exec n8n-n8n-1 n8n export:credentials --all --output=/tmp/n8n_creds_backup.json 2>/dev/null
-docker cp n8n-n8n-1:/tmp/n8n_creds_backup.json $BACKUP_DIR/credentials_$TIMESTAMP.json 2>/dev/null
+docker exec n8n-n8n-1 n8n export:credentials --all \
+  --output=/tmp/n8n_creds_backup.json 2>/dev/null
+docker cp n8n-n8n-1:/tmp/n8n_creds_backup.json \
+  $BACKUP_DIR/credentials_$TIMESTAMP.json 2>/dev/null
 
 # Remove backups older than 7 days
 find $BACKUP_DIR -name "*.sqlite" -mtime +7 -delete

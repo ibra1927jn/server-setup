@@ -20,9 +20,21 @@ def main():
         return out
 
     # Stop ALL n8n containers
-    run("docker stop ultra_n8n 2>/dev/null; docker rm ultra_n8n 2>/dev/null", "Stop ultra_n8n")
-    run("docker stop n8n 2>/dev/null; docker rm n8n 2>/dev/null", "Stop n8n")
-    run("docker stop n8n-n8n-1 2>/dev/null; docker rm n8n-n8n-1 2>/dev/null", "Stop n8n-n8n-1")
+    run(
+        "docker stop ultra_n8n 2>/dev/null;"
+        " docker rm ultra_n8n 2>/dev/null",
+        "Stop ultra_n8n",
+    )
+    run(
+        "docker stop n8n 2>/dev/null;"
+        " docker rm n8n 2>/dev/null",
+        "Stop n8n",
+    )
+    run(
+        "docker stop n8n-n8n-1 2>/dev/null;"
+        " docker rm n8n-n8n-1 2>/dev/null",
+        "Stop n8n-n8n-1",
+    )
 
     # Check port is free
     run("ss -tlnp | grep 5678 || echo 'Port 5678 is FREE'", "Port check")
@@ -37,8 +49,16 @@ def main():
     time.sleep(20)
 
     # Verify
-    run("docker ps --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}' | grep -i n8n", "Final status")
-    code = run("curl -s -o /dev/null -w '%{http_code}' http://localhost:5678/setup", "Setup page")
+    run(
+        "docker ps --format 'table {{.Names}}\t{{.Status}}"
+        "\t{{.Ports}}' | grep -i n8n",
+        "Final status",
+    )
+    code = run(
+        "curl -s -o /dev/null -w '%{http_code}'"
+        " http://localhost:5678/setup",
+        "Setup page",
+    )
     run("curl -s http://localhost:5678/healthz", "Health")
 
     ssh.close()

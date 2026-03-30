@@ -1,6 +1,6 @@
 import time
 
-from shared_config import get_ssh_client
+from shared_config import VPS_HOST, get_ssh_client
 
 
 def main():
@@ -23,7 +23,7 @@ def main():
         lines = []
         for line in current_env.split('\\n'):
             if line.startswith('WEBHOOK_URL='):
-                lines.append('WEBHOOK_URL=https://95.217.158.7/')
+                lines.append(f'WEBHOOK_URL=https://{VPS_HOST}/')
             elif line.startswith('N8N_PROXY_HOPS='):
                 pass  # we'll add it below
             elif line.startswith('N8N_SECURE_COOKIE='):

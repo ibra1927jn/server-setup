@@ -106,12 +106,20 @@ def main():
     time.sleep(1)
 
     # Copy file INTO the Docker container
-    _, o, e = ssh.exec_command("docker cp /tmp/telegram_ai_bot.json n8n-n8n-1:/tmp/telegram_ai_bot.json")
+    cmd = (
+        "docker cp /tmp/telegram_ai_bot.json"
+        " n8n-n8n-1:/tmp/telegram_ai_bot.json"
+    )
+    _, o, e = ssh.exec_command(cmd)
     print("COPY:", o.read().decode(), e.read().decode())
     time.sleep(1)
 
     # Now import from inside the container
-    _, o, e = ssh.exec_command("docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/telegram_ai_bot.json")
+    cmd = (
+        "docker exec n8n-n8n-1 n8n import:workflow"
+        " --input=/tmp/telegram_ai_bot.json"
+    )
+    _, o, e = ssh.exec_command(cmd)
     print("IMPORT STDOUT:", o.read().decode())
     print("IMPORT STDERR:", e.read().decode())
 

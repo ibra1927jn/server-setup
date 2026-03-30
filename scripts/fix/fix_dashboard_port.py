@@ -1,6 +1,6 @@
 import time
 
-from shared_config import get_ssh_client
+from shared_config import VPS_HOST, get_ssh_client
 
 
 def main():
@@ -19,7 +19,7 @@ def main():
 
     # Check if it works locally on the server
     print('=== LOCAL CURL DASHBOARD ===')
-    _, o, _ = ssh.exec_command('curl -s -k -H "Host: 95.217.158.7" http://127.0.0.1:8081/ | head -n 5')
+    _, o, _ = ssh.exec_command(f'curl -s -k -H "Host: {VPS_HOST}" http://127.0.0.1:8081/ | head -n 5')
     print(o.read().decode())
 
     ssh.close()

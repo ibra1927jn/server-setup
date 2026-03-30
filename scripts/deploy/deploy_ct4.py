@@ -7,7 +7,10 @@ LOCAL_DIR = r"C:\Users\ibrab\Desktop\Crypto-Trading-Bot4"
 REMOTE_DIR = "/root/Crypto-Trading-Bot4"
 
 # Files/dirs to SKIP (not needed on server)
-SKIP = {'.git', 'venv', '__pycache__', 'node_modules', '.env', 'logs', 'db', 'docs', 'web', 'tests'}
+SKIP = {
+    '.git', 'venv', '__pycache__', 'node_modules',
+    '.env', 'logs', 'db', 'docs', 'web', 'tests',
+}
 
 
 def deploy():
@@ -31,7 +34,10 @@ def deploy():
         dirs[:] = [d for d in dirs if d not in SKIP]
 
         rel_path = os.path.relpath(root, LOCAL_DIR)
-        remote_path = REMOTE_DIR if rel_path == '.' else f"{REMOTE_DIR}/{rel_path.replace(os.sep, '/')}"
+        remote_path = (
+            REMOTE_DIR if rel_path == '.'
+            else f"{REMOTE_DIR}/{rel_path.replace(os.sep, '/')}"
+        )
 
         # Create remote dirs
         if rel_path != '.':
@@ -60,7 +66,8 @@ def deploy():
     commands = [
         f"cd {REMOTE_DIR} && pip3 install -r requirements.txt 2>&1 | tail -5",
         f"ls -la {REMOTE_DIR}/ | head -20",
-        f"ls -la {REMOTE_DIR}/*.csv 2>/dev/null | head -5 || echo 'No CSVs yet (normal for fresh deploy)'"
+        f"ls -la {REMOTE_DIR}/*.csv 2>/dev/null | head -5"
+        " || echo 'No CSVs yet (normal for fresh deploy)'"
     ]
     for cmd in commands:
         print(f"\n$ {cmd}")

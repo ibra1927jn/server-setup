@@ -13,9 +13,14 @@ def main():
     ssh = get_ssh_client()
 
     # Login first
-    ssh.exec_command(f'''curl -s -c /tmp/n8n_cookies.txt -X POST http://127.0.0.1:5678/rest/login \
-      -H "Content-Type: application/json" \
-      -d '{{"emailOrLdapLoginId":"{N8N_EMAIL}","password":"{N8N_PASSWORD}"}}' ''')
+    login_cmd = (
+        "curl -s -c /tmp/n8n_cookies.txt"
+        " -X POST http://127.0.0.1:5678/rest/login"
+        ' -H "Content-Type: application/json"'
+        f""" -d '{{"emailOrLdapLoginId":"{N8N_EMAIL}","""
+        f""""password":"{N8N_PASSWORD}"}}'"""
+    )
+    ssh.exec_command(login_cmd)
     time.sleep(3)
 
     # Check execution log
@@ -58,7 +63,13 @@ def main():
                     for node_name, runs in run_data.items():
                         for r in runs:
                             if r.get('error'):
-                                print(f"  Node '{node_name}' error: {json.dumps(r['error'], indent=2)[:300]}")
+                                err_str = json.dumps(
+                                    r['error'], indent=2
+                                )[:300]
+                                print(
+                                    f"  Node '{node_name}'"
+                                    f" error: {err_str}"
+                                )
                 except Exception:
                     print(f"  Raw detail: {detail[:300]}")
                 break

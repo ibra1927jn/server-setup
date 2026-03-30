@@ -1,4 +1,6 @@
-from shared_config import get_ssh_client
+from shared_config import VPS_HOST, get_ssh_client
+
+_NIP_HOST = VPS_HOST.replace(".", "-") + ".nip.io"
 
 
 def main():
@@ -9,7 +11,7 @@ def main():
 
     nginx_config = """server {
     listen 80;
-    server_name 95-217-158-7.nip.io 95.217.158.7;
+    server_name __NIP__ __VPS__;
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
@@ -22,7 +24,7 @@ def main():
 
 server {
     listen 443 ssl;
-    server_name 95-217-158-7.nip.io 95.217.158.7;
+    server_name __NIP__ __VPS__;
 
     ssl_certificate /etc/ssl/n8n/self-signed.crt;
     ssl_certificate_key /etc/ssl/n8n/self-signed.key;
@@ -54,7 +56,7 @@ server {
         proxy_set_header X-Forwarded-Proto $scheme;
     }
 }
-"""
+""".replace("__NIP__", _NIP_HOST).replace("__VPS__", VPS_HOST)
 
     sftp = ssh.open_sftp()
     local_path = r'C:\Users\ibrab\Desktop\set up\scripts\temp_nginx5'
@@ -66,7 +68,7 @@ server {
     _, o, e = ssh.exec_command('nginx -t && systemctl reload nginx')
     print('NGINX:', o.read().decode())
 
-    _, o, _ = ssh.exec_command('curl -s -k -H "Host: 95.217.158.7" https://127.0.0.1/status_panel/ | head -n 5')
+    _, o, _ = ssh.exec_command(f'curl -s -k -H "Host: {VPS_HOST}" https://127.0.0.1/status_panel/ | head -n 5')
     print('=== STATUS PANEL HTML ===')
     print(o.read().decode())
 

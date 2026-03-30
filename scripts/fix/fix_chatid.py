@@ -15,7 +15,14 @@ WRONG_CHAT_ID = "6915862027"
 
 def test_send_message(url, chat_id, text):
     """Send a test message and print result."""
-    r = requests.post(url, json={"chat_id": chat_id, "text": text, "parse_mode": "Markdown"})
+    r = requests.post(
+        url,
+        json={
+            "chat_id": chat_id,
+            "text": text,
+            "parse_mode": "Markdown",
+        },
+    )
     print(f"  Status: {r.status_code}")
     print(f"  Response: {r.text[:300]}")
     return r
@@ -28,7 +35,11 @@ def fix_workflow_chat_ids(wf):
     for node in wf.get("nodes", []):
         params = node.get("parameters", {})
         if "chatId" in params and params["chatId"] == WRONG_CHAT_ID:
-            print(f"  [{name}] {node['name']}: chatId {params['chatId']} -> {REAL_CHAT_ID}")
+            print(
+                f"  [{name}] {node['name']}:"
+                f" chatId {params['chatId']}"
+                f" -> {REAL_CHAT_ID}"
+            )
             params["chatId"] = REAL_CHAT_ID
             changed = True
         text = params.get("text", "")
@@ -50,7 +61,11 @@ def upload_and_import_fix(ssh, sftp, wf, name):
     sftp.put(local_path, remote_path)
     ssh.exec_command(f"docker cp {remote_path} n8n-n8n-1:/tmp/{fname}")
     time.sleep(1)
-    _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/{fname}")
+    cmd = (
+        "docker exec n8n-n8n-1 n8n import:workflow"
+        f" --input=/tmp/{fname}"
+    )
+    _, o, e = ssh.exec_command(cmd)
     print(f"    Import: {o.read().decode().strip()}")
 
 
@@ -59,14 +74,19 @@ def main():
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     r = test_send_message(
         url, REAL_CHAT_ID,
-        "🧪 Test AgenticOS - Chat ID CORRECTO (5822131920). Si ves esto, Telegram funciona!",
+        "🧪 Test AgenticOS - Chat ID CORRECTO"
+        " (5822131920). Si ves esto, Telegram funciona!",
     )
 
     if r.status_code == 200 and r.json().get("ok"):
         print("  ✅ MENSAJE ENVIADO! El chatID correcto es 5822131920")
     else:
-        print("  ❌ Fallo. Probando getUpdates para encontrar tu chatID real...")
-        r2 = requests.get(f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates?limit=5")
+        print("  ❌ Fallo. Probando getUpdates...")
+        url2 = (
+            "https://api.telegram.org"
+            f"/bot{TELEGRAM_BOT_TOKEN}/getUpdates?limit=5"
+        )
+        r2 = requests.get(url2)
         print(f"  Updates: {r2.text[:500]}")
 
     print(f"\n=== TEST: chatID incorrecto ({WRONG_CHAT_ID}) ===")
@@ -88,7 +108,11 @@ def main():
     print("\n=== RESTART ===")
     ssh.exec_command("docker restart n8n-n8n-1")
     time.sleep(12)
-    _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n update:workflow --all --active=true")
+    cmd = (
+        "docker exec n8n-n8n-1 n8n update:workflow"
+        " --all --active=true"
+    )
+    _, o, _ = ssh.exec_command(cmd)
     o.read()
     print("  Reiniciado y activado!")
 
@@ -96,7 +120,11 @@ def main():
     for wf in all_wfs:
         if "Crypto" in wf.get("name", ""):
             print(f"  Ejecutando {wf['name']}...")
-            _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n execute --id={wf['id']} 2>&1", timeout=30)
+            cmd = (
+                "docker exec n8n-n8n-1 n8n execute"
+                f" --id={wf['id']} 2>&1"
+            )
+            _, o, e = ssh.exec_command(cmd, timeout=30)
             try:
                 print(f"  {o.read().decode().strip()[:200]}")
             except Exception:

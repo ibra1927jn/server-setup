@@ -41,7 +41,9 @@ def build_crypto_workflow(wf_id, chat_id, tg_cred):
         "active": True,
         "nodes": [
             {
-                "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}},
+                "parameters": {
+                    "rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}
+                },
                 "name": "Every Hour",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
@@ -90,8 +92,12 @@ def build_crypto_workflow(wf_id, chat_id, tg_cred):
             }
         ],
         "connections": {
-            "Every Hour": {"main": [[{"node": "Get Prices", "type": "main", "index": 0}]]},
-            "Get Prices": {"main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]}
+            "Every Hour": {
+                "main": [[{"node": "Get Prices", "type": "main", "index": 0}]]
+            },
+            "Get Prices": {
+                "main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]
+            }
         }
     }
 
@@ -143,8 +149,12 @@ def build_daily_workflow(wf_id, chat_id, ssh_cred, tg_cred):
             }
         ],
         "connections": {
-            "8AM Daily": {"main": [[{"node": "Server Stats", "type": "main", "index": 0}]]},
-            "Server Stats": {"main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]}
+            "8AM Daily": {
+                "main": [[{"node": "Server Stats", "type": "main", "index": 0}]]
+            },
+            "Server Stats": {
+                "main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]
+            }
         }
     }
 
@@ -157,7 +167,9 @@ def build_uptime_workflow(wf_id):
         "active": True,
         "nodes": [
             {
-                "parameters": {"rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}},
+                "parameters": {
+                    "rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}
+                },
                 "name": "Every 5 Min",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
@@ -186,8 +198,12 @@ def build_uptime_workflow(wf_id):
             }
         ],
         "connections": {
-            "Every 5 Min": {"main": [[{"node": "Ping n8n", "type": "main", "index": 0}]]},
-            "Ping n8n": {"main": [[{"node": "All OK", "type": "main", "index": 0}]]}
+            "Every 5 Min": {
+                "main": [[{"node": "Ping n8n", "type": "main", "index": 0}]]
+            },
+            "Ping n8n": {
+                "main": [[{"node": "All OK", "type": "main", "index": 0}]]
+            }
         }
     }
 
@@ -200,7 +216,9 @@ def build_github_workflow(wf_id, chat_id, tg_cred):
         "active": True,
         "nodes": [
             {
-                "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 12}]}},
+                "parameters": {
+                    "rule": {"interval": [{"field": "hours", "hoursInterval": 12}]}
+                },
                 "name": "Every 12h",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
@@ -242,8 +260,12 @@ def build_github_workflow(wf_id, chat_id, tg_cred):
             }
         ],
         "connections": {
-            "Every 12h": {"main": [[{"node": "Get Repos", "type": "main", "index": 0}]]},
-            "Get Repos": {"main": [[{"node": "Send Report", "type": "main", "index": 0}]]}
+            "Every 12h": {
+                "main": [[{"node": "Get Repos", "type": "main", "index": 0}]]
+            },
+            "Get Repos": {
+                "main": [[{"node": "Send Report", "type": "main", "index": 0}]]
+            }
         }
     }
 
@@ -261,7 +283,11 @@ def import_and_deploy_workflows(ssh, workflows):
         sftp.put(local, remote)
         ssh.exec_command(f"docker cp {remote} n8n-n8n-1:/tmp/{fname}")
         time.sleep(1)
-        _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/{fname}")
+        cmd = (
+            "docker exec n8n-n8n-1 n8n import:workflow"
+            f" --input=/tmp/{fname}"
+        )
+        _, o, e = ssh.exec_command(cmd)
         out = o.read().decode().strip()
         err = e.read().decode().strip()
         print(f"  OUT: {out[:100]}")
@@ -272,7 +298,11 @@ def import_and_deploy_workflows(ssh, workflows):
     ssh.exec_command("docker restart n8n-n8n-1")
     time.sleep(15)
 
-    _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n update:workflow --all --active=true")
+    cmd = (
+        "docker exec n8n-n8n-1 n8n update:workflow"
+        " --all --active=true"
+    )
+    _, o, _ = ssh.exec_command(cmd)
     o.read()
 
     sftp.close()
@@ -286,7 +316,11 @@ def test_crypto_workflow(ssh):
         if "Crypto" in line:
             wid = line.split("|")[0].strip()
             print(f"  Executing {wid}...")
-            _, o2, e2 = ssh.exec_command(f"docker exec n8n-n8n-1 n8n execute --id={wid} 2>&1", timeout=30)
+            cmd = (
+                "docker exec n8n-n8n-1 n8n execute"
+                f" --id={wid} 2>&1"
+            )
+            _, o2, e2 = ssh.exec_command(cmd, timeout=30)
             try:
                 full = o2.read().decode().strip()
                 print(f"  FULL OUTPUT:\n{full}")

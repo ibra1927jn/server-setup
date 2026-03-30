@@ -112,7 +112,11 @@ def main():
     print("File size:", o.read().decode().strip())
 
     # Import via CLI
-    _, o, e = ssh.exec_command("docker exec -i n8n-n8n-1 n8n import:workflow --input=/tmp/telegram_ai_bot.json")
+    cmd = (
+        "docker exec -i n8n-n8n-1 n8n import:workflow"
+        " --input=/tmp/telegram_ai_bot.json"
+    )
+    _, o, e = ssh.exec_command(cmd)
     print("STDOUT:", o.read().decode())
     print("STDERR:", e.read().decode())
 

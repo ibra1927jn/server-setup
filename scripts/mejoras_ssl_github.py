@@ -7,7 +7,7 @@ MEJORAS 2 y 3:
 import json
 import time
 
-from shared_config import get_ssh_client
+from shared_config import VPS_HOST, get_ssh_client
 
 
 def setup_nginx_ssl(ssh):
@@ -19,7 +19,7 @@ def setup_nginx_ssl(ssh):
     nginx_config = """
 server {
     listen 80;
-    server_name 95.217.158.7;
+    server_name __VPS__;
 
     # Redirect todo por HTTPS
     location / {
@@ -29,7 +29,7 @@ server {
 
 server {
     listen 443 ssl;
-    server_name 95.217.158.7;
+    server_name __VPS__;
 
     ssl_certificate /etc/ssl/n8n/self-signed.crt;
     ssl_certificate_key /etc/ssl/n8n/self-signed.key;
@@ -50,7 +50,7 @@ server {
         chunked_transfer_encoding off;
     }
 }
-"""
+""".replace("__VPS__", VPS_HOST)
 
     print("  Generating self-signed SSL certificate...")
     ssl_cmds = [
@@ -59,7 +59,7 @@ server {
             'openssl req -x509 -nodes -days 365 -newkey rsa:2048'
             ' -keyout /etc/ssl/n8n/self-signed.key'
             ' -out /etc/ssl/n8n/self-signed.crt'
-            ' -subj "/CN=95.217.158.7/O=AgenticOS"'
+            f' -subj "/CN={VPS_HOST}/O=AgenticOS"'
         ),
     ]
     for cmd in ssl_cmds:

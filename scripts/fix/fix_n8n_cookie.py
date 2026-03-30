@@ -1,9 +1,9 @@
 """Fix n8n secure cookie issue on Hetzner"""
 import time
 
-from shared_config import get_ssh_client
+from shared_config import VPS_HOST, get_ssh_client
 
-DOCKER_COMPOSE = """version: '3.8'
+DOCKER_COMPOSE = f"""version: '3.8'
 
 services:
   n8n:
@@ -16,7 +16,7 @@ services:
       - N8N_HOST=0.0.0.0
       - N8N_PORT=5678
       - N8N_PROTOCOL=http
-      - WEBHOOK_URL=http://95.217.158.7:5678/
+      - WEBHOOK_URL=http://{VPS_HOST}:5678/
       - N8N_SECURE_COOKIE=false
       - GENERIC_TIMEZONE=Europe/Madrid
       - TZ=Europe/Madrid

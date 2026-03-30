@@ -31,7 +31,9 @@ def build_crypto_workflow(chat_id, tg_cred):
         "active": True,
         "nodes": [
             {
-                "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}},
+                "parameters": {
+                    "rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}
+                },
                 "name": "Every Hour",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
@@ -78,8 +80,12 @@ def build_crypto_workflow(chat_id, tg_cred):
             }
         ],
         "connections": {
-            "Every Hour": {"main": [[{"node": "Get Prices", "type": "main", "index": 0}]]},
-            "Get Prices": {"main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]}
+            "Every Hour": {
+                "main": [[{"node": "Get Prices", "type": "main", "index": 0}]]
+            },
+            "Get Prices": {
+                "main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]
+            }
         }
     }
 
@@ -129,8 +135,12 @@ def build_daily_workflow(chat_id, ssh_cred, tg_cred):
             }
         ],
         "connections": {
-            "8AM Daily": {"main": [[{"node": "Server Stats", "type": "main", "index": 0}]]},
-            "Server Stats": {"main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]}
+            "8AM Daily": {
+                "main": [[{"node": "Server Stats", "type": "main", "index": 0}]]
+            },
+            "Server Stats": {
+                "main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]
+            }
         }
     }
 
@@ -142,7 +152,9 @@ def build_uptime_workflow(chat_id, ssh_cred, tg_cred):
         "active": True,
         "nodes": [
             {
-                "parameters": {"rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}},
+                "parameters": {
+                    "rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}
+                },
                 "name": "Every 5 Min",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
@@ -178,7 +190,11 @@ def build_uptime_workflow(chat_id, ssh_cred, tg_cred):
             {
                 "parameters": {
                     "conditions": {
-                        "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict"},
+                        "options": {
+                            "caseSensitive": True,
+                            "leftValue": "",
+                            "typeValidation": "strict",
+                        },
                         "conditions": [{
                             "leftValue": "={{ $json.stdout }}",
                             "rightValue": "FAILED=0",
@@ -198,7 +214,10 @@ def build_uptime_workflow(chat_id, ssh_cred, tg_cred):
             {
                 "parameters": {
                     "chatId": chat_id,
-                    "text": "=🚨 *ALERTA: Servicio Caido!*\n\n{{ $('Check Services').item.json.stdout }}",
+                    "text": (
+                        "=🚨 *ALERTA: Servicio Caido!*"
+                        "\n\n{{ $('Check Services').item.json.stdout }}"
+                    ),
                     "additionalFields": {"parse_mode": "Markdown"}
                 },
                 "name": "Alert Down",
@@ -216,8 +235,12 @@ def build_uptime_workflow(chat_id, ssh_cred, tg_cred):
             }
         ],
         "connections": {
-            "Every 5 Min": {"main": [[{"node": "Check Services", "type": "main", "index": 0}]]},
-            "Check Services": {"main": [[{"node": "Has Failures?", "type": "main", "index": 0}]]},
+            "Every 5 Min": {
+                "main": [[{"node": "Check Services", "type": "main", "index": 0}]]
+            },
+            "Check Services": {
+                "main": [[{"node": "Has Failures?", "type": "main", "index": 0}]]
+            },
             "Has Failures?": {
                 "main": [
                     [{"node": "Alert Down", "type": "main", "index": 0}],
@@ -235,7 +258,9 @@ def build_github_workflow(chat_id, tg_cred):
         "active": True,
         "nodes": [
             {
-                "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 12}]}},
+                "parameters": {
+                    "rule": {"interval": [{"field": "hours", "hoursInterval": 12}]}
+                },
                 "name": "Every 12h",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
@@ -276,8 +301,12 @@ def build_github_workflow(chat_id, tg_cred):
             }
         ],
         "connections": {
-            "Every 12h": {"main": [[{"node": "Get Repos", "type": "main", "index": 0}]]},
-            "Get Repos": {"main": [[{"node": "Send Report", "type": "main", "index": 0}]]}
+            "Every 12h": {
+                "main": [[{"node": "Get Repos", "type": "main", "index": 0}]]
+            },
+            "Get Repos": {
+                "main": [[{"node": "Send Report", "type": "main", "index": 0}]]
+            }
         }
     }
 
@@ -295,14 +324,22 @@ def import_all_workflows(ssh, workflows):
         sftp.put(local, remote)
         ssh.exec_command(f"docker cp {remote} n8n-n8n-1:/tmp/{fname}")
         time.sleep(1)
-        _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/{fname}")
+        cmd = (
+            "docker exec n8n-n8n-1 n8n import:workflow"
+            f" --input=/tmp/{fname}"
+        )
+        _, o, e = ssh.exec_command(cmd)
         print(f"  {o.read().decode().strip()}")
 
     print("\nRestarting n8n...")
     ssh.exec_command("docker restart n8n-n8n-1")
     time.sleep(15)
 
-    _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n update:workflow --all --active=true")
+    cmd = (
+        "docker exec n8n-n8n-1 n8n update:workflow"
+        " --all --active=true"
+    )
+    _, o, _ = ssh.exec_command(cmd)
     o.read()
     print("All activated!")
 

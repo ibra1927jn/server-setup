@@ -1,7 +1,11 @@
 import json
 import time
 
-from shared_config import N8N_AI_WORKFLOW_ID, N8N_CRED_OPENROUTER, get_ssh_client
+from shared_config import (
+    N8N_AI_WORKFLOW_ID,
+    N8N_CRED_OPENROUTER,
+    get_ssh_client,
+)
 
 
 def main():
@@ -109,17 +113,28 @@ def main():
             f.write(workflow_json)
 
     time.sleep(1)
-    ssh.exec_command("docker cp /tmp/fixed_ai_agent.json n8n-n8n-1:/tmp/fixed_ai_agent.json")
+    ssh.exec_command(
+        "docker cp /tmp/fixed_ai_agent.json"
+        " n8n-n8n-1:/tmp/fixed_ai_agent.json"
+    )
     time.sleep(1)
 
-    _, o, e = ssh.exec_command("docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/fixed_ai_agent.json")
+    cmd = (
+        "docker exec n8n-n8n-1 n8n import:workflow"
+        " --input=/tmp/fixed_ai_agent.json"
+    )
+    _, o, e = ssh.exec_command(cmd)
     print("IMPORT:", o.read().decode())
     print("STDERR:", e.read().decode())
 
     time.sleep(2)
 
     # Activate the workflow
-    _, o2, e2 = ssh.exec_command(f"docker exec n8n-n8n-1 n8n update:workflow --id={N8N_AI_WORKFLOW_ID} --active=true")
+    cmd = (
+        "docker exec n8n-n8n-1 n8n update:workflow"
+        f" --id={N8N_AI_WORKFLOW_ID} --active=true"
+    )
+    _, o2, e2 = ssh.exec_command(cmd)
     time.sleep(3)
     print("ACTIVATE:", o2.read().decode())
 

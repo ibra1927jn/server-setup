@@ -14,7 +14,8 @@ def main():
     logs = o.read().decode().strip()
     for line in logs.split("\n"):
         low = line.lower()
-        if any(k in low for k in ["error", "fail", "cred", "telegram", "warn", "unrecog"]):
+        keywords = ["error", "fail", "cred", "telegram", "warn", "unrecog"]
+        if any(k in low for k in keywords):
             print(f"  {line.strip()[:150]}")
 
     # 2. Check workflow execution errors more carefully
@@ -42,7 +43,10 @@ def main():
     print("\n=== TEST DIRECTO TELEGRAM ===")
     r = requests.post(
         f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage",
-        json={"chat_id": TELEGRAM_CHAT_ID, "text": "Test directo - si ves esto, Telegram funciona OK"}
+        json={
+            "chat_id": TELEGRAM_CHAT_ID,
+            "text": "Test directo - si ves esto, Telegram funciona OK",
+        }
     )
     print(f"  Status: {r.status_code}")
     print(f"  Response: {r.text[:300]}")

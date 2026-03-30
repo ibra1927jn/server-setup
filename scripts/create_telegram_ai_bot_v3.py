@@ -109,10 +109,17 @@ def main():
 
     time.sleep(1)
 
-    ssh.exec_command("docker cp /tmp/telegram_ai_bot.json n8n-n8n-1:/tmp/telegram_ai_bot.json")
+    ssh.exec_command(
+        "docker cp /tmp/telegram_ai_bot.json"
+        " n8n-n8n-1:/tmp/telegram_ai_bot.json"
+    )
     time.sleep(1)
 
-    _, o, e = ssh.exec_command("docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/telegram_ai_bot.json")
+    cmd = (
+        "docker exec n8n-n8n-1 n8n import:workflow"
+        " --input=/tmp/telegram_ai_bot.json"
+    )
+    _, o, e = ssh.exec_command(cmd)
     stdout = o.read().decode()
     stderr = e.read().decode()
     print("STDOUT:", stdout)
@@ -122,7 +129,11 @@ def main():
         print(f"\nSUCCESS! Workflow ID: {wf_id}")
         print("Now activating the workflow...")
         # Activate it via n8n CLI update
-        _, o2, e2 = ssh.exec_command(f"docker exec n8n-n8n-1 n8n update:workflow --id={wf_id} --active=true")
+        cmd = (
+            "docker exec n8n-n8n-1 n8n update:workflow"
+            f" --id={wf_id} --active=true"
+        )
+        _, o2, e2 = ssh.exec_command(cmd)
         print("ACTIVATE:", o2.read().decode(), e2.read().decode())
 
     ssh.close()

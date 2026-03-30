@@ -79,7 +79,10 @@ def main():
     all_wfs = json.loads(o.read().decode().strip())
 
     sftp = ssh.open_sftp()
-    workflows_to_fix = ["Daily Briefing", "Uptime Monitor", "Crypto Portfolio Alerts", "GitHub Auto-Backup"]
+    workflows_to_fix = [
+        "Daily Briefing", "Uptime Monitor",
+        "Crypto Portfolio Alerts", "GitHub Auto-Backup",
+    ]
 
     for wf in all_wfs:
         name = wf.get("name", "")
@@ -100,7 +103,11 @@ def main():
             sftp.put(local_path, remote_path)
             ssh.exec_command(f"docker cp {remote_path} n8n-n8n-1:/tmp/{fname}")
             time.sleep(1)
-            _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/{fname}")
+            cmd = (
+                "docker exec n8n-n8n-1 n8n import:workflow"
+                f" --input=/tmp/{fname}"
+            )
+            _, o, e = ssh.exec_command(cmd)
             result = o.read().decode().strip()
             print(f"  Import: {result}")
 
@@ -109,7 +116,11 @@ def main():
     ssh.exec_command("docker restart n8n-n8n-1")
     time.sleep(12)
 
-    _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n update:workflow --all --active=true")
+    cmd = (
+        "docker exec n8n-n8n-1 n8n update:workflow"
+        " --all --active=true"
+    )
+    _, o, _ = ssh.exec_command(cmd)
     o.read()
     print("  All activated!")
 
@@ -119,7 +130,11 @@ def main():
         if "Crypto" in wf.get("name", ""):
             wf_id = wf["id"]
             print(f"  Executing {wf_id}...")
-            _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n execute --id={wf_id} 2>&1", timeout=30)
+            cmd = (
+                "docker exec n8n-n8n-1 n8n execute"
+                f" --id={wf_id} 2>&1"
+            )
+            _, o, e = ssh.exec_command(cmd, timeout=30)
             try:
                 out = o.read().decode().strip()
                 print(f"  Result: {out[:200]}")

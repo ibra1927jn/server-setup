@@ -1,6 +1,6 @@
 import time
 
-from shared_config import get_ssh_client
+from shared_config import VPS_HOST, get_ssh_client
 
 
 def main():
@@ -25,10 +25,10 @@ def main():
 
     # Test the webhook with the correct field
     time.sleep(1)
-    cmd = '''curl -s -k -X POST https://127.0.0.1/webhook/ai-agent \
+    cmd = f'''curl -s -k -X POST https://127.0.0.1/webhook/ai-agent \
   -H "Content-Type: application/json" \
-  -H "Host: 95.217.158.7" \
-  -d '{"chatInput": "Di solamente OK"}' '''
+  -H "Host: {VPS_HOST}" \
+  -d '{{"chatInput": "Di solamente OK"}}' '''
     _, o2, _ = ssh.exec_command(cmd)
     time.sleep(15)  # Give AI time to respond
     print("\n=== WEBHOOK TEST WITH chatInput ===")
