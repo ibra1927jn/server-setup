@@ -48,7 +48,7 @@ def print_execution_history(ssh):
         ' FROM execution_entity ORDER BY id DESC LIMIT 15;\'"'
     )
     execs = o.read().decode().strip()
-    print(execs if execs else "  (no sqlite3 or no data)")
+    print(execs or "  (no sqlite3 or no data)")
 
 
 def print_telegram_creds(ssh):

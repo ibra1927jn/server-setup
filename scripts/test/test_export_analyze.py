@@ -46,8 +46,7 @@ def _get_connections(wf_data):
         targets = []
         for conn_type, branches in conn_data.items():
             for branch in branches:
-                for link in branch:
-                    targets.append({"node": link["node"], "type": conn_type})
+                targets.extend({"node": link["node"], "type": conn_type} for link in branch)
         result[source] = targets
     return result
 

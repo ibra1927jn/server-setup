@@ -75,7 +75,7 @@ def main():
     )
     _, o, _ = ssh.exec_command(docker_log_cmd)
     logs = o.read().decode().strip()
-    print(logs if logs else "  (no relevant logs)")
+    print(logs or "  (no relevant logs)")
 
     ssh.close()
     print("\nDone!")

@@ -13,9 +13,9 @@ def _collect_py_files():
     for root, _dirs, files in os.walk(SCRIPTS_DIR):
         if "__pycache__" in root:
             continue
-        for f in files:
-            if f.endswith(".py"):
-                py_files.append(os.path.join(root, f))
+        py_files.extend(
+            os.path.join(root, f) for f in files if f.endswith(".py")
+        )
     return sorted(py_files)
 
 
