@@ -6,21 +6,7 @@ los workflows existentes con los nodos correctos.
 import json
 import time
 
-from shared_config import GITHUB_PAT, TELEGRAM_CHAT_ID, VPS_HOST, get_ssh_client
-
-
-def fetch_credentials(ssh):
-    """Fetch telegram and SSH credential IDs from n8n."""
-    _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:credentials --all")
-    creds = json.loads(o.read().decode().strip())
-    tg_cred = None
-    ssh_cred = None
-    for c in creds:
-        if c["type"] == "telegramApi":
-            tg_cred = {"id": c["id"], "name": c["name"]}
-        if c["type"] == "sshPassword":
-            ssh_cred = {"id": c["id"], "name": c["name"]}
-    return tg_cred, ssh_cred
+from shared_config import GITHUB_PAT, TELEGRAM_CHAT_ID, VPS_HOST, fetch_n8n_credentials, get_ssh_client
 
 
 def fetch_workflow_ids(ssh):
@@ -296,9 +282,9 @@ def main():
     chat_id = TELEGRAM_CHAT_ID
     ssh = get_ssh_client()
 
-    tg_cred, ssh_cred = fetch_credentials(ssh)
-    print(f"TG: {tg_cred}")
-    print(f"SSH: {ssh_cred}")
+    tg_cred, ssh_cred = fetch_n8n_credentials(ssh)
+    print(f"TG cred: {'found' if tg_cred else 'missing'}")
+    print(f"SSH cred: {'found' if ssh_cred else 'missing'}")
 
     wf_ids = fetch_workflow_ids(ssh)
 

@@ -49,12 +49,12 @@ def _fetch_credentials(ssh):
 
     real_creds = index_credentials_by_type(creds)
     for c in creds:
-        print(f"  {c.get('id', '')} | {c.get('name', '')} | {c.get('type', '')}")
+        print(f"  {c.get('type', '')} | {c.get('name', '')}")
 
     telegram_cred = real_creds.get("telegramApi", {})
     ssh_cred = real_creds.get("sshPassword", {})
-    print(f"\n  Telegram real: {telegram_cred}")
-    print(f"  SSH real: {ssh_cred}")
+    print(f"\n  Telegram: {'found' if telegram_cred else 'missing'}")
+    print(f"  SSH: {'found' if ssh_cred else 'missing'}")
     return telegram_cred, ssh_cred
 
 

@@ -30,8 +30,7 @@ def main():
         lines.append("N8N_PROXY_HOPS=1")
 
     new_env = "\\n".join(lines)
-    print("=== NEW ENV ===")
-    print(new_env)
+    print(f"Updated .env ({len(lines)} lines)")
 
     # Write back
     sftp = ssh.open_sftp()
