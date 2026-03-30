@@ -80,7 +80,7 @@ def _build_chat_widget():
     <span>AgenticOS IA</span>
     <small>GLM-4.5 Air</small>
   </div>
-  <div id="chat-messages" id="chat-messages"></div>
+  <div id="chat-messages"></div>
   <div id="chat-input-area">
     <input id="chat-input" type="text" placeholder="Escribe tu pregunta..." autocomplete="off"
            onkeydown="if(event.key==='Enter')sendChat()">
