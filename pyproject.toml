@@ -75,7 +75,6 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "scripts/test/*.py" = ["S106", "ARG001", "ARG002", "ARG005", "PT019"]  # test passwords, unused mock/lambda args from @patch, pytest fixture style
-"scripts/test/test_gen_id.py" = ["E402"]  # imports after mock setup (intentional)
 "scripts/test/test_deploy_ct4.py" = ["PTH118"]  # os.path.join in assertions matching production code
 "scripts/test/test_ai_agent.py" = ["BLE001"]  # operational test, broad catch is intentional
 "scripts/test/test_e2e_workflows.py" = ["BLE001"]  # operational test
