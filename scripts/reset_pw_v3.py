@@ -6,7 +6,7 @@ ssh = get_ssh_client()
 # Crear script remoto inyectando la password desde shared_config
 # Se usa .replace() para evitar conflictos con f-strings del script remoto
 reset_script_template = '''
-import subprocess, json
+import subprocess, json, sqlite3 as db
 
 # Generate bcrypt hash inside the container
 result = subprocess.run(
@@ -18,22 +18,17 @@ pw_hash = result.stdout.strip()
 print(f"Hash: {pw_hash}")
 
 if pw_hash and pw_hash.startswith("$2"):
-    # Write a SQL file to avoid shell escaping issues
-    sql = f"UPDATE user SET password = '{pw_hash}';"
-    with open("/tmp/update_pw.sql", "w") as f:
-        f.write(sql)
-
-    # Execute it
     vol = "/var/lib/docker/volumes/n8n_data/_data"
-    r2 = subprocess.run(["sqlite3", f"{vol}/database.sqlite", f".read /tmp/update_pw.sql"],
-                        capture_output=True, text=True)
-    print(f"Update stdout: {r2.stdout}")
-    print(f"Update stderr: {r2.stderr}")
+    conn = db.connect(f"{vol}/database.sqlite")
+    col = "password"
+    conn.execute(f"UPDATE user SET {col} = ?;", (pw_hash,))
+    conn.commit()
+    print("Update: OK")
 
     # Verify
-    r3 = subprocess.run(["sqlite3", f"{vol}/database.sqlite", "SELECT email, substr(password,1,20) FROM user;"],
-                        capture_output=True, text=True)
-    print(f"Verify: {r3.stdout}")
+    row = conn.execute("SELECT email, substr(password,1,20) FROM user;").fetchone()
+    print(f"Verify: {row}")
+    conn.close()
 else:
     print("Failed to generate hash")
     print(f"stderr: {result.stderr}")
