@@ -12,7 +12,8 @@ def main():
     _, o, e = ssh.exec_command(activate_cmd)
     print("Out:", o.read().decode().strip())
     err = e.read().decode().strip()
-    if err: print("Err:", err)
+    if err:
+        print("Err:", err)
 
     print("--- Current Workflows ---")
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n list:workflow")

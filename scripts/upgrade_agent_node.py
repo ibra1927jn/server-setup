@@ -60,7 +60,8 @@ print("Uploaded patched workflow")
 
 # Copy into container
 _, o, e = ssh.exec_command("docker cp /tmp/patched_agent.json n8n-n8n-1:/tmp/patched_agent.json")
-o.read(); e.read()
+o.read()
+e.read()
 
 # Import
 print("\n=== Importing patched workflow ===")

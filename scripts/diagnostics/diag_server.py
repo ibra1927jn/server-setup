@@ -1,4 +1,6 @@
 """Save diagnostic results to a file so we can read them without truncation"""
+import time
+
 from shared_config import get_ssh_client, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
 ssh = get_ssh_client()
@@ -37,7 +39,6 @@ _, o, e = ssh.exec_command(f"bash -c '{diag_script}'")
 o.read()
 e.read()
 
-import time
 time.sleep(5)
 
 # Read results

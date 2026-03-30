@@ -95,21 +95,25 @@ write_cmd = f'''cat > /root/n8n-backup.sh << 'HEREDOC'
 HEREDOC
 chmod +x /root/n8n-backup.sh'''
 _, o, e = ssh.exec_command(write_cmd)
-o.read(); e.read()
+o.read()
+e.read()
 
 # Run first backup now
 print("  Running first backup...")
 _, o, e = ssh.exec_command("bash /root/n8n-backup.sh")
 out = o.read().decode().strip()
 err = e.read().decode().strip()
-if out: print(f"    {out}")
-if err: print(f"    ERR: {err}")
+if out:
+    print(f"    {out}")
+if err:
+    print(f"    ERR: {err}")
 
 # Set up cron job - daily at 3:00 AM
 print("  Setting up daily cron (3:00 AM)...")
 cron_cmd = '(crontab -l 2>/dev/null | grep -v n8n-backup; echo "0 3 * * * /root/n8n-backup.sh >> /var/log/n8n-backup.log 2>&1") | crontab -'
 _, o, e = ssh.exec_command(cron_cmd)
-o.read(); e.read()
+o.read()
+e.read()
 
 # Verify cron
 _, o, _ = ssh.exec_command("crontab -l")

@@ -41,8 +41,10 @@ for cmd in firewall_commands:
     _, o, e = ssh.exec_command(cmd)
     out = o.read().decode().strip()
     err = e.read().decode().strip()
-    if out: print(out)
-    if err and 'WARNING' not in err: print(f"  ERR: {err}")
+    if out:
+        print(out)
+    if err and 'WARNING' not in err:
+        print(f"  ERR: {err}")
 
 print("\n✅ Firewall configurado!")
 

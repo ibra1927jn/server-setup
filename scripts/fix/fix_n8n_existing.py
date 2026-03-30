@@ -5,12 +5,15 @@ from shared_config import get_ssh_client
 ssh = get_ssh_client()
 
 def run(cmd, label=""):
-    if label: print(f"\n=== {label} ===")
+    if label:
+        print(f"\n=== {label} ===")
     _, o, e = ssh.exec_command(cmd, timeout=60)
     out = o.read().decode().strip()
     err = e.read().decode().strip()
-    if out: print(out)
-    if err and 'warn' not in err.lower(): print(f"[err] {err}")
+    if out:
+        print(out)
+    if err and 'warn' not in err.lower():
+        print(f"[err] {err}")
     return out
 
 # Stop ALL n8n containers

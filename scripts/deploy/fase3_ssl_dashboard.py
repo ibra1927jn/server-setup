@@ -32,7 +32,7 @@ print(f"  Response: {r.text.strip()}")
 # DuckDNS requires a token. Let's set it up on the server instead with a script
 # We'll use the server itself to register
 print("\n  Setting up DuckDNS from server...")
-duck_setup = f"""
+duck_setup = """
 # Install DuckDNS updater
 mkdir -p /opt/duckdns
 cat > /opt/duckdns/duck.sh << 'DUCKEOF'
@@ -47,7 +47,8 @@ chmod +x /opt/duckdns/duck.sh
 echo "DuckDNS script created"
 """
 _, o, e = ssh.exec_command(duck_setup)
-o.read(); e.read()
+o.read()
+e.read()
 
 # Since DuckDNS needs manual token creation, let's use a different approach
 # Use nip.io which doesn't need registration - it auto-resolves
@@ -128,7 +129,8 @@ server {{
 
 print("  Writing nginx config...")
 _, o, e = ssh.exec_command(f"cat > /etc/nginx/sites-available/n8n << 'NGINXEOF'\n{nginx_config}\nNGINXEOF")
-o.read(); e.read()
+o.read()
+e.read()
 
 # Create certbot webroot
 ssh.exec_command("mkdir -p /var/www/certbot")
