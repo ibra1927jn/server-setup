@@ -40,10 +40,8 @@ def patch_workflow_credentials(wf, telegram_cred, ssh_cred):
     return changed
 
 
-def main():
-    ssh = get_ssh_client()
-
-    # 1. Get REAL credential IDs
+def _fetch_credentials(ssh):
+    """Export credentials from n8n and return (indexed_creds, telegram_cred, ssh_cred)."""
     print("=== CREDENCIALES REALES ===")
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:credentials --all")
     creds_raw = o.read().decode().strip()
@@ -53,23 +51,15 @@ def main():
     for c in creds:
         print(f"  {c.get('id', '')} | {c.get('name', '')} | {c.get('type', '')}")
 
-    # 2. Get REAL telegram credential
     telegram_cred = real_creds.get("telegramApi", {})
     ssh_cred = real_creds.get("sshPassword", {})
     print(f"\n  Telegram real: {telegram_cred}")
     print(f"  SSH real: {ssh_cred}")
+    return telegram_cred, ssh_cred
 
-    if not telegram_cred.get("id"):
-        print("\n  ERROR: No telegram credential found!")
-        ssh.close()
-        sys.exit(1)
 
-    # 3. Export all workflows and fix credentials
-    print("\n=== PARCHANDO WORKFLOWS ===")
-    _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:workflow --all")
-    all_wfs = json.loads(o.read().decode().strip())
-
-    sftp = ssh.open_sftp()
+def _patch_and_upload_workflows(ssh, sftp, all_wfs, telegram_cred, ssh_cred):
+    """Patch credentials in target workflows and upload them to n8n."""
     workflows_to_fix = [
         "Daily Briefing",
         "Uptime Monitor",
@@ -101,7 +91,25 @@ def main():
             result = o.read().decode().strip()
             print(f"  Import: {result}")
 
-    # 4. Restart and activate
+
+def main():
+    ssh = get_ssh_client()
+
+    telegram_cred, ssh_cred = _fetch_credentials(ssh)
+
+    if not telegram_cred.get("id"):
+        print("\n  ERROR: No telegram credential found!")
+        ssh.close()
+        sys.exit(1)
+
+    print("\n=== PARCHANDO WORKFLOWS ===")
+    _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:workflow --all")
+    all_wfs = json.loads(o.read().decode().strip())
+
+    sftp = ssh.open_sftp()
+    _patch_and_upload_workflows(ssh, sftp, all_wfs, telegram_cred, ssh_cred)
+
+    # Restart and activate
     print("\n=== RESTART + ACTIVATE ===")
     ssh.exec_command("docker restart n8n-n8n-1")
     time.sleep(12)
@@ -111,7 +119,7 @@ def main():
     o.read()
     print("  All activated!")
 
-    # 5. TEST: Execute Crypto Portfolio Alerts (simplest, no SSH needed)
+    # TEST: Execute Crypto Portfolio Alerts (simplest, no SSH needed)
     print("\n=== TEST RAPIDO: Crypto Portfolio Alerts ===")
     for wf in all_wfs:
         if "Crypto" in wf.get("name", ""):
