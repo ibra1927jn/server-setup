@@ -30,6 +30,16 @@ omit = [
     # Deploy scripts that run against live server with no extracted helpers
     "scripts/deploy/deploy_chat_widget.py",
     "scripts/deploy/fase3_ssl_dashboard.py",
+    # Diagnostics scripts (run against live server, except check_server which has tests)
+    "scripts/diagnostics/check_docker_compose.py",
+    "scripts/diagnostics/check_exec_error.py",
+    "scripts/diagnostics/check_n8n_*.py",
+    "scripts/diagnostics/check_openrouter_balance.py",
+    "scripts/diagnostics/check_port*.py",
+    "scripts/diagnostics/check_ssl_prereqs.py",
+    "scripts/diagnostics/check_webhook_paths.py",
+    "scripts/diagnostics/diag_*.py",
+    "scripts/diagnostics/inspect_docker.py",
     # Fix scripts (run against live server, not unit-testable)
     "scripts/fix/*.py",
     "scripts/test/test_after_*.py",
