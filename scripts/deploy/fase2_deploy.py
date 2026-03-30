@@ -55,8 +55,10 @@ print("\n" + "=" * 60)
 print("PASO 2: CREANDO WORKFLOWS AVANZADOS")
 print("=" * 60)
 
+
 def gen_id():
     return ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+
 
 # --- WORKFLOW 1: Daily Briefing ---
 daily_briefing = {
@@ -361,14 +363,14 @@ for filename, wf_data in workflows.items():
     print(f"\n--- {wf_data['name']} ---")
     local_path = f"C:\\Users\\ibrab\\Desktop\\set up\\scripts\\{filename}"
     remote_path = f"/tmp/n8n-import/{filename}"
-    
+
     with open(local_path, 'w', encoding='utf-8') as f:
         json.dump(wf_data, f)
-    
+
     sftp.put(local_path, remote_path)
     ssh.exec_command(f"docker cp {remote_path} n8n-n8n-1:/tmp/n8n-import/{filename}")
     time.sleep(1)
-    
+
     _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/n8n-import/{filename}")
     out = o.read().decode().strip()
     err = e.read().decode().strip()

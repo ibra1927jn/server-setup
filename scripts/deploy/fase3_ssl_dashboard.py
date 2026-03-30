@@ -75,12 +75,12 @@ nginx_config = f"""
 server {{
     listen 80;
     server_name {NIP_DOMAIN} {HOST};
-    
+
     # ACME challenge for Let's Encrypt
     location /.well-known/acme-challenge/ {{
         root /var/www/certbot;
     }}
-    
+
     # Redirect to HTTPS
     location / {{
         return 301 https://$host$request_uri;
@@ -110,14 +110,14 @@ server {{
         proxy_cache off;
         chunked_transfer_encoding off;
     }}
-    
+
     # Dashboard
     location /dashboard {{
         alias /var/www/dashboard;
         index index.html;
         try_files $uri $uri/ /dashboard/index.html;
     }}
-    
+
     # Dashboard API
     location /api/dashboard {{
         proxy_pass http://127.0.0.1:5678/api/v1;
@@ -144,14 +144,14 @@ print(f"  {test}")
 if "successful" in test:
     ssh.exec_command("systemctl reload nginx")
     print("  Nginx reloaded!")
-    
+
     # Try Let's Encrypt (may fail with nip.io but worth trying)
     print("\n  Attempting Let's Encrypt certificate...")
     certbot_cmd = f"certbot certonly --webroot -w /var/www/certbot -d {NIP_DOMAIN} --non-interactive --agree-tos --email admin@agenticosvps.local --no-eff-email 2>&1"
     _, o, _ = ssh.exec_command(certbot_cmd)
     certbot_result = o.read().decode().strip()
     print(f"  Certbot: {certbot_result[:300]}")
-    
+
     if "Congratulations" in certbot_result or "Successfully" in certbot_result:
         print("  SSL certificate obtained!")
         # Update nginx to use real cert

@@ -7,11 +7,12 @@ REMOTE_DIR = "/root/Crypto-Trading-Bot4"
 # Files/dirs to SKIP (not needed on server)
 SKIP = {'.git', 'venv', '__pycache__', 'node_modules', '.env', 'logs', 'db', 'docs', 'web', 'tests'}
 
+
 def deploy():
     print(f"Connecting to {VPS_HOST}...")
     ssh = get_ssh_client()
     sftp = ssh.open_sftp()
-    
+
     # Create remote directory
     try:
         sftp.stat(REMOTE_DIR)
@@ -19,17 +20,17 @@ def deploy():
     except FileNotFoundError:
         print(f"Creating {REMOTE_DIR}...")
         sftp.mkdir(REMOTE_DIR)
-    
+
     # Walk and upload
     uploaded = 0
     skipped = 0
     for root, dirs, files in os.walk(LOCAL_DIR):
         # Skip unwanted directories
         dirs[:] = [d for d in dirs if d not in SKIP]
-        
+
         rel_path = os.path.relpath(root, LOCAL_DIR)
         remote_path = REMOTE_DIR if rel_path == '.' else f"{REMOTE_DIR}/{rel_path.replace(os.sep, '/')}"
-        
+
         # Create remote dirs
         if rel_path != '.':
             try:
@@ -37,7 +38,7 @@ def deploy():
             except FileNotFoundError:
                 print(f"  mkdir: {remote_path}")
                 _mkdir_p(sftp, remote_path)
-        
+
         for f in files:
             local_file = os.path.join(root, f)
             remote_file = f"{remote_path}/{f}"
@@ -46,12 +47,12 @@ def deploy():
                 print(f"  SKIP (>10MB): {f}")
                 skipped += 1
                 continue
-            print(f"  >> {remote_file} ({size//1024}KB)")
+            print(f"  >> {remote_file} ({size // 1024}KB)")
             sftp.put(local_file, remote_file)
             uploaded += 1
-    
+
     print(f"\n=== Upload complete: {uploaded} files, {skipped} skipped ===")
-    
+
     # Install requirements on server
     print("\nInstalling Python requirements...")
     commands = [
@@ -63,10 +64,11 @@ def deploy():
         print(f"\n$ {cmd}")
         stdin, stdout, stderr = ssh.exec_command(cmd)
         print(stdout.read().decode())
-    
+
     sftp.close()
     ssh.close()
     print("Done!")
+
 
 def _mkdir_p(sftp, remote_dir):
     """Recursively create remote directories"""
@@ -81,6 +83,7 @@ def _mkdir_p(sftp, remote_dir):
             sftp.stat(current)
         except FileNotFoundError:
             sftp.mkdir(current)
+
 
 if __name__ == "__main__":
     deploy()
