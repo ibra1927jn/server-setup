@@ -6,13 +6,13 @@ import json
 import time
 
 import requests
-from shared_config import get_ssh_client, VPS_HOST
+from shared_config import get_ssh_client, VPS_HOST, N8N_AI_WORKFLOW_ID
 
 ssh = get_ssh_client()
 
 # Export workflow
 print("=== Exportando workflow ===")
-_, o, _ = ssh.exec_command('docker exec n8n-n8n-1 n8n export:workflow --id=WiTcSI66bHwdSgkd')
+_, o, _ = ssh.exec_command(f'docker exec n8n-n8n-1 n8n export:workflow --id={N8N_AI_WORKFLOW_ID}')
 raw = o.read().decode().strip()
 data = json.loads(raw)
 wf = data[0] if isinstance(data, list) else data
@@ -56,7 +56,7 @@ print("ERR:", e.read().decode().strip())
 
 # Activate
 print("\n=== Activando workflow ===")
-_, o, e = ssh.exec_command("docker exec n8n-n8n-1 n8n update:workflow --id=WiTcSI66bHwdSgkd --active=true")
+_, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n update:workflow --id={N8N_AI_WORKFLOW_ID} --active=true")
 print("OUT:", o.read().decode().strip())
 
 # Restart n8n
@@ -67,7 +67,7 @@ print("n8n reiniciado!")
 
 # Verify the fix
 print("\n=== VERIFICACION: Modelo actual ===")
-_, o, _ = ssh.exec_command('docker exec n8n-n8n-1 n8n export:workflow --id=WiTcSI66bHwdSgkd')
+_, o, _ = ssh.exec_command(f'docker exec n8n-n8n-1 n8n export:workflow --id={N8N_AI_WORKFLOW_ID}')
 raw2 = o.read().decode().strip()
 data2 = json.loads(raw2)
 wf2 = data2[0] if isinstance(data2, list) else data2

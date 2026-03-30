@@ -1,6 +1,8 @@
 import time
 import json
-from shared_config import get_ssh_client, N8N_EMAIL, N8N_PASSWORD
+from shared_config import (
+    get_ssh_client, N8N_EMAIL, N8N_PASSWORD, N8N_AI_WORKFLOW_ID,
+)
 
 ssh = get_ssh_client()
 
@@ -15,7 +17,7 @@ print("=== LATEST EXECUTIONS ===")
 _, o, _ = ssh.exec_command(
     'curl -s -b /tmp/n8n_cookies.txt'
     ' "http://127.0.0.1:5678/rest/executions'
-    '?workflowId=WiTcSI66bHwdSgkd&limit=5"'
+    f'?workflowId={N8N_AI_WORKFLOW_ID}&limit=5"'
 )
 time.sleep(3)
 resp = o.read().decode()

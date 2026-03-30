@@ -1,10 +1,12 @@
 import time
 import json
-from shared_config import get_ssh_client, N8N_EMAIL, N8N_PASSWORD
+from shared_config import (
+    get_ssh_client, N8N_EMAIL, N8N_PASSWORD, N8N_AI_WORKFLOW_ID,
+)
 
 ssh = get_ssh_client()
 
-w_id = 'WiTcSI66bHwdSgkd'
+w_id = N8N_AI_WORKFLOW_ID
 
 print("1. Logging in...")
 ssh.exec_command(f'''curl -s -c /tmp/n8n_cookies.txt -X POST http://127.0.0.1:5678/rest/login \

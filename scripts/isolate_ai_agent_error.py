@@ -1,9 +1,9 @@
 import time
-from shared_config import get_ssh_client
+from shared_config import get_ssh_client, N8N_AI_WORKFLOW_ID
 
 ssh = get_ssh_client()
 
-w_id = 'WiTcSI66bHwdSgkd'
+w_id = N8N_AI_WORKFLOW_ID
 
 print("=== DEACTIVATING TELEGRAM BOT ===")
 # Execute command in n8n container to update workflow active state

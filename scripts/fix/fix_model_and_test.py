@@ -1,6 +1,6 @@
 import json
 import time
-from shared_config import get_ssh_client, OPENROUTER_API_KEY
+from shared_config import get_ssh_client, OPENROUTER_API_KEY, N8N_AI_WORKFLOW_ID
 
 ssh = get_ssh_client()
 
@@ -21,7 +21,7 @@ print(result[:500])
 
 # Now fix the workflow with the correct model
 fixed_workflow = {
-    "id": "WiTcSI66bHwdSgkd",
+    "id": N8N_AI_WORKFLOW_ID,
     "name": "AI Agent Base - Template con Memoria",
     "active": True,
     "nodes": [
@@ -137,7 +137,7 @@ ssh.exec_command("cd /root/n8n && docker compose restart")
 time.sleep(20)
 
 # Activate workflow
-_, o3, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n update:workflow --id=WiTcSI66bHwdSgkd --active=true")
+_, o3, _ = ssh.exec_command(f"docker exec n8n-n8n-1 n8n update:workflow --id={N8N_AI_WORKFLOW_ID} --active=true")
 time.sleep(3)
 print("ACTIVATE:", o3.read().decode())
 

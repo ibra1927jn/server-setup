@@ -3,7 +3,7 @@ Upgrade AI Agent node - Fixed version handling list/dict JSON format.
 """
 import json
 import time
-from shared_config import get_ssh_client
+from shared_config import get_ssh_client, N8N_AI_WORKFLOW_ID
 
 
 def parse_workflow(raw):
@@ -29,7 +29,7 @@ def main():
 
     # Export the specific workflow by ID
     print("=== Exporting AI Agent Base workflow ===")
-    export_cmd = "docker exec n8n-n8n-1 n8n export:workflow --id=WiTcSI66bHwdSgkd"
+    export_cmd = f"docker exec n8n-n8n-1 n8n export:workflow --id={N8N_AI_WORKFLOW_ID}"
     _, o, e = ssh.exec_command(export_cmd)
     raw = o.read().decode().strip()
     err = e.read().decode().strip()

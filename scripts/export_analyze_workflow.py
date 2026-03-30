@@ -1,6 +1,8 @@
 import time
 import json
-from shared_config import get_ssh_client, N8N_EMAIL, N8N_PASSWORD
+from shared_config import (
+    get_ssh_client, N8N_EMAIL, N8N_PASSWORD, N8N_AI_WORKFLOW_ID,
+)
 
 ssh = get_ssh_client()
 
@@ -16,7 +18,7 @@ print("Login:", "OK" if "id" in login_resp else "FAIL")
 
 # Step 2: Export the workflow
 print("\n=== EXPORTING WORKFLOW ===")
-export_cmd = '''curl -s -b /tmp/n8n_cookies.txt http://127.0.0.1:5678/rest/workflows/WiTcSI66bHwdSgkd'''
+export_cmd = f'''curl -s -b /tmp/n8n_cookies.txt http://127.0.0.1:5678/rest/workflows/{N8N_AI_WORKFLOW_ID}'''
 _, o, _ = ssh.exec_command(export_cmd)
 time.sleep(3)
 wf_json = o.read().decode()

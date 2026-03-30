@@ -1,13 +1,13 @@
 import json
 import time
-from shared_config import get_ssh_client
+from shared_config import get_ssh_client, N8N_AI_WORKFLOW_ID
 
 ssh = get_ssh_client()
 
 # Replace the AI Agent Base workflow with a simpler version that uses typeVersion 1.7
 # This avoids the Python task runner requirement
 fixed_workflow = {
-    "id": "WiTcSI66bHwdSgkd",
+    "id": N8N_AI_WORKFLOW_ID,
     "name": "AI Agent Base - Template con Memoria",
     "active": True,
     "nodes": [
@@ -116,7 +116,7 @@ print("STDERR:", e.read().decode())
 time.sleep(2)
 
 # Activate the workflow
-_, o2, e2 = ssh.exec_command("docker exec n8n-n8n-1 n8n update:workflow --id=WiTcSI66bHwdSgkd --active=true")
+_, o2, e2 = ssh.exec_command(f"docker exec n8n-n8n-1 n8n update:workflow --id={N8N_AI_WORKFLOW_ID} --active=true")
 time.sleep(3)
 print("ACTIVATE:", o2.read().decode())
 
