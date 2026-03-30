@@ -9,7 +9,12 @@ CHAT_ID = TELEGRAM_CHAT_ID
 
 # Test 1: Direct curl from HOST to Telegram
 print("TEST 1: Curl from Hetzner host")
-_, o, e = ssh.exec_command(f'curl -s -X POST "https://api.telegram.org/bot{BOT}/sendMessage" -H "Content-Type: application/json" -d \'{{"chat_id": {CHAT_ID}, "text": "Test desde Hetzner host"}}\'')
+_, o, e = ssh.exec_command(
+    f'curl -s -X POST "https://api.telegram.org/bot{BOT}/sendMessage"'
+    ' -H "Content-Type: application/json"'
+    f" -d '{{\"chat_id\": {CHAT_ID},"
+    ' "text": "Test desde Hetzner host"}}\''
+)
 print(f"  {o.read().decode().strip()[:300]}")
 
 # Test 2: Does n8n container have curl?
@@ -21,7 +26,14 @@ print(f"  wget: {o.read().decode().strip()}")
 
 # Test 3: Can n8n container reach internet?
 print("\nTEST 3: n8n container internet access")
-_, o, _ = ssh.exec_command("docker exec n8n-n8n-1 node -e \"fetch('https://api.telegram.org/bot" + BOT + "/getMe').then(r=>r.json()).then(d=>console.log(JSON.stringify(d)))\" 2>&1")
+_, o, _ = ssh.exec_command(
+    "docker exec n8n-n8n-1 node -e"
+    " \"fetch('https://api.telegram.org/bot"
+    + BOT
+    + "/getMe').then(r=>r.json())"
+    ".then(d=>console.log(JSON.stringify(d)))\""
+    " 2>&1"
+)
 print(f"  {o.read().decode().strip()[:300]}")
 
 # Test 4: Check what the actual Telegram credential contains

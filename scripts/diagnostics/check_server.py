@@ -24,7 +24,13 @@ def main():
     run(ssh, "df -h / | tail -1", "DISK")
     run(ssh, "free -h | head -2", "RAM")
     run(ssh, "docker --version 2>/dev/null || echo 'NO_DOCKER'", "DOCKER")
-    run(ssh, "docker compose version 2>/dev/null || docker-compose --version 2>/dev/null || echo 'NO_COMPOSE'", "COMPOSE")
+    run(
+        ssh,
+        "docker compose version 2>/dev/null"
+        " || docker-compose --version 2>/dev/null"
+        " || echo 'NO_COMPOSE'",
+        "COMPOSE",
+    )
     run(ssh, "nginx -v 2>&1 || echo 'NO_NGINX'", "NGINX")
     run(ssh, "ss -tlnp | grep -E ':(80|443|5678) ' || echo 'Ports 80/443/5678 free'", "PORTS")
 

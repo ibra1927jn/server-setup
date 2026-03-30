@@ -12,7 +12,11 @@ time.sleep(3)
 
 # Check execution log
 print("=== LATEST EXECUTIONS ===")
-_, o, _ = ssh.exec_command('''curl -s -b /tmp/n8n_cookies.txt "http://127.0.0.1:5678/rest/executions?workflowId=WiTcSI66bHwdSgkd&limit=5" ''')
+_, o, _ = ssh.exec_command(
+    'curl -s -b /tmp/n8n_cookies.txt'
+    ' "http://127.0.0.1:5678/rest/executions'
+    '?workflowId=WiTcSI66bHwdSgkd&limit=5"'
+)
 time.sleep(3)
 resp = o.read().decode()
 try:
@@ -27,7 +31,11 @@ try:
         print(f"\nExecution {eid}: status={status}, finished={finished}")
         # Get full details for the most recent failed one
         if status in ['error', 'failed', 'crashed']:
-            _, o2, _ = ssh.exec_command(f'''curl -s -b /tmp/n8n_cookies.txt "http://127.0.0.1:5678/rest/executions/{eid}" ''')
+            _, o2, _ = ssh.exec_command(
+                'curl -s -b /tmp/n8n_cookies.txt'
+                ' "http://127.0.0.1:5678/rest/'
+                f'executions/{eid}"'
+            )
             time.sleep(3)
             detail = o2.read().decode()
             try:
