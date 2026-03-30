@@ -71,7 +71,7 @@ def deploy():
     ]
     for cmd in commands:
         print(f"\n$ {cmd}")
-        _, stdout, stderr = ssh.exec_command(cmd)
+        _, stdout, _stderr = ssh.exec_command(cmd)
         print(stdout.read().decode())
 
     sftp.close()

@@ -37,7 +37,7 @@ def main():
 
     for label, cmd in cmds:
         print(f"\n=== {label} ===")
-        _, o, e = ssh.exec_command(cmd)
+        _, o, _e = ssh.exec_command(cmd)
         print(o.read().decode().strip())
 
     ssh.close()
