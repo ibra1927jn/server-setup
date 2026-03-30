@@ -7,6 +7,47 @@ import time
 from shared_config import get_ssh_client
 
 
+def index_credentials_by_type(creds):
+    """Index a list of n8n credential dicts by their type.
+
+    Returns dict: {type_str: {"id": ..., "name": ...}}
+    """
+    result = {}
+    for c in creds:
+        ctype = c.get("type", "")
+        result[ctype] = {"id": c.get("id", ""), "name": c.get("name", "")}
+    return result
+
+
+def patch_workflow_credentials(wf, telegram_cred, ssh_cred):
+    """Patch Telegram and SSH credentials in workflow nodes.
+
+    Modifies wf in place. Returns True if any node was changed.
+    """
+    changed = False
+    for node in wf.get("nodes", []):
+        ntype = node.get("type", "")
+
+        if "telegram" in ntype.lower():
+            node["credentials"] = {
+                "telegramApi": {
+                    "id": telegram_cred["id"],
+                    "name": telegram_cred["name"]
+                }
+            }
+            changed = True
+
+        if "ssh" in ntype.lower() and ssh_cred.get("id"):
+            node["credentials"] = {
+                "sshPassword": {
+                    "id": ssh_cred["id"],
+                    "name": ssh_cred["name"]
+                }
+            }
+            changed = True
+    return changed
+
+
 def main():
     ssh = get_ssh_client()
 
@@ -16,13 +57,9 @@ def main():
     creds_raw = o.read().decode().strip()
     creds = json.loads(creds_raw)
 
-    real_creds = {}
+    real_creds = index_credentials_by_type(creds)
     for c in creds:
-        cid = c.get("id", "")
-        cname = c.get("name", "")
-        ctype = c.get("type", "")
-        print(f"  {cid} | {cname} | {ctype}")
-        real_creds[ctype] = {"id": cid, "name": cname}
+        print(f"  {c.get('id', '')} | {c.get('name', '')} | {c.get('type', '')}")
 
     # 2. Get REAL telegram credential
     telegram_cred = real_creds.get("telegramApi", {})
@@ -49,34 +86,7 @@ def main():
             continue
 
         print(f"\n--- {name} ---")
-        changed = False
-
-        for node in wf.get("nodes", []):
-            ntype = node.get("type", "")
-
-            # Fix Telegram credentials
-            if "telegram" in ntype.lower():
-                old_cred = node.get("credentials", {}).get("telegramApi", {})
-                print(f"  Telegram node '{node['name']}': old ID={old_cred.get('id')}, real ID={telegram_cred['id']}")
-                node["credentials"] = {
-                    "telegramApi": {
-                        "id": telegram_cred["id"],
-                        "name": telegram_cred["name"]
-                    }
-                }
-                changed = True
-
-            # Fix SSH credentials
-            if "ssh" in ntype.lower() and ssh_cred.get("id"):
-                old_cred = node.get("credentials", {}).get("sshPassword", {})
-                print(f"  SSH node '{node['name']}': old ID={old_cred.get('id')}, real ID={ssh_cred['id']}")
-                node["credentials"] = {
-                    "sshPassword": {
-                        "id": ssh_cred["id"],
-                        "name": ssh_cred["name"]
-                    }
-                }
-                changed = True
+        changed = patch_workflow_credentials(wf, telegram_cred, ssh_cred)
 
         if changed:
             fname = name.lower().replace(" ", "_") + "_fixed.json"
