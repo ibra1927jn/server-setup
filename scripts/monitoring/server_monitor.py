@@ -95,7 +95,7 @@ def check_disk() -> list[CheckResult]:
             text=True,
         )
     except subprocess.CalledProcessError:
-        return [CheckResult("disk", CRITICAL, "N/A", "Failed to run df")]
+        return [CheckResult("disk", CRITICAL, "N/A", "Failed to run df", severity=CRITICAL)]
 
     for line in output.strip().split("\n")[1:]:
         parts = line.split()
@@ -135,7 +135,7 @@ def check_ram() -> CheckResult:
     try:
         output = subprocess.check_output(["free", "-m"], text=True)
     except subprocess.CalledProcessError:
-        return CheckResult("ram", CRITICAL, "N/A", "Failed to run free")
+        return CheckResult("ram", CRITICAL, "N/A", "Failed to run free", severity=CRITICAL)
 
     for line in output.strip().split("\n"):
         if line.startswith("Mem:"):
@@ -160,7 +160,7 @@ def check_ram() -> CheckResult:
                 severity=severity,
             )
 
-    return CheckResult("ram", CRITICAL, "N/A", "Could not parse free output")
+    return CheckResult("ram", CRITICAL, "N/A", "Could not parse free output", severity=CRITICAL)
 
 
 def check_swap() -> CheckResult:
@@ -168,7 +168,7 @@ def check_swap() -> CheckResult:
     try:
         output = subprocess.check_output(["free", "-m"], text=True)
     except subprocess.CalledProcessError:
-        return CheckResult("swap", CRITICAL, "N/A", "Failed to run free")
+        return CheckResult("swap", CRITICAL, "N/A", "Failed to run free", severity=CRITICAL)
 
     for line in output.strip().split("\n"):
         if line.startswith("Swap:"):
@@ -213,7 +213,7 @@ def check_cpu() -> CheckResult:
             pct = round(load / ncpu * 100)
             pct = min(pct, 100)
         except (OSError, ValueError):
-            return CheckResult("cpu", WARNING, "N/A", "Cannot read CPU stats")
+            return CheckResult("cpu", WARNING, "N/A", "Cannot read CPU stats", severity=WARNING)
     else:
         # Parse mpstat output: last line, last column is %idle
         for line in reversed(output.strip().split("\n")):
@@ -226,7 +226,7 @@ def check_cpu() -> CheckResult:
                 except (ValueError, IndexError):
                     continue
         else:
-            return CheckResult("cpu", WARNING, "N/A", "Could not parse mpstat output")
+            return CheckResult("cpu", WARNING, "N/A", "Could not parse mpstat output", severity=WARNING)
 
     if pct >= THRESHOLDS["cpu_critical_pct"]:
         severity = CRITICAL
@@ -249,7 +249,7 @@ def check_load() -> CheckResult:
     try:
         load1, load5, load15 = os.getloadavg()
     except OSError:
-        return CheckResult("load", WARNING, "N/A", "Cannot read load average")
+        return CheckResult("load", WARNING, "N/A", "Cannot read load average", severity=WARNING)
 
     ncpu = os.cpu_count() or 1
     ratio = load5 / ncpu
