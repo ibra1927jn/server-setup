@@ -103,9 +103,8 @@ def main():
     wf_id = telegram_ai_workflow["id"]
     workflow_json = json.dumps([telegram_ai_workflow])
 
-    with ssh.open_sftp() as sftp:
-        with sftp.file('/tmp/telegram_ai_bot.json', 'w') as f:
-            f.write(workflow_json)
+    with ssh.open_sftp() as sftp, sftp.file('/tmp/telegram_ai_bot.json', 'w') as f:
+        f.write(workflow_json)
 
     time.sleep(1)
 

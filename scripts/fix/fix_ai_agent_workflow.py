@@ -108,9 +108,8 @@ def main():
 
     workflow_json = json.dumps([fixed_workflow])
 
-    with ssh.open_sftp() as sftp:
-        with sftp.file('/tmp/fixed_ai_agent.json', 'w') as f:
-            f.write(workflow_json)
+    with ssh.open_sftp() as sftp, sftp.file('/tmp/fixed_ai_agent.json', 'w') as f:
+        f.write(workflow_json)
 
     time.sleep(1)
     ssh.exec_command(

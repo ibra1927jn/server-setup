@@ -44,9 +44,8 @@ else:
     # Inyectar credenciales reales
     reset_script = reset_script_template.replace('__N8N_PW__', N8N_PASSWORD)
 
-    with ssh.open_sftp() as sftp:
-        with sftp.file('/tmp/reset_pw.py', 'w') as f:
-            f.write(reset_script)
+    with ssh.open_sftp() as sftp, sftp.file('/tmp/reset_pw.py', 'w') as f:
+        f.write(reset_script)
 
     time.sleep(1)
     _, o, e = ssh.exec_command("python3 /tmp/reset_pw.py")

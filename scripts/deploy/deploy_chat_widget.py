@@ -165,9 +165,8 @@ def main():
     new_html = current_html.replace('</body>', chat_widget + '\n</body>')
 
     # Upload via SFTP
-    with ssh.open_sftp() as sftp:
-        with sftp.file('/var/www/dashboard/index.html', 'w') as f:
-            f.write(new_html)
+    with ssh.open_sftp() as sftp, sftp.file('/var/www/dashboard/index.html', 'w') as f:
+        f.write(new_html)
 
     print("Chat widget deployed to dashboard!")
 

@@ -17,9 +17,8 @@ def main():
     )
 
     # Upload the fixed version
-    with ssh.open_sftp() as sftp:
-        with sftp.file('/var/www/dashboard/index.html', 'w') as f:
-            f.write(fixed_html)
+    with ssh.open_sftp() as sftp, sftp.file('/var/www/dashboard/index.html', 'w') as f:
+        f.write(fixed_html)
 
     print("Fixed! Changed 'message' -> 'chatInput' in webhook payload")
 
