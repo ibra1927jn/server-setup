@@ -1,4 +1,5 @@
 """Tests for check_server.py run() function and main() orchestration."""
+
 from unittest.mock import MagicMock, patch
 
 
@@ -15,6 +16,7 @@ def _mock_ssh(stdout="", stderr=""):
 
 def test_run_returns_stdout():
     from diagnostics.check_server import run
+
     ssh = _mock_ssh(stdout="uptime: 5 days")
     result = run(ssh, "uptime", "UPTIME")
     assert result == "uptime: 5 days"
@@ -22,6 +24,7 @@ def test_run_returns_stdout():
 
 def test_run_calls_exec_command():
     from diagnostics.check_server import run
+
     ssh = _mock_ssh()
     run(ssh, "df -h /", "DISK")
     ssh.exec_command.assert_called_once_with("df -h /", timeout=120)
@@ -29,6 +32,7 @@ def test_run_calls_exec_command():
 
 def test_run_prints_label(capsys):
     from diagnostics.check_server import run
+
     ssh = _mock_ssh(stdout="ok")
     run(ssh, "test", "MY LABEL")
     captured = capsys.readouterr()
@@ -37,6 +41,7 @@ def test_run_prints_label(capsys):
 
 def test_run_no_label(capsys):
     from diagnostics.check_server import run
+
     ssh = _mock_ssh(stdout="ok")
     run(ssh, "test")
     captured = capsys.readouterr()
@@ -45,6 +50,7 @@ def test_run_no_label(capsys):
 
 def test_run_prints_stderr(capsys):
     from diagnostics.check_server import run
+
     ssh = _mock_ssh(stdout="", stderr="some error")
     run(ssh, "test")
     captured = capsys.readouterr()
@@ -53,6 +59,7 @@ def test_run_prints_stderr(capsys):
 
 def test_run_empty_stderr_not_printed(capsys):
     from diagnostics.check_server import run
+
     ssh = _mock_ssh(stdout="ok", stderr="")
     run(ssh, "test")
     captured = capsys.readouterr()
@@ -61,6 +68,7 @@ def test_run_empty_stderr_not_printed(capsys):
 
 def test_run_truncates_long_command(capsys):
     from diagnostics.check_server import run
+
     ssh = _mock_ssh(stdout="ok")
     long_cmd = "x" * 200
     run(ssh, long_cmd)
@@ -74,6 +82,7 @@ def test_run_truncates_long_command(capsys):
 @patch("diagnostics.check_server.VPS_HOST", "10.0.0.1")
 def test_main_runs_all_checks(mock_get_ssh):
     from diagnostics.check_server import main
+
     ssh = _mock_ssh(stdout="ok")
     mock_get_ssh.return_value = ssh
     main()
@@ -88,6 +97,7 @@ def test_main_runs_all_checks(mock_get_ssh):
 @patch("diagnostics.check_server.VPS_HOST", "10.0.0.1")
 def test_main_closes_ssh(mock_get_ssh):
     from diagnostics.check_server import main
+
     ssh = _mock_ssh(stdout="ok")
     mock_get_ssh.return_value = ssh
     main()

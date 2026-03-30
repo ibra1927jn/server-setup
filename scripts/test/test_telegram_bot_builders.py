@@ -1,4 +1,5 @@
 """Tests for build_telegram_ai_workflow() across all three bot script versions."""
+
 import scripts.create_telegram_ai_bot as bot_v1
 import scripts.create_telegram_ai_bot_v2 as bot_v2
 import scripts.create_telegram_ai_bot_v3 as bot_v3
@@ -61,6 +62,7 @@ class TestBotV1:
 
 # ---------- v2: create_telegram_ai_bot_v2 ----------
 
+
 class TestBotV2:
     def test_workflow_name(self):
         wf = bot_v2.build_telegram_ai_workflow()
@@ -90,6 +92,7 @@ class TestBotV2:
 
 
 # ---------- v3: create_telegram_ai_bot_v3 (UUID-based IDs) ----------
+
 
 class TestBotV3:
     def test_workflow_has_hex_id(self):

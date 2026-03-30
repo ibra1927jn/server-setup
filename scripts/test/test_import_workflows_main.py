@@ -1,4 +1,5 @@
 """Tests for import_workflows_hetzner.py main() with mocked requests."""
+
 from unittest.mock import MagicMock, mock_open, patch
 
 from import_workflows_hetzner import main
@@ -9,7 +10,8 @@ def _mock_get_response(workflows=None):
     resp = MagicMock()
     resp.status_code = 200
     resp.json.return_value = {
-        "data": workflows or [
+        "data": workflows
+        or [
             {"name": "WF1", "id": "id1", "active": True},
         ]
     }

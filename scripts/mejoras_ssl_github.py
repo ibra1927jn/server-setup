@@ -4,6 +4,7 @@ MEJORAS 2 y 3:
 - Agregar GitHub token al workflow GitHub Auto-Backup
 - Verificar ejecuciones de los tests E2E
 """
+
 import json
 import time
 
@@ -56,9 +57,9 @@ server {
     ssl_cmds = [
         "mkdir -p /etc/ssl/n8n",
         (
-            'openssl req -x509 -nodes -days 365 -newkey rsa:2048'
-            ' -keyout /etc/ssl/n8n/self-signed.key'
-            ' -out /etc/ssl/n8n/self-signed.crt'
+            "openssl req -x509 -nodes -days 365 -newkey rsa:2048"
+            " -keyout /etc/ssl/n8n/self-signed.key"
+            " -out /etc/ssl/n8n/self-signed.crt"
             f' -subj "/CN={VPS_HOST}/O=AgenticOS"'
         ),
     ]
@@ -115,11 +116,12 @@ def find_github_token():
         try:
             import glob
             import re
+
             for f in glob.glob(r"C:\Users\ibrab\Desktop\set up\scripts\*.py"):
                 with open(f) as fh:
                     content = fh.read()
                     if "ghp_" in content or "github_pat_" in content:
-                        match = re.search(r'(ghp_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+)', content)
+                        match = re.search(r"(ghp_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+)", content)
                         if match:
                             github_token = match.group(1)
                             print(f"  Found token in {f}")
@@ -147,14 +149,8 @@ def update_github_workflow_token(ssh, github_token):
                     node["parameters"]["sendHeaders"] = True
                     node["parameters"]["headerParameters"] = {
                         "parameters": [
-                            {
-                                "name": "Authorization",
-                                "value": f"Bearer {github_token}"
-                            },
-                            {
-                                "name": "User-Agent",
-                                "value": "AgenticOS-Backup"
-                            }
+                            {"name": "Authorization", "value": f"Bearer {github_token}"},
+                            {"name": "User-Agent", "value": "AgenticOS-Backup"},
                         ]
                     }
                     if "authentication" in node["parameters"]:
@@ -172,10 +168,7 @@ def update_github_workflow_token(ssh, github_token):
             sftp.put(local_path, "/tmp/github_backup_fixed.json")
             ssh.exec_command("docker cp /tmp/github_backup_fixed.json n8n-n8n-1:/tmp/github_backup_fixed.json")
             time.sleep(1)
-            _, o, _e = ssh.exec_command(
-                "docker exec n8n-n8n-1 n8n import:workflow"
-                " --input=/tmp/github_backup_fixed.json"
-            )
+            _, o, _e = ssh.exec_command("docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/github_backup_fixed.json")
             print(f"    Import: {o.read().decode().strip()}")
             sftp.close()
             break

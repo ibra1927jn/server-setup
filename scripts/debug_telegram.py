@@ -2,6 +2,7 @@
 Debug: por que no llegan mensajes de Telegram.
 Verificar: credenciales, IDs de credencial, ejecuciones, errores.
 """
+
 import json
 
 from shared_config import get_ssh_client
@@ -16,11 +17,7 @@ def print_credentials(ssh):
         creds = json.loads(creds_raw)
         if isinstance(creds, list):
             for c in creds:
-                print(
-                    f"  ID: {c.get('id')}"
-                    f" | Name: {c.get('name')}"
-                    f" | Type: {c.get('type')}"
-                )
+                print(f"  ID: {c.get('id')} | Name: {c.get('name')} | Type: {c.get('type')}")
         else:
             print(f"  {creds_raw[:300]}")
     except Exception:
@@ -49,7 +46,7 @@ def print_execution_history(ssh):
         'docker exec n8n-n8n-1 sh -c "sqlite3'
         " /home/node/.n8n/database.sqlite"
         " 'SELECT id, workflowId, status, stoppedAt"
-        ' FROM execution_entity ORDER BY id DESC LIMIT 15;\'"'
+        " FROM execution_entity ORDER BY id DESC LIMIT 15;'\""
     )
     execs = o.read().decode().strip()
     print(execs or "  (no sqlite3 or no data)")
@@ -58,10 +55,7 @@ def print_execution_history(ssh):
 def print_telegram_creds(ssh):
     """Print decrypted Telegram credentials and test API access."""
     print("\n=== TEST DIRECTO TELEGRAM ===")
-    cmd = (
-        "docker exec n8n-n8n-1 n8n export:credentials"
-        " --all --decrypted 2>/dev/null"
-    )
+    cmd = "docker exec n8n-n8n-1 n8n export:credentials --all --decrypted 2>/dev/null"
     _, o, _ = ssh.exec_command(cmd)
     decrypted = o.read().decode().strip()
     try:
@@ -78,7 +72,7 @@ def print_telegram_creds(ssh):
     test_cmd = (
         "docker exec n8n-n8n-1 sh -c 'curl -s"
         ' "https://api.telegram.org/bot$(cat /tmp/tg_test'
-        " 2>/dev/null || echo NOTOKEN)/getMe\""
+        ' 2>/dev/null || echo NOTOKEN)/getMe"'
         " 2>/dev/null'"
     )
     _, o, _ = ssh.exec_command(test_cmd)
@@ -92,8 +86,12 @@ def print_relevant_logs(ssh):
     logs = o.read().decode().strip()
     for line in logs.split("\n"):
         keywords = [
-            "error", "fail", "telegram",
-            "execut", "workflow", "credential",
+            "error",
+            "fail",
+            "telegram",
+            "execut",
+            "workflow",
+            "credential",
         ]
         if any(kw in line.lower() for kw in keywords):
             print(f"  {line.strip()}")

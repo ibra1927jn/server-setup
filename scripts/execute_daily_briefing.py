@@ -6,8 +6,8 @@ from shared_config import get_ssh_client
 def find_workflow_id(workflows, name):
     """Find a workflow ID by name from a list of workflow dicts."""
     for wf in workflows:
-        if wf.get('name') == name:
-            return wf.get('id')
+        if wf.get("name") == name:
+            return wf.get("id")
     return None
 
 
@@ -20,14 +20,12 @@ def main():
 
     try:
         data = json.loads(workflows_json)
-        briefing_id = find_workflow_id(data, 'Daily Briefing')
+        briefing_id = find_workflow_id(data, "Daily Briefing")
 
         if briefing_id:
             print(f"Found Daily Briefing ID: {briefing_id}")
             print("Executing workflow...")
-            _, ex_o, ex_e = ssh.exec_command(
-                f'docker exec n8n-n8n-1 n8n execute --id {briefing_id}'
-            )
+            _, ex_o, ex_e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n execute --id {briefing_id}")
             output = ex_o.read().decode()
             error = ex_e.read().decode()
             print("OUTPUT:")

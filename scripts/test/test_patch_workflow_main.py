@@ -1,4 +1,5 @@
 """Tests for patch_workflow.py main() with mocked SSH."""
+
 import json
 from unittest.mock import MagicMock, patch
 
@@ -13,18 +14,17 @@ def _make_mock_ssh(wf_data=None):
                 "id": "wf123",
                 "name": "AI Agent Base",
                 "nodes": [
-                    {"name": "Telegram Trigger", "type": "telegramTrigger",
-                     "typeVersion": 1},
-                    {"name": "AI Agent1", "type": "@n8n/n8n-nodes-langchain.agent",
-                     "typeVersion": 1.6},
-                    {"name": "OpenAI Chat Model",
-                     "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-                     "typeVersion": 1, "parameters": {"model": "old"}},
+                    {"name": "Telegram Trigger", "type": "telegramTrigger", "typeVersion": 1},
+                    {"name": "AI Agent1", "type": "@n8n/n8n-nodes-langchain.agent", "typeVersion": 1.6},
+                    {
+                        "name": "OpenAI Chat Model",
+                        "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+                        "typeVersion": 1,
+                        "parameters": {"model": "old"},
+                    },
                 ],
                 "connections": {
-                    "OpenAI Chat Model": {"ai_languageModel": [[
-                        {"node": "AI Agent1", "type": "ai_languageModel", "index": 0}
-                    ]]},
+                    "OpenAI Chat Model": {"ai_languageModel": [[{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]]},
                 },
                 "active": False,
             }
@@ -46,7 +46,7 @@ def _make_mock_ssh(wf_data=None):
         call_idx[0] += 1
         stdout = MagicMock()
         stderr = MagicMock()
-        stderr.read.return_value = b''
+        stderr.read.return_value = b""
         if idx == 0:
             # login
             stdout.read.return_value = b'{"id":"u1"}'
@@ -96,7 +96,7 @@ class TestPatchWorkflowMain:
         mock_get_ssh.return_value = ssh
         main()
         sftp = ssh.open_sftp.return_value
-        sftp.file.assert_called_once_with('/tmp/wf_patch.json', 'w')
+        sftp.file.assert_called_once_with("/tmp/wf_patch.json", "w")
 
     @patch("patch_workflow.time.sleep")
     @patch("patch_workflow.get_ssh_client")
@@ -112,11 +112,12 @@ class TestPatchWorkflowMain:
 
         wf_data = {
             "data": {
-                "name": "WF", "nodes": [
-                    {"name": "OpenAI Chat Model", "type": "lmChatOpenAi",
-                     "typeVersion": 1, "parameters": {}},
+                "name": "WF",
+                "nodes": [
+                    {"name": "OpenAI Chat Model", "type": "lmChatOpenAi", "typeVersion": 1, "parameters": {}},
                 ],
-                "connections": {"OpenAI Chat Model": {}}, "active": False,
+                "connections": {"OpenAI Chat Model": {}},
+                "active": False,
             }
         }
         call_idx = [0]
@@ -126,13 +127,13 @@ class TestPatchWorkflowMain:
             call_idx[0] += 1
             stdout = MagicMock()
             stderr = MagicMock()
-            stderr.read.return_value = b''
+            stderr.read.return_value = b""
             if idx == 1:
                 stdout.read.return_value = json.dumps(wf_data).encode()
             elif idx == 2:
-                stdout.read.return_value = b'not-json'
+                stdout.read.return_value = b"not-json"
             else:
-                stdout.read.return_value = b'{}'
+                stdout.read.return_value = b"{}"
             return (MagicMock(), stdout, stderr)
 
         ssh.exec_command.side_effect = exec_side

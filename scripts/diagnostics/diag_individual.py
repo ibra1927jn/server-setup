@@ -1,4 +1,5 @@
 """Individual SSH commands to test each thing separately"""
+
 import json
 
 from shared_config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, get_ssh_client
@@ -15,7 +16,7 @@ def main():
     _, o, _e = ssh.exec_command(
         f'curl -s -X POST "https://api.telegram.org/bot{bot}/sendMessage"'
         ' -H "Content-Type: application/json"'
-        f" -d '{{\"chat_id\": {chat_id},"
+        f' -d \'{{"chat_id": {chat_id},'
         ' "text": "Test desde Hetzner host"}}\''
     )
     print(f"  {o.read().decode().strip()[:300]}")
@@ -31,10 +32,8 @@ def main():
     print("\nTEST 3: n8n container internet access")
     _, o, _ = ssh.exec_command(
         "docker exec n8n-n8n-1 node -e"
-        " \"fetch('https://api.telegram.org/bot"
-        + bot
-        + "/getMe').then(r=>r.json())"
-        ".then(d=>console.log(JSON.stringify(d)))\""
+        " \"fetch('https://api.telegram.org/bot" + bot + "/getMe').then(r=>r.json())"
+        '.then(d=>console.log(JSON.stringify(d)))"'
         " 2>&1"
     )
     print(f"  {o.read().decode().strip()[:300]}")

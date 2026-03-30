@@ -2,6 +2,7 @@
 Approach final: Usar la REST API interna de n8n para actualizar
 los workflows existentes con los nodos correctos.
 """
+
 import json
 import time
 
@@ -41,14 +42,12 @@ def build_crypto_workflow(wf_id, chat_id, tg_cred):
         "active": True,
         "nodes": [
             {
-                "parameters": {
-                    "rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}
-                },
+                "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}},
                 "name": "Every Hour",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
                 "position": [250, 300],
-                "id": "node1"
+                "id": "node1",
             },
             {
                 "parameters": {
@@ -57,13 +56,13 @@ def build_crypto_workflow(wf_id, chat_id, tg_cred):
                         "?ids=bitcoin,ethereum,solana,ripple,dogecoin"
                         "&vs_currencies=usd&include_24hr_change=true"
                     ),
-                    "options": {}
+                    "options": {},
                 },
                 "name": "Get Prices",
                 "type": "n8n-nodes-base.httpRequest",
                 "typeVersion": 4.2,
                 "position": [470, 300],
-                "id": "node2"
+                "id": "node2",
             },
             {
                 "parameters": {
@@ -81,24 +80,20 @@ def build_crypto_workflow(wf_id, chat_id, tg_cred):
                         "🐕 DOGE: ${{ $json.dogecoin.usd }} "
                         "({{ $json.dogecoin.usd_24h_change.toFixed(1) }}%)"
                     ),
-                    "additionalFields": {"parse_mode": "Markdown"}
+                    "additionalFields": {"parse_mode": "Markdown"},
                 },
                 "name": "Send Telegram",
                 "type": "n8n-nodes-base.telegram",
                 "typeVersion": 1.2,
                 "position": [690, 300],
                 "id": "node3",
-                "credentials": {"telegramApi": tg_cred}
-            }
+                "credentials": {"telegramApi": tg_cred},
+            },
         ],
         "connections": {
-            "Every Hour": {
-                "main": [[{"node": "Get Prices", "type": "main", "index": 0}]]
-            },
-            "Get Prices": {
-                "main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]
-            }
-        }
+            "Every Hour": {"main": [[{"node": "Get Prices", "type": "main", "index": 0}]]},
+            "Get Prices": {"main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]},
+        },
     }
 
 
@@ -115,47 +110,40 @@ def build_daily_workflow(wf_id, chat_id, ssh_cred, tg_cred):
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
                 "position": [250, 300],
-                "id": "node1"
+                "id": "node1",
             },
             {
                 "parameters": {
                     "command": (
-                        "uptime && df -h / | tail -1"
-                        " && free -h | grep Mem"
-                        " && docker ps --format"
-                        " '{{.Names}}: {{.Status}}'"
+                        "uptime && df -h / | tail -1 && free -h | grep Mem && docker ps --format '{{.Names}}: {{.Status}}'"
                     ),
-                    "authentication": "password"
+                    "authentication": "password",
                 },
                 "name": "Server Stats",
                 "type": "n8n-nodes-base.ssh",
                 "typeVersion": 1,
                 "position": [470, 300],
                 "id": "node2",
-                "credentials": {"sshPassword": ssh_cred}
+                "credentials": {"sshPassword": ssh_cred},
             },
             {
                 "parameters": {
                     "chatId": chat_id,
                     "text": "=🌅 *Daily Briefing*\n\n{{ $json.stdout }}",
-                    "additionalFields": {"parse_mode": "Markdown"}
+                    "additionalFields": {"parse_mode": "Markdown"},
                 },
                 "name": "Send Telegram",
                 "type": "n8n-nodes-base.telegram",
                 "typeVersion": 1.2,
                 "position": [690, 300],
                 "id": "node3",
-                "credentials": {"telegramApi": tg_cred}
-            }
+                "credentials": {"telegramApi": tg_cred},
+            },
         ],
         "connections": {
-            "8AM Daily": {
-                "main": [[{"node": "Server Stats", "type": "main", "index": 0}]]
-            },
-            "Server Stats": {
-                "main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]
-            }
-        }
+            "8AM Daily": {"main": [[{"node": "Server Stats", "type": "main", "index": 0}]]},
+            "Server Stats": {"main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]},
+        },
     }
 
 
@@ -167,26 +155,21 @@ def build_uptime_workflow(wf_id):
         "active": True,
         "nodes": [
             {
-                "parameters": {
-                    "rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}
-                },
+                "parameters": {"rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}},
                 "name": "Every 5 Min",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
                 "position": [250, 300],
-                "id": "node1"
+                "id": "node1",
             },
             {
-                "parameters": {
-                    "url": f"http://{VPS_HOST}:5678/healthz",
-                    "options": {"timeout": 5000}
-                },
+                "parameters": {"url": f"http://{VPS_HOST}:5678/healthz", "options": {"timeout": 5000}},
                 "name": "Ping n8n",
                 "type": "n8n-nodes-base.httpRequest",
                 "typeVersion": 4.2,
                 "position": [470, 300],
                 "id": "node2",
-                "onError": "continueRegularOutput"
+                "onError": "continueRegularOutput",
             },
             {
                 "parameters": {},
@@ -194,17 +177,13 @@ def build_uptime_workflow(wf_id):
                 "type": "n8n-nodes-base.noOp",
                 "typeVersion": 1,
                 "position": [690, 300],
-                "id": "node3"
-            }
+                "id": "node3",
+            },
         ],
         "connections": {
-            "Every 5 Min": {
-                "main": [[{"node": "Ping n8n", "type": "main", "index": 0}]]
-            },
-            "Ping n8n": {
-                "main": [[{"node": "All OK", "type": "main", "index": 0}]]
-            }
-        }
+            "Every 5 Min": {"main": [[{"node": "Ping n8n", "type": "main", "index": 0}]]},
+            "Ping n8n": {"main": [[{"node": "All OK", "type": "main", "index": 0}]]},
+        },
     }
 
 
@@ -216,57 +195,51 @@ def build_github_workflow(wf_id, chat_id, tg_cred):
         "active": True,
         "nodes": [
             {
-                "parameters": {
-                    "rule": {"interval": [{"field": "hours", "hoursInterval": 12}]}
-                },
+                "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 12}]}},
                 "name": "Every 12h",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
                 "position": [250, 300],
-                "id": "node1"
+                "id": "node1",
             },
             {
                 "parameters": {
                     "url": "https://api.github.com/user/repos?per_page=5&sort=pushed",
                     "sendHeaders": True,
-                    "headerParameters": {"parameters": [
-                        {"name": "Authorization", "value": f"Bearer {GITHUB_PAT}"},
-                        {"name": "User-Agent", "value": "AgenticOS"}
-                    ]},
-                    "options": {}
+                    "headerParameters": {
+                        "parameters": [
+                            {"name": "Authorization", "value": f"Bearer {GITHUB_PAT}"},
+                            {"name": "User-Agent", "value": "AgenticOS"},
+                        ]
+                    },
+                    "options": {},
                 },
                 "name": "Get Repos",
                 "type": "n8n-nodes-base.httpRequest",
                 "typeVersion": 4.2,
                 "position": [470, 300],
-                "id": "node2"
+                "id": "node2",
             },
             {
                 "parameters": {
                     "chatId": chat_id,
                     "text": (
-                        "=🗂️ *GitHub Backup Report*\n\n"
-                        "Repos recientes revisados\n"
-                        "🕐 {{ new Date().toLocaleString('es-ES') }}"
+                        "=🗂️ *GitHub Backup Report*\n\nRepos recientes revisados\n🕐 {{ new Date().toLocaleString('es-ES') }}"
                     ),
-                    "additionalFields": {"parse_mode": "Markdown"}
+                    "additionalFields": {"parse_mode": "Markdown"},
                 },
                 "name": "Send Report",
                 "type": "n8n-nodes-base.telegram",
                 "typeVersion": 1.2,
                 "position": [690, 300],
                 "id": "node3",
-                "credentials": {"telegramApi": tg_cred}
-            }
+                "credentials": {"telegramApi": tg_cred},
+            },
         ],
         "connections": {
-            "Every 12h": {
-                "main": [[{"node": "Get Repos", "type": "main", "index": 0}]]
-            },
-            "Get Repos": {
-                "main": [[{"node": "Send Report", "type": "main", "index": 0}]]
-            }
-        }
+            "Every 12h": {"main": [[{"node": "Get Repos", "type": "main", "index": 0}]]},
+            "Get Repos": {"main": [[{"node": "Send Report", "type": "main", "index": 0}]]},
+        },
     }
 
 
@@ -283,10 +256,7 @@ def import_and_deploy_workflows(ssh, workflows):
         sftp.put(local, remote)
         ssh.exec_command(f"docker cp {remote} n8n-n8n-1:/tmp/{fname}")
         time.sleep(1)
-        cmd = (
-            "docker exec n8n-n8n-1 n8n import:workflow"
-            f" --input=/tmp/{fname}"
-        )
+        cmd = f"docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/{fname}"
         _, o, e = ssh.exec_command(cmd)
         out = o.read().decode().strip()
         err = e.read().decode().strip()
@@ -298,10 +268,7 @@ def import_and_deploy_workflows(ssh, workflows):
     ssh.exec_command("docker restart n8n-n8n-1")
     time.sleep(15)
 
-    cmd = (
-        "docker exec n8n-n8n-1 n8n update:workflow"
-        " --all --active=true"
-    )
+    cmd = "docker exec n8n-n8n-1 n8n update:workflow --all --active=true"
     _, o, _ = ssh.exec_command(cmd)
     o.read()
 
@@ -316,10 +283,7 @@ def test_crypto_workflow(ssh):
         if "Crypto" in line:
             wid = line.split("|")[0].strip()
             print(f"  Executing {wid}...")
-            cmd = (
-                "docker exec n8n-n8n-1 n8n execute"
-                f" --id={wid} 2>&1"
-            )
+            cmd = f"docker exec n8n-n8n-1 n8n execute --id={wid} 2>&1"
             _, o2, _e2 = ssh.exec_command(cmd, timeout=30)
             try:
                 full = o2.read().decode().strip()
@@ -340,21 +304,13 @@ def main():
 
     workflows = {}
     if "Crypto Portfolio Alerts" in wf_ids:
-        workflows["Crypto Portfolio Alerts"] = build_crypto_workflow(
-            wf_ids["Crypto Portfolio Alerts"], chat_id, tg_cred
-        )
+        workflows["Crypto Portfolio Alerts"] = build_crypto_workflow(wf_ids["Crypto Portfolio Alerts"], chat_id, tg_cred)
     if "Daily Briefing" in wf_ids:
-        workflows["Daily Briefing"] = build_daily_workflow(
-            wf_ids["Daily Briefing"], chat_id, ssh_cred, tg_cred
-        )
+        workflows["Daily Briefing"] = build_daily_workflow(wf_ids["Daily Briefing"], chat_id, ssh_cred, tg_cred)
     if "Uptime Monitor" in wf_ids:
-        workflows["Uptime Monitor"] = build_uptime_workflow(
-            wf_ids["Uptime Monitor"]
-        )
+        workflows["Uptime Monitor"] = build_uptime_workflow(wf_ids["Uptime Monitor"])
     if "GitHub Auto-Backup" in wf_ids:
-        workflows["GitHub Auto-Backup"] = build_github_workflow(
-            wf_ids["GitHub Auto-Backup"], chat_id, tg_cred
-        )
+        workflows["GitHub Auto-Backup"] = build_github_workflow(wf_ids["GitHub Auto-Backup"], chat_id, tg_cred)
 
     import_and_deploy_workflows(ssh, workflows)
     test_crypto_workflow(ssh)

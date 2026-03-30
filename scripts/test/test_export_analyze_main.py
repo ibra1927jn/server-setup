@@ -1,4 +1,5 @@
 """Tests for export_analyze_workflow.py main() with mocked SSH."""
+
 import json
 from unittest.mock import MagicMock, patch
 
@@ -83,9 +84,7 @@ class TestExportAnalyzeMain:
             if call_count[0] == 1:
                 stdout.read.return_value = b'{"error":"bad creds"}'
             else:
-                stdout.read.return_value = json.dumps({
-                    "data": {"name": "WF", "nodes": [], "connections": {}}
-                }).encode()
+                stdout.read.return_value = json.dumps({"data": {"name": "WF", "nodes": [], "connections": {}}}).encode()
             return (MagicMock(), stdout, MagicMock())
 
         ssh.exec_command.side_effect = exec_side

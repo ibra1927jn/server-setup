@@ -1,4 +1,5 @@
 """Tests for upgrade_agent_node.py main() with mocked SSH."""
+
 import json
 from unittest.mock import MagicMock, mock_open, patch
 
@@ -9,12 +10,9 @@ def _make_wf():
     return {
         "name": "AI Agent Base",
         "nodes": [
-            {"name": "Trigger", "type": "n8n-nodes-base.telegramTrigger",
-             "typeVersion": 1},
-            {"name": "AI Agent1", "type": "@n8n/n8n-nodes-langchain.agent",
-             "typeVersion": 1.6},
-            {"name": "Chat Model", "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-             "typeVersion": 1},
+            {"name": "Trigger", "type": "n8n-nodes-base.telegramTrigger", "typeVersion": 1},
+            {"name": "AI Agent1", "type": "@n8n/n8n-nodes-langchain.agent", "typeVersion": 1.6},
+            {"name": "Chat Model", "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi", "typeVersion": 1},
         ],
     }
 
@@ -35,22 +33,22 @@ def _make_mock_ssh(wf=None, *, as_list=False):
         call_idx[0] += 1
         stdout = MagicMock()
         stderr = MagicMock()
-        stderr.read.return_value = b''
+        stderr.read.return_value = b""
         if idx == 0:
             # export workflow
             stdout.read.return_value = json.dumps(export_data).encode()
         elif idx == 1:
             # docker cp
-            stdout.read.return_value = b''
+            stdout.read.return_value = b""
         elif idx == 2:
             # import
-            stdout.read.return_value = b'Imported workflow'
+            stdout.read.return_value = b"Imported workflow"
         elif idx == 3:
             # restart
-            stdout.read.return_value = b''
+            stdout.read.return_value = b""
         elif idx == 4:
             # list workflows
-            stdout.read.return_value = b'id1 | AI Agent Base'
+            stdout.read.return_value = b"id1 | AI Agent Base"
         return (MagicMock(), stdout, stderr)
 
     ssh.exec_command.side_effect = exec_side
@@ -103,12 +101,16 @@ class TestUpgradeAgentMain:
     @patch("upgrade_agent_node.get_ssh_client")
     def test_main_no_agent_exits(self, mock_get_ssh, mock_sleep):
         """When no agent node exists, main should call exit(1)."""
-        wf = {"name": "No Agent", "nodes": [
-            {"name": "Trigger", "type": "start", "typeVersion": 1},
-        ]}
+        wf = {
+            "name": "No Agent",
+            "nodes": [
+                {"name": "Trigger", "type": "start", "typeVersion": 1},
+            ],
+        }
         ssh = _make_mock_ssh(wf=wf)
         mock_get_ssh.return_value = ssh
         import pytest
+
         with pytest.raises(SystemExit) as exc_info:
             main()
         assert exc_info.value.code == 1
@@ -132,10 +134,10 @@ class TestUpgradeAgentMain:
             stderr = MagicMock()
             if idx == 0:
                 stdout.read.return_value = json.dumps(wf).encode()
-                stderr.read.return_value = b'some warning'
+                stderr.read.return_value = b"some warning"
             else:
-                stdout.read.return_value = b''
-                stderr.read.return_value = b''
+                stdout.read.return_value = b""
+                stderr.read.return_value = b""
             return (MagicMock(), stdout, stderr)
 
         ssh.exec_command.side_effect = exec_side

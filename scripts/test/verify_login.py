@@ -18,7 +18,7 @@ login_result = o.read().decode()
 print("=== LOGIN RESULT ===")
 print(login_result[:500])
 
-if '"id"' in login_result and 'ibrahim' in login_result.lower():
+if '"id"' in login_result and "ibrahim" in login_result.lower():
     print("\n✅ PASSWORD RESET SUCCESSFUL!")
 else:
     print("\n❌ Login still failing")

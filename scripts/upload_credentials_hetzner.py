@@ -1,4 +1,5 @@
 """Upload credentials to Hetzner n8n"""
+
 import json
 
 import requests
@@ -10,15 +11,11 @@ def main():
 
     headers = N8N_HEADERS
 
-    with open(cred_file, encoding='utf-8') as f:
+    with open(cred_file, encoding="utf-8") as f:
         creds = json.load(f)
 
     for c in creds:
-        payload = {
-            "name": c["name"],
-            "type": c["type"],
-            "data": c["data"]
-        }
+        payload = {"name": c["name"], "type": c["type"], "data": c["data"]}
 
         print(f"Uploading credential: {c['name']} ({c['type']})...")
         resp = requests.post(f"{N8N_URL}/api/v1/credentials", headers=headers, json=payload, timeout=30)

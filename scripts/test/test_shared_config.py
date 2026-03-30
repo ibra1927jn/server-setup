@@ -1,4 +1,5 @@
 """Tests for shared_config module — validates config loading and SSH client factory."""
+
 import os
 from unittest.mock import patch
 

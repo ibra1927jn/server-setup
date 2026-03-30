@@ -15,9 +15,9 @@ def main():
 
     # Try login with credentials from .env
     login_payload = json.dumps({"emailOrLdapLoginId": N8N_EMAIL, "password": N8N_PASSWORD})
-    cmd = f'''curl -s -c /tmp/n8n_cookies.txt -X POST http://127.0.0.1:5678/rest/login \
+    cmd = f"""curl -s -c /tmp/n8n_cookies.txt -X POST http://127.0.0.1:5678/rest/login \
       -H "Content-Type: application/json" \
-      -d '{login_payload}' '''
+      -d '{login_payload}' """
     _, o2, _ = ssh.exec_command(cmd)
     time.sleep(2)
     login_resp = o2.read().decode()

@@ -8,7 +8,7 @@ def main():
 
     # Crear script remoto inyectando la password desde shared_config
     # Se usa .replace() para evitar conflictos con f-strings del script remoto
-    reset_script_template = '''
+    reset_script_template = """
 import subprocess, json, sqlite3 as db
 
 # Generate bcrypt hash inside the container
@@ -39,12 +39,12 @@ if pw_hash and pw_hash.startswith("$2"):
 else:
     print("Failed to generate hash")
     print(f"stderr: {result.stderr}")
-'''
+"""
 
     # Inyectar credenciales reales
-    reset_script = reset_script_template.replace('__N8N_PW__', N8N_PASSWORD)
+    reset_script = reset_script_template.replace("__N8N_PW__", N8N_PASSWORD)
 
-    with ssh.open_sftp() as sftp, sftp.file('/tmp/reset_pw.py', 'w') as f:
+    with ssh.open_sftp() as sftp, sftp.file("/tmp/reset_pw.py", "w") as f:
         f.write(reset_script)
 
     time.sleep(1)

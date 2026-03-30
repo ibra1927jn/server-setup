@@ -1,4 +1,5 @@
 """Deploy CT4 to Hetzner VPS via SSH/SFTP (password auth)"""
+
 import os
 
 from shared_config import VPS_HOST, get_ssh_client
@@ -8,8 +9,16 @@ REMOTE_DIR = "/root/Crypto-Trading-Bot4"
 
 # Files/dirs to SKIP (not needed on server)
 SKIP = {
-    '.git', 'venv', '__pycache__', 'node_modules',
-    '.env', 'logs', 'db', 'docs', 'web', 'tests',
+    ".git",
+    "venv",
+    "__pycache__",
+    "node_modules",
+    ".env",
+    "logs",
+    "db",
+    "docs",
+    "web",
+    "tests",
 }
 
 
@@ -34,13 +43,10 @@ def deploy():
         dirs[:] = [d for d in dirs if d not in SKIP]
 
         rel_path = os.path.relpath(root, LOCAL_DIR)
-        remote_path = (
-            REMOTE_DIR if rel_path == '.'
-            else f"{REMOTE_DIR}/{rel_path.replace(os.sep, '/')}"
-        )
+        remote_path = REMOTE_DIR if rel_path == "." else f"{REMOTE_DIR}/{rel_path.replace(os.sep, '/')}"
 
         # Create remote dirs
-        if rel_path != '.':
+        if rel_path != ".":
             try:
                 sftp.stat(remote_path)
             except FileNotFoundError:
@@ -66,8 +72,7 @@ def deploy():
     commands = [
         f"cd {REMOTE_DIR} && pip3 install -r requirements.txt 2>&1 | tail -5",
         f"ls -la {REMOTE_DIR}/ | head -20",
-        f"ls -la {REMOTE_DIR}/*.csv 2>/dev/null | head -5"
-        " || echo 'No CSVs yet (normal for fresh deploy)'"
+        f"ls -la {REMOTE_DIR}/*.csv 2>/dev/null | head -5 || echo 'No CSVs yet (normal for fresh deploy)'",
     ]
     for cmd in commands:
         print(f"\n$ {cmd}")
@@ -81,13 +86,13 @@ def deploy():
 
 def _mkdir_p(sftp, remote_dir):
     """Recursively create remote directories"""
-    parts = remote_dir.split('/')
-    current = ''
+    parts = remote_dir.split("/")
+    current = ""
     for part in parts:
         if not part:
-            current = '/'
+            current = "/"
             continue
-        current = f"{current}/{part}" if current != '/' else f"/{part}"
+        current = f"{current}/{part}" if current != "/" else f"/{part}"
         try:
             sftp.stat(current)
         except FileNotFoundError:

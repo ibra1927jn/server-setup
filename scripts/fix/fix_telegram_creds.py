@@ -1,6 +1,7 @@
 """
 Fix: Obtener IDs reales de credenciales y parchear TODOS los workflows nuevos.
 """
+
 import json
 import sys
 import time
@@ -30,21 +31,11 @@ def patch_workflow_credentials(wf, telegram_cred, ssh_cred):
         ntype = node.get("type", "")
 
         if "telegram" in ntype.lower():
-            node["credentials"] = {
-                "telegramApi": {
-                    "id": telegram_cred["id"],
-                    "name": telegram_cred["name"]
-                }
-            }
+            node["credentials"] = {"telegramApi": {"id": telegram_cred["id"], "name": telegram_cred["name"]}}
             changed = True
 
         if "ssh" in ntype.lower() and ssh_cred.get("id"):
-            node["credentials"] = {
-                "sshPassword": {
-                    "id": ssh_cred["id"],
-                    "name": ssh_cred["name"]
-                }
-            }
+            node["credentials"] = {"sshPassword": {"id": ssh_cred["id"], "name": ssh_cred["name"]}}
             changed = True
     return changed
 
@@ -80,8 +71,10 @@ def main():
 
     sftp = ssh.open_sftp()
     workflows_to_fix = [
-        "Daily Briefing", "Uptime Monitor",
-        "Crypto Portfolio Alerts", "GitHub Auto-Backup",
+        "Daily Briefing",
+        "Uptime Monitor",
+        "Crypto Portfolio Alerts",
+        "GitHub Auto-Backup",
     ]
 
     for wf in all_wfs:
@@ -103,10 +96,7 @@ def main():
             sftp.put(local_path, remote_path)
             ssh.exec_command(f"docker cp {remote_path} n8n-n8n-1:/tmp/{fname}")
             time.sleep(1)
-            cmd = (
-                "docker exec n8n-n8n-1 n8n import:workflow"
-                f" --input=/tmp/{fname}"
-            )
+            cmd = f"docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/{fname}"
             _, o, _e = ssh.exec_command(cmd)
             result = o.read().decode().strip()
             print(f"  Import: {result}")
@@ -116,10 +106,7 @@ def main():
     ssh.exec_command("docker restart n8n-n8n-1")
     time.sleep(12)
 
-    cmd = (
-        "docker exec n8n-n8n-1 n8n update:workflow"
-        " --all --active=true"
-    )
+    cmd = "docker exec n8n-n8n-1 n8n update:workflow --all --active=true"
     _, o, _ = ssh.exec_command(cmd)
     o.read()
     print("  All activated!")
@@ -130,10 +117,7 @@ def main():
         if "Crypto" in wf.get("name", ""):
             wf_id = wf["id"]
             print(f"  Executing {wf_id}...")
-            cmd = (
-                "docker exec n8n-n8n-1 n8n execute"
-                f" --id={wf_id} 2>&1"
-            )
+            cmd = f"docker exec n8n-n8n-1 n8n execute --id={wf_id} 2>&1"
             _, o, _e = ssh.exec_command(cmd, timeout=30)
             try:
                 out = o.read().decode().strip()

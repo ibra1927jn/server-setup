@@ -1,4 +1,5 @@
 """Create OpenRouter (OpenAI-compatible) credential on Hetzner n8n"""
+
 import requests
 from shared_config import (
     N8N_HEADERS,
@@ -17,10 +18,7 @@ def main():
     payload = {
         "name": "OpenRouter Account",
         "type": "openAiApi",
-        "data": {
-            "apiKey": OPENROUTER_API_KEY,
-            "url": "https://openrouter.ai/api/v1"
-        }
+        "data": {"apiKey": OPENROUTER_API_KEY, "url": "https://openrouter.ai/api/v1"},
     }
 
     print("Creating OpenRouter credential...")
@@ -36,12 +34,7 @@ def main():
     ssh_payload = {
         "name": "Hetzner SSH",
         "type": "sshPassword",
-        "data": {
-            "host": VPS_HOST,
-            "port": 22,
-            "username": VPS_USER,
-            "password": VPS_PASS
-        }
+        "data": {"host": VPS_HOST, "port": 22, "username": VPS_USER, "password": VPS_PASS},
     }
 
     print("Creating Hetzner SSH credential...")

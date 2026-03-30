@@ -1,4 +1,5 @@
 """Tests for rebuild_v2.py credential extraction, workflow structures, and line parsing."""
+
 import json
 
 # --- Credential extraction logic (mirrors rebuild_v2.py lines 17-21) ---
@@ -68,6 +69,7 @@ def test_extract_last_wins_on_duplicate():
 
 # --- Workflow ID mapping (mirrors rebuild_v2.py lines 26-31) ---
 
+
 def _build_wf_id_map(existing_workflows):
     """Build name->id mapping from exported workflows."""
     wf_ids = {}
@@ -90,6 +92,7 @@ def test_build_wf_id_map_empty():
 
 
 # --- Workflow structure validation ---
+
 
 def _make_crypto_workflow(wf_id, chat_id, tg_cred):
     """Build Crypto Portfolio Alerts workflow (mirrors rebuild_v2.py lines 37-80)."""
@@ -179,6 +182,7 @@ def test_crypto_workflow_credential_ref():
 
 # --- Workflow filename generation (mirrors rebuild_v2.py line 226) ---
 
+
 def _workflow_filename(name):
     """Generate filename for workflow export."""
     return f"update_{name.lower().replace(' ', '_')}.json"
@@ -201,6 +205,7 @@ def test_filename_github():
 
 
 # --- Pipe-delimited line parsing (mirrors final_pendientes.py lines 23-27) ---
+
 
 def _parse_workflow_list(lines):
     """Parse n8n list:workflow output (pipe-delimited)."""
@@ -249,6 +254,7 @@ def test_parse_mixed_lines():
 
 
 # --- Reset password template (mirrors reset_pw_v3.py line 43) ---
+
 
 def _inject_password(template, password):
     """Replace placeholder with actual password."""

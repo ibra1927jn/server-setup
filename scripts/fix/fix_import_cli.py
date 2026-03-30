@@ -1,4 +1,5 @@
 """Fix missing workflows by injecting IDs and importing via CLI"""
+
 import json
 import os
 import random
@@ -16,15 +17,15 @@ def main():
 
     for f in MISSING_FILES:
         local_path = os.path.join(FLOWS_DIR, f)
-        with open(local_path, encoding='utf-8') as fh:
+        with open(local_path, encoding="utf-8") as fh:
             data = json.load(fh)
 
         # Inject a random 16-char alphanumeric ID
-        random_id = ''.join(random.choices(string.ascii_letters + string.digits, k=16))
-        data['id'] = random_id
+        random_id = "".join(random.choices(string.ascii_letters + string.digits, k=16))
+        data["id"] = random_id
 
-        fixed_path = local_path.replace('.json', '-fixed.json')
-        with open(fixed_path, 'w', encoding='utf-8') as fh:
+        fixed_path = local_path.replace(".json", "-fixed.json")
+        with open(fixed_path, "w", encoding="utf-8") as fh:
             json.dump(data, fh)
 
         remote_path = f"/tmp/n8n-import/{f}"

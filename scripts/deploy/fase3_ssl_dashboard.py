@@ -5,6 +5,7 @@ Fase 3: SSL Let's Encrypt + Dashboard de Monitoreo
 3. Nginx con certificado real
 4. Dashboard HTML de monitoreo
 """
+
 import requests
 from shared_config import VPS_HOST, get_ssh_client
 
@@ -59,11 +60,7 @@ def main():
     print("  nip.io auto-resolves IPs embedded in the domain name - no registration needed!")
 
     # Verify it resolves
-    _, o, _ = ssh.exec_command(
-        f"host {nip_domain} 2>/dev/null"
-        f" || dig +short {nip_domain} 2>/dev/null"
-        " || echo 'DNS_CHECK_FAILED'"
-    )
+    _, o, _ = ssh.exec_command(f"host {nip_domain} 2>/dev/null || dig +short {nip_domain} 2>/dev/null || echo 'DNS_CHECK_FAILED'")
     dns_result = o.read().decode().strip()
     print(f"  DNS check: {dns_result}")
 

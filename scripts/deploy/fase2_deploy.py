@@ -2,6 +2,7 @@
 Fase 2 — Paso 1: Configurar Firewall en Hetzner
 Paso 2: Crear e importar los 4 workflows avanzados
 """
+
 import json
 import random
 import string
@@ -11,7 +12,7 @@ from shared_config import N8N_CRED_SSH, N8N_CRED_TELEGRAM_BOT, TELEGRAM_CHAT_ID,
 
 
 def gen_id():
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+    return "".join(random.choices(string.ascii_letters + string.digits, k=16))
 
 
 def build_daily_briefing():
@@ -21,14 +22,12 @@ def build_daily_briefing():
         "name": "Daily Briefing",
         "nodes": [
             {
-                "parameters": {
-                    "rule": {"interval": [{"triggerAtHour": 8}]}
-                },
+                "parameters": {"rule": {"interval": [{"triggerAtHour": 8}]}},
                 "id": gen_id(),
                 "name": "Cron 8AM",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
-                "position": [250, 300]
+                "position": [250, 300],
             },
             {
                 "parameters": {
@@ -48,47 +47,31 @@ def build_daily_briefing():
                 "type": "n8n-nodes-base.executeCommand",
                 "typeVersion": 1,
                 "position": [470, 300],
-                "credentials": {
-                    "sshPassword": {
-                        "id": N8N_CRED_SSH,
-                        "name": "Hetzner Root SSH"
-                    }
-                }
+                "credentials": {"sshPassword": {"id": N8N_CRED_SSH, "name": "Hetzner Root SSH"}},
             },
             {
                 "parameters": {
                     "chatId": TELEGRAM_CHAT_ID,
                     "text": (
-                        "=🌅 **DAILY BRIEFING — AgenticOS**\n"
-                        "📅 {{ $now.format('dd/MM/yyyy HH:mm') }}"
-                        "\n\n{{ $json.stdout }}"
+                        "=🌅 **DAILY BRIEFING — AgenticOS**\n📅 {{ $now.format('dd/MM/yyyy HH:mm') }}\n\n{{ $json.stdout }}"
                     ),
-                    "additionalFields": {"parse_mode": "Markdown"}
+                    "additionalFields": {"parse_mode": "Markdown"},
                 },
                 "id": gen_id(),
                 "name": "Telegram Briefing",
                 "type": "n8n-nodes-base.telegram",
                 "typeVersion": 1.2,
                 "position": [690, 300],
-                "credentials": {
-                    "telegramApi": {
-                        "id": N8N_CRED_TELEGRAM_BOT,
-                        "name": "AgenticOS Bot"
-                    }
-                }
-            }
+                "credentials": {"telegramApi": {"id": N8N_CRED_TELEGRAM_BOT, "name": "AgenticOS Bot"}},
+            },
         ],
         "connections": {
-            "Cron 8AM": {
-                "main": [[{"node": "Check Server", "type": "main", "index": 0}]]
-            },
-            "Check Server": {
-                "main": [[{"node": "Telegram Briefing", "type": "main", "index": 0}]]
-            }
+            "Cron 8AM": {"main": [[{"node": "Check Server", "type": "main", "index": 0}]]},
+            "Check Server": {"main": [[{"node": "Telegram Briefing", "type": "main", "index": 0}]]},
         },
         "active": True,
         "settings": {"executionOrder": "v1"},
-        "meta": {"templateCredsSetupCompleted": True}
+        "meta": {"templateCredsSetupCompleted": True},
     }
 
 
@@ -99,14 +82,12 @@ def build_uptime_monitor():
         "name": "Uptime Monitor",
         "nodes": [
             {
-                "parameters": {
-                    "rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}
-                },
+                "parameters": {"rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}},
                 "id": gen_id(),
                 "name": "Every 5min",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
-                "position": [250, 300]
+                "position": [250, 300],
             },
             {
                 "parameters": {
@@ -116,17 +97,17 @@ def build_uptime_monitor():
                         "for svc in $services; do\n"
                         "  host=$(echo $svc | cut -d: -f1)\n"
                         "  port=$(echo $svc | cut -d: -f2)\n"
-                        "  if [ -z \"$port\" ]; then port=443; fi\n"
+                        '  if [ -z "$port" ]; then port=443; fi\n'
                         "  if timeout 5 bash -c "
-                        "\"echo > /dev/tcp/$host/$port\""
+                        '"echo > /dev/tcp/$host/$port"'
                         " 2>/dev/null; then\n"
-                        "    result=\"$result\\n✅ $svc — UP\"\n"
+                        '    result="$result\\n✅ $svc — UP"\n'
                         "  else\n"
-                        "    result=\"$result\\n❌ $svc — DOWN!\"\n"
+                        '    result="$result\\n❌ $svc — DOWN!"\n'
                         "    failed=$((failed+1))\n"
                         "  fi\ndone\n"
-                        "echo -e \"$result\"\n"
-                        "echo \"FAILED=$failed\""
+                        'echo -e "$result"\n'
+                        'echo "FAILED=$failed"'
                     )
                 },
                 "id": gen_id(),
@@ -134,12 +115,7 @@ def build_uptime_monitor():
                 "type": "n8n-nodes-base.executeCommand",
                 "typeVersion": 1,
                 "position": [470, 300],
-                "credentials": {
-                    "sshPassword": {
-                        "id": N8N_CRED_SSH,
-                        "name": "Hetzner Root SSH"
-                    }
-                }
+                "credentials": {"sshPassword": {"id": N8N_CRED_SSH, "name": "Hetzner Root SSH"}},
             },
             {
                 "parameters": {
@@ -157,16 +133,16 @@ def build_uptime_monitor():
                                 "operator": {
                                     "type": "string",
                                     "operation": "notContains",
-                                }
+                                },
                             }
-                        ]
+                        ],
                     }
                 },
                 "id": gen_id(),
                 "name": "Any Failed?",
                 "type": "n8n-nodes-base.if",
                 "typeVersion": 2,
-                "position": [690, 300]
+                "position": [690, 300],
             },
             {
                 "parameters": {
@@ -176,19 +152,14 @@ def build_uptime_monitor():
                         "⏰ {{ $now.format('HH:mm') }}\n\n"
                         "{{ $('Ping Services').item.json.stdout }}"
                     ),
-                    "additionalFields": {"parse_mode": "Markdown"}
+                    "additionalFields": {"parse_mode": "Markdown"},
                 },
                 "id": gen_id(),
                 "name": "Alert Telegram",
                 "type": "n8n-nodes-base.telegram",
                 "typeVersion": 1.2,
                 "position": [910, 200],
-                "credentials": {
-                    "telegramApi": {
-                        "id": N8N_CRED_TELEGRAM_BOT,
-                        "name": "AgenticOS Bot"
-                    }
-                }
+                "credentials": {"telegramApi": {"id": N8N_CRED_TELEGRAM_BOT, "name": "AgenticOS Bot"}},
             },
             {
                 "parameters": {},
@@ -196,26 +167,22 @@ def build_uptime_monitor():
                 "name": "All OK",
                 "type": "n8n-nodes-base.noOp",
                 "typeVersion": 1,
-                "position": [910, 400]
-            }
+                "position": [910, 400],
+            },
         ],
         "connections": {
-            "Every 5min": {
-                "main": [[{"node": "Ping Services", "type": "main", "index": 0}]]
-            },
-            "Ping Services": {
-                "main": [[{"node": "Any Failed?", "type": "main", "index": 0}]]
-            },
+            "Every 5min": {"main": [[{"node": "Ping Services", "type": "main", "index": 0}]]},
+            "Ping Services": {"main": [[{"node": "Any Failed?", "type": "main", "index": 0}]]},
             "Any Failed?": {
                 "main": [
                     [{"node": "Alert Telegram", "type": "main", "index": 0}],
-                    [{"node": "All OK", "type": "main", "index": 0}]
+                    [{"node": "All OK", "type": "main", "index": 0}],
                 ]
-            }
+            },
         },
         "active": True,
         "settings": {"executionOrder": "v1"},
-        "meta": {"templateCredsSetupCompleted": True}
+        "meta": {"templateCredsSetupCompleted": True},
     }
 
 
@@ -226,14 +193,12 @@ def build_crypto_alerts():
         "name": "Crypto Portfolio Alerts",
         "nodes": [
             {
-                "parameters": {
-                    "rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}
-                },
+                "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}},
                 "id": gen_id(),
                 "name": "Every 1h",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
-                "position": [250, 300]
+                "position": [250, 300],
             },
             {
                 "parameters": {
@@ -242,13 +207,13 @@ def build_crypto_alerts():
                         "?ids=bitcoin,ethereum,solana,ripple,dogecoin"
                         "&vs_currencies=usd&include_24hr_change=true"
                     ),
-                    "options": {}
+                    "options": {},
                 },
                 "id": gen_id(),
                 "name": "Get Prices",
                 "type": "n8n-nodes-base.httpRequest",
                 "typeVersion": 4.2,
-                "position": [470, 300]
+                "position": [470, 300],
             },
             {
                 "parameters": {
@@ -294,41 +259,30 @@ def build_crypto_alerts():
                 "name": "Format Prices",
                 "type": "n8n-nodes-base.code",
                 "typeVersion": 2,
-                "position": [690, 300]
+                "position": [690, 300],
             },
             {
                 "parameters": {
                     "chatId": TELEGRAM_CHAT_ID,
                     "text": "={{ $json.report }}",
-                    "additionalFields": {"parse_mode": "Markdown"}
+                    "additionalFields": {"parse_mode": "Markdown"},
                 },
                 "id": gen_id(),
                 "name": "Send Report",
                 "type": "n8n-nodes-base.telegram",
                 "typeVersion": 1.2,
                 "position": [910, 300],
-                "credentials": {
-                    "telegramApi": {
-                        "id": N8N_CRED_TELEGRAM_BOT,
-                        "name": "AgenticOS Bot"
-                    }
-                }
-            }
+                "credentials": {"telegramApi": {"id": N8N_CRED_TELEGRAM_BOT, "name": "AgenticOS Bot"}},
+            },
         ],
         "connections": {
-            "Every 1h": {
-                "main": [[{"node": "Get Prices", "type": "main", "index": 0}]]
-            },
-            "Get Prices": {
-                "main": [[{"node": "Format Prices", "type": "main", "index": 0}]]
-            },
-            "Format Prices": {
-                "main": [[{"node": "Send Report", "type": "main", "index": 0}]]
-            }
+            "Every 1h": {"main": [[{"node": "Get Prices", "type": "main", "index": 0}]]},
+            "Get Prices": {"main": [[{"node": "Format Prices", "type": "main", "index": 0}]]},
+            "Format Prices": {"main": [[{"node": "Send Report", "type": "main", "index": 0}]]},
         },
         "active": True,
         "settings": {"executionOrder": "v1"},
-        "meta": {"templateCredsSetupCompleted": True}
+        "meta": {"templateCredsSetupCompleted": True},
     }
 
 
@@ -339,27 +293,25 @@ def build_github_backup():
         "name": "GitHub Auto-Backup",
         "nodes": [
             {
-                "parameters": {
-                    "rule": {"interval": [{"field": "hours", "hoursInterval": 12}]}
-                },
+                "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 12}]}},
                 "id": gen_id(),
                 "name": "Every 12h",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
-                "position": [250, 300]
+                "position": [250, 300],
             },
             {
                 "parameters": {
                     "url": "https://api.github.com/user/repos?per_page=100&sort=pushed",
                     "authentication": "genericCredentialType",
                     "genericAuthType": "httpHeaderAuth",
-                    "options": {}
+                    "options": {},
                 },
                 "id": gen_id(),
                 "name": "Get Repos",
                 "type": "n8n-nodes-base.httpRequest",
                 "typeVersion": 4.2,
-                "position": [470, 300]
+                "position": [470, 300],
             },
             {
                 "parameters": {
@@ -413,41 +365,30 @@ def build_github_backup():
                 "name": "Analyze Repos",
                 "type": "n8n-nodes-base.code",
                 "typeVersion": 2,
-                "position": [690, 300]
+                "position": [690, 300],
             },
             {
                 "parameters": {
                     "chatId": TELEGRAM_CHAT_ID,
                     "text": "={{ $json.report }}",
-                    "additionalFields": {"parse_mode": "Markdown"}
+                    "additionalFields": {"parse_mode": "Markdown"},
                 },
                 "id": gen_id(),
                 "name": "Send Report",
                 "type": "n8n-nodes-base.telegram",
                 "typeVersion": 1.2,
                 "position": [910, 300],
-                "credentials": {
-                    "telegramApi": {
-                        "id": N8N_CRED_TELEGRAM_BOT,
-                        "name": "AgenticOS Bot"
-                    }
-                }
-            }
+                "credentials": {"telegramApi": {"id": N8N_CRED_TELEGRAM_BOT, "name": "AgenticOS Bot"}},
+            },
         ],
         "connections": {
-            "Every 12h": {
-                "main": [[{"node": "Get Repos", "type": "main", "index": 0}]]
-            },
-            "Get Repos": {
-                "main": [[{"node": "Analyze Repos", "type": "main", "index": 0}]]
-            },
-            "Analyze Repos": {
-                "main": [[{"node": "Send Report", "type": "main", "index": 0}]]
-            }
+            "Every 12h": {"main": [[{"node": "Get Repos", "type": "main", "index": 0}]]},
+            "Get Repos": {"main": [[{"node": "Analyze Repos", "type": "main", "index": 0}]]},
+            "Analyze Repos": {"main": [[{"node": "Send Report", "type": "main", "index": 0}]]},
         },
         "active": True,
         "settings": {"executionOrder": "v1"},
-        "meta": {"templateCredsSetupCompleted": True}
+        "meta": {"templateCredsSetupCompleted": True},
     }
 
 
@@ -480,7 +421,7 @@ def main():
         err = e.read().decode().strip()
         if out:
             print(out)
-        if err and 'WARNING' not in err:
+        if err and "WARNING" not in err:
             print(f"  ERR: {err}")
 
     print("\n✅ Firewall configurado!")
@@ -517,34 +458,25 @@ def main():
         local_path = f"C:\\Users\\ibrab\\Desktop\\set up\\scripts\\{filename}"
         remote_path = f"/tmp/n8n-import/{filename}"
 
-        with open(local_path, 'w', encoding='utf-8') as f:
+        with open(local_path, "w", encoding="utf-8") as f:
             json.dump(wf_data, f)
 
         sftp.put(local_path, remote_path)
-        cp_cmd = (
-            f"docker cp {remote_path}"
-            f" n8n-n8n-1:/tmp/n8n-import/{filename}"
-        )
+        cp_cmd = f"docker cp {remote_path} n8n-n8n-1:/tmp/n8n-import/{filename}"
         ssh.exec_command(cp_cmd)
         time.sleep(1)
 
-        import_cmd = (
-            "docker exec n8n-n8n-1 n8n import:workflow"
-            f" --input=/tmp/n8n-import/{filename}"
-        )
+        import_cmd = f"docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/n8n-import/{filename}"
         _, o, e = ssh.exec_command(import_cmd)
         out = o.read().decode().strip()
         err = e.read().decode().strip()
         print(f"  OUT: {out}")
-        if 'error' in err.lower():
+        if "error" in err.lower():
             print(f"  ERR: {err}")
 
     # Activate all
     print("\n--- Activando todos ---")
-    cmd = (
-        "docker exec n8n-n8n-1 n8n update:workflow"
-        " --all --active=true"
-    )
+    cmd = "docker exec n8n-n8n-1 n8n update:workflow --all --active=true"
     _, o, e = ssh.exec_command(cmd)
     out = o.read().decode().strip()
     print(out)

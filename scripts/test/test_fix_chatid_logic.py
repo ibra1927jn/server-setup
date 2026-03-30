@@ -1,4 +1,5 @@
 """Tests for chat ID replacement logic used in fix_chatid.py"""
+
 import json
 
 WRONG_CHAT_ID = "6915862027"
@@ -28,9 +29,7 @@ def _make_workflow(chat_id, name="Test Workflow"):
                 },
             },
         ],
-        "connections": {
-            "Cron": {"main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]}
-        },
+        "connections": {"Cron": {"main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]}},
     }
 
 
@@ -80,12 +79,14 @@ def test_no_change_when_already_correct():
 def test_fix_multiple_telegram_nodes():
     """Should fix chatId in all Telegram nodes."""
     wf = _make_workflow(WRONG_CHAT_ID)
-    wf["nodes"].append({
-        "name": "Alert Telegram",
-        "type": "n8n-nodes-base.telegram",
-        "typeVersion": 1.2,
-        "parameters": {"chatId": WRONG_CHAT_ID, "text": "Alert!"},
-    })
+    wf["nodes"].append(
+        {
+            "name": "Alert Telegram",
+            "type": "n8n-nodes-base.telegram",
+            "typeVersion": 1.2,
+            "parameters": {"chatId": WRONG_CHAT_ID, "text": "Alert!"},
+        }
+    )
     changed = _fix_chatids(wf, WRONG_CHAT_ID, REAL_CHAT_ID)
     assert changed is True
     for node in wf["nodes"]:

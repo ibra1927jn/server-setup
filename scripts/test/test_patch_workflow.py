@@ -1,4 +1,5 @@
 """Tests for JSON manipulation logic used in patch_workflow.py"""
+
 import json
 
 
@@ -12,9 +13,7 @@ def _sample_workflow():
         ],
         "connections": {
             "Telegram Trigger": {"main": [[{"node": "AI Agent1", "type": "main", "index": 0}]]},
-            "OpenAI Chat Model": {
-                "ai_languageModel": [[{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]]
-            },
+            "OpenAI Chat Model": {"ai_languageModel": [[{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]]},
         },
         "active": False,
     }
@@ -54,9 +53,7 @@ def test_connection_rebuild():
     assert "Trigger" in conns  # other connections preserved
 
     # Rebuild
-    conns["OpenAI Chat Model"] = {
-        "ai_languageModel": [[{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]]
-    }
+    conns["OpenAI Chat Model"] = {"ai_languageModel": [[{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]]}
     assert "ai_languageModel" in conns["OpenAI Chat Model"]
 
 

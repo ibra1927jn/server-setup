@@ -1,4 +1,5 @@
 """Save diagnostic results to a file so we can read them without truncation"""
+
 import time
 
 from shared_config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, get_ssh_client

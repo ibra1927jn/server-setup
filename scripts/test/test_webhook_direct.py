@@ -5,10 +5,10 @@ def main():
     ssh = get_ssh_client()
 
     # Test the webhook directly from the server
-    cmd = f'''curl -s -k -X POST https://127.0.0.1/webhook/ai-agent \
+    cmd = f"""curl -s -k -X POST https://127.0.0.1/webhook/ai-agent \
       -H "Content-Type: application/json" \
       -H "Host: {VPS_HOST}" \
-      -d '{{"message": "Hola, di simplemente OK"}}' '''
+      -d '{{"message": "Hola, di simplemente OK"}}' """
 
     _, o, e = ssh.exec_command(cmd)
     print("=== WEBHOOK RESPONSE ===")

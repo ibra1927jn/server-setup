@@ -7,13 +7,9 @@ def main():
     ssh = get_ssh_client()
 
     # Test OpenRouter API directly
-    json_body = (
-        '{"model": "zhipuai/glm-4.5-air",'
-        ' "messages": [{"role": "user", "content": "Di solamente OK"}],'
-        ' "max_tokens": 50}'
-    )
+    json_body = '{"model": "zhipuai/glm-4.5-air", "messages": [{"role": "user", "content": "Di solamente OK"}], "max_tokens": 50}'
     cmd = (
-        f'curl -s https://openrouter.ai/api/v1/chat/completions'
+        f"curl -s https://openrouter.ai/api/v1/chat/completions"
         f' -H "Authorization: Bearer {OPENROUTER_API_KEY}"'
         f' -H "Content-Type: application/json"'
         f" -d '{json_body}' --max-time 30"

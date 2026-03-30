@@ -18,18 +18,18 @@ def main():
     print("=== PATCHING SQLITE DIRECTLY ===")
     patch_cmd = (
         f"docker exec n8n-n8n-1 sqlite3 /home/node/.n8n/database.sqlite"
-        f''' "UPDATE workflow_entity SET nodes = REPLACE(nodes, '{old_cred}','''
-        f''' '{new_cred}'), active = 1 WHERE id = '{w_id}';" '''
+        f""" "UPDATE workflow_entity SET nodes = REPLACE(nodes, '{old_cred}',"""
+        f""" '{new_cred}'), active = 1 WHERE id = '{w_id}';" """
     )
     ssh.exec_command(patch_cmd)
 
     time.sleep(1)
     print("=== RESTARTING N8N ===")
-    ssh.exec_command('docker restart n8n-n8n-1')
+    ssh.exec_command("docker restart n8n-n8n-1")
     time.sleep(15)  # allow n8n to boot
 
     print("=== CHECKING FOR TELEGRAM ERRORS IN LOGS ===")
-    _, o2, _ = ssh.exec_command('docker logs n8n-n8n-1 --tail 50')
+    _, o2, _ = ssh.exec_command("docker logs n8n-n8n-1 --tail 50")
     print("LOGS:", o2.read().decode()[-2000:])
 
     ssh.close()

@@ -1,6 +1,7 @@
 """
 Upgrade AI Agent node - Fixed version handling list/dict JSON format.
 """
+
 import json
 import sys
 import time
@@ -19,9 +20,9 @@ def parse_workflow(raw):
 def patch_agent_nodes(wf, target_version=2.1):
     """Patch agent nodes to target version. Returns True if any patched."""
     patched = False
-    for node in wf.get('nodes', []):
-        if 'agent' in node.get('type', '').lower():
-            node['typeVersion'] = target_version
+    for node in wf.get("nodes", []):
+        if "agent" in node.get("type", "").lower():
+            node["typeVersion"] = target_version
             patched = True
     return patched
 
@@ -43,10 +44,10 @@ def main():
     print(f"Workflow: {wf.get('name')}")
     print(f"Nodes ({len(wf.get('nodes', []))}):")
 
-    for node in wf.get('nodes', []):
-        name = node.get('name', '?')
-        ntype = node.get('type', '?')
-        ver = node.get('typeVersion', '?')
+    for node in wf.get("nodes", []):
+        name = node.get("name", "?")
+        ntype = node.get("type", "?")
+        ver = node.get("typeVersion", "?")
         print(f"  {name} | {ntype} | v{ver}")
 
     if not patch_agent_nodes(wf):
@@ -57,7 +58,7 @@ def main():
     # Save patched workflow to server
     patched_json = json.dumps(wf)
     local_path = r"C:\Users\ibrab\Desktop\set up\scripts\patched_agent.json"
-    with open(local_path, 'w', encoding='utf-8') as f:
+    with open(local_path, "w", encoding="utf-8") as f:
         f.write(patched_json)
 
     sftp = ssh.open_sftp()

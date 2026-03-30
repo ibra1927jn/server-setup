@@ -12,7 +12,7 @@ def main():
     workflows = json.loads(raw)
 
     for wf in workflows:
-        if 'AI Agent Base' in wf['name']:
+        if "AI Agent Base" in wf["name"]:
             print(json.dumps(wf, indent=2))
             break
 

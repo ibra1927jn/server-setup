@@ -1,4 +1,5 @@
 """Tests for deploy_n8n_hetzner.py main() and template rendering"""
+
 from unittest.mock import MagicMock, patch
 
 

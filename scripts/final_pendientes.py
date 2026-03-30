@@ -3,6 +3,7 @@ Final 2 pendientes:
 1. Publicar TODOS los workflows via n8n REST API
 2. Configurar backup automatico de la DB de n8n
 """
+
 import time
 
 from shared_config import get_ssh_client
@@ -24,7 +25,7 @@ def parse_workflow_ids(output):
     return results
 
 
-BACKUP_SCRIPT = '''#!/bin/bash
+BACKUP_SCRIPT = """#!/bin/bash
 # AgenticOS n8n Backup Script
 # Runs daily, keeps last 7 backups
 
@@ -53,7 +54,7 @@ find $BACKUP_DIR -name "*.sqlite" -mtime +7 -delete
 find $BACKUP_DIR -name "*.json" -mtime +7 -delete
 
 echo "[$(date)] Backup completed: n8n_db_$TIMESTAMP.sqlite"
-'''
+"""
 
 
 def publish_workflows(ssh):
@@ -82,10 +83,7 @@ def publish_workflows(ssh):
         if "active" in out:
             print("    OK - activated via API")
         else:
-            _, o2, _e2 = ssh.exec_command(
-                f"docker exec n8n-n8n-1 n8n update:workflow"
-                f" --id={wf_id} --active=true"
-            )
+            _, o2, _e2 = ssh.exec_command(f"docker exec n8n-n8n-1 n8n update:workflow --id={wf_id} --active=true")
             o2.read()
             print("    Activated via CLI")
 
@@ -108,11 +106,7 @@ def setup_backup(ssh):
     print("=" * 50)
 
     print("  Creating backup script...")
-    write_cmd = (
-        f"cat > /root/n8n-backup.sh << 'HEREDOC'\n"
-        f"{BACKUP_SCRIPT}\nHEREDOC\n"
-        f"chmod +x /root/n8n-backup.sh"
-    )
+    write_cmd = f"cat > /root/n8n-backup.sh << 'HEREDOC'\n{BACKUP_SCRIPT}\nHEREDOC\nchmod +x /root/n8n-backup.sh"
     _, o, e = ssh.exec_command(write_cmd)
     o.read()
     e.read()
@@ -129,7 +123,7 @@ def setup_backup(ssh):
     # Set up cron job - daily at 3:00 AM
     print("  Setting up daily cron (3:00 AM)...")
     cron_cmd = (
-        '(crontab -l 2>/dev/null | grep -v n8n-backup; '
+        "(crontab -l 2>/dev/null | grep -v n8n-backup; "
         'echo "0 3 * * * /root/n8n-backup.sh '
         '>> /var/log/n8n-backup.log 2>&1") | crontab -'
     )

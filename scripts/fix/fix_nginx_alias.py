@@ -1,4 +1,5 @@
 """Script to fix Nginx dashboard routing"""
+
 from shared_config import get_ssh_client
 
 
@@ -6,18 +7,18 @@ def main():
     ssh = get_ssh_client()
 
     # Read the current config
-    _, o, _ = ssh.exec_command('cat /etc/nginx/sites-available/n8n')
+    _, o, _ = ssh.exec_command("cat /etc/nginx/sites-available/n8n")
     config = o.read().decode()
 
     # Replace the dashboard block with a correct alias/root block
     new_config = config.replace(
-        '''    # Dashboard
+        """    # Dashboard
     location /dashboard {
         alias /var/www/dashboard;
         index index.html;
         try_files $uri $uri/ /dashboard/index.html;
-    }''',
-        '''    # Dashboard
+    }""",
+        """    # Dashboard
     location /dashboard/ {
         alias /var/www/dashboard/;
         index index.html;
@@ -27,7 +28,7 @@ def main():
     # Exact match for /dashboard without trailing slash
     location = /dashboard {
         return 301 /dashboard/;
-    }'''
+    }""",
     )
 
     # Replace the file content
@@ -43,7 +44,7 @@ nginx -t && systemctl reload nginx
 
     # Test it again
     print("\n=== LOCAL CURL DASHBOARD ===")
-    _, o, _ = ssh.exec_command('curl -s -k https://localhost/dashboard/ | head -n 5')
+    _, o, _ = ssh.exec_command("curl -s -k https://localhost/dashboard/ | head -n 5")
     print(o.read().decode())
 
     ssh.close()

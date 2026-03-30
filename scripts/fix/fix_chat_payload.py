@@ -11,23 +11,20 @@ def main():
     current_html = o.read().decode()
 
     # Fix the JSON payload: change "message" to "chatInput"
-    fixed_html = current_html.replace(
-        "body: JSON.stringify({message: msg})",
-        "body: JSON.stringify({chatInput: msg})"
-    )
+    fixed_html = current_html.replace("body: JSON.stringify({message: msg})", "body: JSON.stringify({chatInput: msg})")
 
     # Upload the fixed version
-    with ssh.open_sftp() as sftp, sftp.file('/var/www/dashboard/index.html', 'w') as f:
+    with ssh.open_sftp() as sftp, sftp.file("/var/www/dashboard/index.html", "w") as f:
         f.write(fixed_html)
 
     print("Fixed! Changed 'message' -> 'chatInput' in webhook payload")
 
     # Test the webhook with the correct field
     time.sleep(1)
-    cmd = f'''curl -s -k -X POST https://127.0.0.1/webhook/ai-agent \
+    cmd = f"""curl -s -k -X POST https://127.0.0.1/webhook/ai-agent \
   -H "Content-Type: application/json" \
   -H "Host: {VPS_HOST}" \
-  -d '{{"chatInput": "Di solamente OK"}}' '''
+  -d '{{"chatInput": "Di solamente OK"}}' """
     _, o2, _ = ssh.exec_command(cmd)
     time.sleep(15)  # Give AI time to respond
     print("\n=== WEBHOOK TEST WITH chatInput ===")

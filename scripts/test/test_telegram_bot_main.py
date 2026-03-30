@@ -1,4 +1,5 @@
 """Tests for create_telegram_ai_bot*.py main() functions with mocked SSH."""
+
 from unittest.mock import MagicMock, patch
 
 
@@ -11,15 +12,15 @@ def _mock_ssh_basic():
         call_count[0] += 1
         stdout = MagicMock()
         stderr = MagicMock()
-        stderr.read.return_value = b''
+        stderr.read.return_value = b""
         if call_count[0] == 2:
             # wc -c
-            stdout.read.return_value = b'1234 /tmp/telegram_ai_bot.json'
+            stdout.read.return_value = b"1234 /tmp/telegram_ai_bot.json"
         elif call_count[0] == 3:
             # import
-            stdout.read.return_value = b'Imported'
+            stdout.read.return_value = b"Imported"
         else:
-            stdout.read.return_value = b''
+            stdout.read.return_value = b""
         return (MagicMock(), stdout, stderr)
 
     ssh.exec_command.side_effect = exec_side
@@ -41,8 +42,8 @@ def _mock_ssh_sftp():
     def exec_side(cmd):
         stdout = MagicMock()
         stderr = MagicMock()
-        stderr.read.return_value = b''
-        stdout.read.return_value = b'OK'
+        stderr.read.return_value = b""
+        stdout.read.return_value = b"OK"
         return (MagicMock(), stdout, stderr)
 
     ssh.exec_command.side_effect = exec_side
@@ -54,6 +55,7 @@ class TestCreateTelegramAiBotV1Main:
     @patch("create_telegram_ai_bot.get_ssh_client")
     def test_main_runs(self, mock_get_ssh, mock_sleep, capsys):
         from create_telegram_ai_bot import main
+
         ssh = _mock_ssh_basic()
         mock_get_ssh.return_value = ssh
         main()
@@ -64,6 +66,7 @@ class TestCreateTelegramAiBotV1Main:
     @patch("create_telegram_ai_bot.get_ssh_client")
     def test_main_closes_ssh(self, mock_get_ssh, mock_sleep):
         from create_telegram_ai_bot import main
+
         ssh = _mock_ssh_basic()
         mock_get_ssh.return_value = ssh
         main()
@@ -73,6 +76,7 @@ class TestCreateTelegramAiBotV1Main:
     @patch("create_telegram_ai_bot.get_ssh_client")
     def test_main_imports_workflow(self, mock_get_ssh, mock_sleep):
         from create_telegram_ai_bot import main
+
         ssh = _mock_ssh_basic()
         mock_get_ssh.return_value = ssh
         main()
@@ -85,6 +89,7 @@ class TestCreateTelegramAiBotV2Main:
     @patch("create_telegram_ai_bot_v2.get_ssh_client")
     def test_main_runs(self, mock_get_ssh, mock_sleep, capsys):
         from create_telegram_ai_bot_v2 import main
+
         ssh = _mock_ssh_sftp()
         mock_get_ssh.return_value = ssh
         main()
@@ -95,6 +100,7 @@ class TestCreateTelegramAiBotV2Main:
     @patch("create_telegram_ai_bot_v2.get_ssh_client")
     def test_main_uses_sftp(self, mock_get_ssh, mock_sleep):
         from create_telegram_ai_bot_v2 import main
+
         ssh = _mock_ssh_sftp()
         mock_get_ssh.return_value = ssh
         main()
@@ -104,6 +110,7 @@ class TestCreateTelegramAiBotV2Main:
     @patch("create_telegram_ai_bot_v2.get_ssh_client")
     def test_main_closes_ssh(self, mock_get_ssh, mock_sleep):
         from create_telegram_ai_bot_v2 import main
+
         ssh = _mock_ssh_sftp()
         mock_get_ssh.return_value = ssh
         main()
@@ -115,19 +122,20 @@ class TestCreateTelegramAiBotV3Main:
     @patch("create_telegram_ai_bot_v3.get_ssh_client")
     def test_main_success(self, mock_get_ssh, mock_sleep, capsys):
         from create_telegram_ai_bot_v3 import main
+
         ssh = _mock_ssh_sftp()
 
         # v3 checks for "error" in stdout to decide activation
         def exec_side(cmd):
             stdout = MagicMock()
             stderr = MagicMock()
-            stderr.read.return_value = b''
+            stderr.read.return_value = b""
             if "import:workflow" in str(cmd):
-                stdout.read.return_value = b'imported successfully'
+                stdout.read.return_value = b"imported successfully"
             elif "update:workflow" in str(cmd):
-                stdout.read.return_value = b'activated'
+                stdout.read.return_value = b"activated"
             else:
-                stdout.read.return_value = b''
+                stdout.read.return_value = b""
             return (MagicMock(), stdout, stderr)
 
         ssh.exec_command.side_effect = exec_side
@@ -140,16 +148,17 @@ class TestCreateTelegramAiBotV3Main:
     @patch("create_telegram_ai_bot_v3.get_ssh_client")
     def test_main_error_skips_activation(self, mock_get_ssh, mock_sleep, capsys):
         from create_telegram_ai_bot_v3 import main
+
         ssh = _mock_ssh_sftp()
 
         def exec_side(cmd):
             stdout = MagicMock()
             stderr = MagicMock()
-            stderr.read.return_value = b''
+            stderr.read.return_value = b""
             if "import:workflow" in str(cmd):
-                stdout.read.return_value = b'Error: workflow already exists'
+                stdout.read.return_value = b"Error: workflow already exists"
             else:
-                stdout.read.return_value = b''
+                stdout.read.return_value = b""
             return (MagicMock(), stdout, stderr)
 
         ssh.exec_command.side_effect = exec_side
@@ -162,6 +171,7 @@ class TestCreateTelegramAiBotV3Main:
     @patch("create_telegram_ai_bot_v3.get_ssh_client")
     def test_main_closes_ssh(self, mock_get_ssh, mock_sleep):
         from create_telegram_ai_bot_v3 import main
+
         ssh = _mock_ssh_sftp()
         mock_get_ssh.return_value = ssh
         main()

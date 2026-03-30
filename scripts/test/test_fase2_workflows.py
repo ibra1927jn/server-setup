@@ -1,4 +1,5 @@
 """Tests for fase2_deploy.py workflow data structures and gen_id()"""
+
 import json
 import random
 import string
@@ -29,9 +30,12 @@ def test_workflow_structure_daily_briefing():
         "id": gen_id(),
         "name": "Daily Briefing",
         "nodes": [
-            {"parameters": {"rule": {"interval": [{"triggerAtHour": 8}]}},
-             "id": gen_id(), "name": "Cron 8AM",
-             "type": "n8n-nodes-base.scheduleTrigger"},
+            {
+                "parameters": {"rule": {"interval": [{"triggerAtHour": 8}]}},
+                "id": gen_id(),
+                "name": "Cron 8AM",
+                "type": "n8n-nodes-base.scheduleTrigger",
+            },
         ],
         "connections": {},
         "active": True,
@@ -50,9 +54,12 @@ def test_workflow_structure_uptime_monitor():
         "id": gen_id(),
         "name": "Uptime Monitor",
         "nodes": [
-            {"parameters": {"rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}},
-             "id": gen_id(), "name": "Every 5 min",
-             "type": "n8n-nodes-base.scheduleTrigger"},
+            {
+                "parameters": {"rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}},
+                "id": gen_id(),
+                "name": "Every 5 min",
+                "type": "n8n-nodes-base.scheduleTrigger",
+            },
         ],
         "connections": {},
         "active": True,

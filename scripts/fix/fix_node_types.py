@@ -3,6 +3,7 @@ Fix Daily Briefing and Uptime Monitor: replace executeCommand with SSH node.
 The n8n Docker image doesn't have executeCommand node available.
 The working Server Sentinel uses n8n-nodes-base.ssh for remote commands.
 """
+
 import json
 import time
 
@@ -33,9 +34,7 @@ def replace_execute_command_nodes(wf):
             node["type"] = "n8n-nodes-base.ssh"
             node["typeVersion"] = 1
             node["parameters"] = {"command": old_cmd, "authentication": "password"}
-            node["credentials"] = {
-                "sshPassword": {"id": N8N_CRED_SSH, "name": "Hetzner Root SSH"}
-            }
+            node["credentials"] = {"sshPassword": {"id": N8N_CRED_SSH, "name": "Hetzner Root SSH"}}
             changed = True
     return changed
 

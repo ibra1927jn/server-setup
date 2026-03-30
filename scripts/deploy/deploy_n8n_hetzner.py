@@ -1,4 +1,5 @@
 """Deploy n8n to Hetzner VPS via Docker Compose"""
+
 import time
 
 from shared_config import N8N_EMAIL, N8N_PASSWORD, VPS_HOST, get_ssh_client
@@ -52,18 +53,19 @@ NGINX_CONF = """server {
 }
 """
 
+
 def run(ssh, cmd, label="", timeout=120):
     if label:
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print(f"  {label}")
-        print(f"{'='*50}")
+        print(f"{'=' * 50}")
     print(f"$ {cmd[:100]}")
     _, o, e = ssh.exec_command(cmd, timeout=timeout)
     out = o.read().decode().strip()
     err = e.read().decode().strip()
     if out:
         print(out)
-    if err and 'WARNING' not in err and 'warn' not in err.lower():
+    if err and "WARNING" not in err and "warn" not in err.lower():
         print(f"[stderr] {err}")
     return out
 

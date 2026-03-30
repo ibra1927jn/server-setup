@@ -1,4 +1,5 @@
 """Fix n8n secure cookie issue on Hetzner"""
+
 import time
 
 from shared_config import VPS_HOST, get_ssh_client

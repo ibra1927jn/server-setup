@@ -14,12 +14,12 @@ def main():
 
     # First verify the correct model works
     cmd = (
-        f'curl -s https://openrouter.ai/api/v1/chat/completions'
+        f"curl -s https://openrouter.ai/api/v1/chat/completions"
         f' -H "Authorization: Bearer {OPENROUTER_API_KEY}"'
         f' -H "Content-Type: application/json"'
         ' -d \'{"model": "z-ai/glm-4.5-air:free",'
         ' "messages": [{"role": "user", "content": "Di solamente OK"}],'
-        " \"max_tokens\": 50}' --max-time 30"
+        ' "max_tokens": 50}\' --max-time 30'
     )
     _, o, _ = ssh.exec_command(cmd)
     time.sleep(20)
@@ -34,18 +34,13 @@ def main():
         "active": True,
         "nodes": [
             {
-                "parameters": {
-                    "httpMethod": "POST",
-                    "path": "ai-agent",
-                    "responseMode": "lastNode",
-                    "options": {}
-                },
+                "parameters": {"httpMethod": "POST", "path": "ai-agent", "responseMode": "lastNode", "options": {}},
                 "id": "webhook-input",
                 "name": "Webhook Input",
                 "type": "n8n-nodes-base.webhook",
                 "typeVersion": 2,
                 "position": [224, 304],
-                "webhookId": "ai-agent-endpoint"
+                "webhookId": "ai-agent-endpoint",
             },
             {
                 "parameters": {
@@ -53,80 +48,52 @@ def main():
                     "text": "={{ $json.body.chatInput }}",
                     "options": {
                         "systemMessage": (
-                            "Eres AgenticOS, un asistente de IA"
-                            " conciso. Responde en español."
-                            " Sé breve, máximo 2 párrafos."
+                            "Eres AgenticOS, un asistente de IA conciso. Responde en español. Sé breve, máximo 2 párrafos."
                         )
-                    }
+                    },
                 },
                 "type": "@n8n/n8n-nodes-langchain.agent",
                 "typeVersion": 1.7,
                 "position": [448, 304],
                 "id": "ai-agent-node",
-                "name": "AI Agent1"
+                "name": "AI Agent1",
             },
             {
                 "parameters": {
-                    "model": {
-                        "__rl": True,
-                        "value": "=z-ai/glm-4.5-air:free",
-                        "mode": "id"
-                    },
-                    "options": {
-                        "maxTokens": 500,
-                        "temperature": 0.7
-                    }
+                    "model": {"__rl": True, "value": "=z-ai/glm-4.5-air:free", "mode": "id"},
+                    "options": {"maxTokens": 500, "temperature": 0.7},
                 },
                 "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
                 "typeVersion": 1.3,
                 "position": [456, 528],
                 "id": "openrouter-model-node",
                 "name": "OpenAI Chat Model",
-                "credentials": {
-                    "openAiApi": {
-                        "id": N8N_CRED_OPENROUTER,
-                        "name": "OpenRouter Account"
-                    }
-                }
+                "credentials": {"openAiApi": {"id": N8N_CRED_OPENROUTER, "name": "OpenRouter Account"}},
             },
             {
                 "parameters": {
                     "sessionIdType": "customKey",
                     "sessionKey": "={{ $json.body.session_id || 'default' }}",
-                    "contextWindowLength": 10
+                    "contextWindowLength": 10,
                 },
                 "id": "memory",
                 "name": "Window Buffer Memory",
                 "type": "@n8n/n8n-nodes-langchain.memoryBufferWindow",
                 "typeVersion": 1.3,
-                "position": [584, 528]
-            }
+                "position": [584, 528],
+            },
         ],
         "connections": {
-            "Webhook Input": {
-                "main": [
-                    [{"node": "AI Agent1", "type": "main", "index": 0}]
-                ]
-            },
-            "OpenAI Chat Model": {
-                "ai_languageModel": [
-                    [{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]
-                ]
-            },
-            "Window Buffer Memory": {
-                "ai_memory": [
-                    [{"node": "AI Agent1", "type": "ai_memory", "index": 0}]
-                ]
-            }
+            "Webhook Input": {"main": [[{"node": "AI Agent1", "type": "main", "index": 0}]]},
+            "OpenAI Chat Model": {"ai_languageModel": [[{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]]},
+            "Window Buffer Memory": {"ai_memory": [[{"node": "AI Agent1", "type": "ai_memory", "index": 0}]]},
         },
-        "settings": {
-            "executionOrder": "v1"
-        }
+        "settings": {"executionOrder": "v1"},
     }
 
     workflow_json = json.dumps([fixed_workflow])
 
-    with ssh.open_sftp() as sftp, sftp.file('/tmp/fixed_ai_agent_v2.json', 'w') as f:
+    with ssh.open_sftp() as sftp, sftp.file("/tmp/fixed_ai_agent_v2.json", "w") as f:
         f.write(workflow_json)
 
     time.sleep(1)
@@ -150,9 +117,9 @@ def main():
 
     # Test webhook
     print("\n=== TESTING WEBHOOK ===")
-    cmd2 = '''curl -s -X POST http://127.0.0.1:5678/webhook/ai-agent \
+    cmd2 = """curl -s -X POST http://127.0.0.1:5678/webhook/ai-agent \
   -H "Content-Type: application/json" \
-  -d '{"chatInput": "Di solamente OK"}' --max-time 45'''
+  -d '{"chatInput": "Di solamente OK"}' --max-time 45"""
     _, o4, _ = ssh.exec_command(cmd2)
     time.sleep(30)
     print("RESPONSE:", o4.read().decode())

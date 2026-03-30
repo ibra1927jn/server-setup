@@ -12,16 +12,16 @@ def main():
 
     workflows = json.loads(raw)
     for wf in workflows:
-        if wf['name'] == 'AI Agent Base':
+        if wf["name"] == "AI Agent Base":
             # Save full workflow to file for analysis
-            with open(r'C:\Users\ibrab\Desktop\set up\scripts\ai_agent_base_export.json', 'w') as f:
+            with open(r"C:\Users\ibrab\Desktop\set up\scripts\ai_agent_base_export.json", "w") as f:
                 json.dump(wf, f, indent=2)
             print(f"AI Agent Base ID: {wf['id']}")
             print(f"Active: {wf.get('active')}")
             print(f"Nodes ({len(wf.get('nodes', []))}):")
-            for node in wf.get('nodes', []):
+            for node in wf.get("nodes", []):
                 print(f"  - {node['name']} ({node['type']})")
-                if 'credentials' in node:
+                if "credentials" in node:
                     print(f"    Credentials: {json.dumps(node['credentials'])}")
             break
 

@@ -1,4 +1,5 @@
 """Diagnostico del VPS: disco, RAM, Docker, Nginx, puertos"""
+
 from shared_config import VPS_HOST, get_ssh_client
 
 
@@ -26,16 +27,13 @@ def main():
     run(ssh, "docker --version 2>/dev/null || echo 'NO_DOCKER'", "DOCKER")
     run(
         ssh,
-        "docker compose version 2>/dev/null"
-        " || docker-compose --version 2>/dev/null"
-        " || echo 'NO_COMPOSE'",
+        "docker compose version 2>/dev/null || docker-compose --version 2>/dev/null || echo 'NO_COMPOSE'",
         "COMPOSE",
     )
     run(ssh, "nginx -v 2>&1 || echo 'NO_NGINX'", "NGINX")
     run(
         ssh,
-        "ss -tlnp | grep -E ':(80|443|5678) '"
-        " || echo 'Ports 80/443/5678 free'",
+        "ss -tlnp | grep -E ':(80|443|5678) ' || echo 'Ports 80/443/5678 free'",
         "PORTS",
     )
 

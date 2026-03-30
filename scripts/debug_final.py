@@ -1,4 +1,5 @@
 """Debug final: revisar logs, execution history, y enviar test directo"""
+
 import json
 
 import requests
@@ -47,7 +48,7 @@ def main():
             "chat_id": TELEGRAM_CHAT_ID,
             "text": "Test directo - si ves esto, Telegram funciona OK",
         },
-        timeout=30
+        timeout=30,
     )
     print(f"  Status: {r.status_code}")
     print(f"  Response: {r.text[:300]}")

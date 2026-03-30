@@ -1,4 +1,5 @@
 """Tests for final_pendientes.py main() and BACKUP_SCRIPT with mocked SSH."""
+
 from unittest.mock import MagicMock, patch
 
 from final_pendientes import BACKUP_SCRIPT, main
@@ -29,15 +30,15 @@ def _make_mock_ssh(workflow_list="id1 | WF One\nid2 | WF Two"):
     ssh = MagicMock()
     call_idx = [0]
     responses = {
-        0: workflow_list.encode(),       # list:workflow
-        1: b'"active":true',             # activate wf1 (API)
-        2: b'"active":true',             # activate wf2 (API)
-        3: b'',                          # docker restart
-        4: b'id1 | WF One\nid2 | WF Two',  # verify listing
-        5: b'',                          # write backup script
-        6: b'[2026-03-30] Backup completed',  # run backup
-        7: b'0 3 * * * /root/n8n-backup.sh',  # crontab -l
-        8: b'-rw-r--r-- 1 root root 100K n8n_db.sqlite',  # ls backups
+        0: workflow_list.encode(),  # list:workflow
+        1: b'"active":true',  # activate wf1 (API)
+        2: b'"active":true',  # activate wf2 (API)
+        3: b"",  # docker restart
+        4: b"id1 | WF One\nid2 | WF Two",  # verify listing
+        5: b"",  # write backup script
+        6: b"[2026-03-30] Backup completed",  # run backup
+        7: b"0 3 * * * /root/n8n-backup.sh",  # crontab -l
+        8: b"-rw-r--r-- 1 root root 100K n8n_db.sqlite",  # ls backups
     }
 
     def exec_side(cmd):
@@ -45,8 +46,8 @@ def _make_mock_ssh(workflow_list="id1 | WF One\nid2 | WF Two"):
         call_idx[0] += 1
         stdout = MagicMock()
         stderr = MagicMock()
-        stdout.read.return_value = responses.get(idx, b'')
-        stderr.read.return_value = b''
+        stdout.read.return_value = responses.get(idx, b"")
+        stderr.read.return_value = b""
         return (MagicMock(), stdout, stderr)
 
     ssh.exec_command.side_effect = exec_side
@@ -95,17 +96,17 @@ class TestFinalPendientesMain:
             call_idx[0] += 1
             stdout = MagicMock()
             stderr = MagicMock()
-            stderr.read.return_value = b''
+            stderr.read.return_value = b""
             if idx == 0:
-                stdout.read.return_value = b'id1 | WF One'
+                stdout.read.return_value = b"id1 | WF One"
             elif idx == 1:
                 # API activation fails
                 stdout.read.return_value = b'{"error": "not found"}'
             elif idx == 2:
                 # CLI fallback
-                stdout.read.return_value = b''
+                stdout.read.return_value = b""
             else:
-                stdout.read.return_value = b''
+                stdout.read.return_value = b""
             return (MagicMock(), stdout, stderr)
 
         ssh.exec_command.side_effect = exec_side
@@ -136,14 +137,14 @@ class TestFinalPendientesMain:
             stdout = MagicMock()
             stderr = MagicMock()
             if idx == 0:
-                stdout.read.return_value = b''
-                stderr.read.return_value = b''
+                stdout.read.return_value = b""
+                stderr.read.return_value = b""
             elif "n8n-backup.sh" in str(cmd) and "bash" in str(cmd):
-                stdout.read.return_value = b''
-                stderr.read.return_value = b'backup error'
+                stdout.read.return_value = b""
+                stderr.read.return_value = b"backup error"
             else:
-                stdout.read.return_value = b''
-                stderr.read.return_value = b''
+                stdout.read.return_value = b""
+                stderr.read.return_value = b""
             return (MagicMock(), stdout, stderr)
 
         ssh.exec_command.side_effect = exec_side

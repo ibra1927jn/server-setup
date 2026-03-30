@@ -1,4 +1,5 @@
 """Tests for fase2_deploy.py main() with mocked SSH."""
+
 import json
 from unittest.mock import MagicMock, mock_open, patch
 
@@ -25,6 +26,7 @@ def test_main_runs_firewall_commands(mock_get_ssh, mock_time):
     mock_get_ssh.return_value = ssh
 
     from deploy.fase2_deploy import main
+
     main()
 
     commands = [c[0][0] for c in ssh.exec_command.call_args_list]
@@ -43,6 +45,7 @@ def test_main_uploads_4_workflows_via_sftp(mock_get_ssh, mock_time):
     mock_get_ssh.return_value = ssh
 
     from deploy.fase2_deploy import main
+
     main()
 
     ssh.open_sftp.assert_called_once()
@@ -62,6 +65,7 @@ def test_main_imports_workflows_into_n8n(mock_get_ssh, mock_time):
     mock_get_ssh.return_value = ssh
 
     from deploy.fase2_deploy import main
+
     main()
 
     commands = [c[0][0] for c in ssh.exec_command.call_args_list]
@@ -78,6 +82,7 @@ def test_main_activates_and_restarts(mock_get_ssh, mock_time):
     mock_get_ssh.return_value = ssh
 
     from deploy.fase2_deploy import main
+
     main()
 
     commands = [c[0][0] for c in ssh.exec_command.call_args_list]
@@ -95,6 +100,7 @@ def test_main_closes_connections(mock_get_ssh, mock_time):
     mock_get_ssh.return_value = ssh
 
     from deploy.fase2_deploy import main
+
     main()
 
     sftp.close.assert_called_once()
@@ -113,6 +119,7 @@ def test_main_writes_valid_workflow_json(mock_get_ssh, mock_time):
     def capturing_open(path, *args, **kwargs):
         if isinstance(path, str) and path.endswith(".json"):
             from io import StringIO
+
             buf = StringIO()
             buf.name = path
             buf.__enter__ = lambda s: s
@@ -122,12 +129,14 @@ def test_main_writes_valid_workflow_json(mock_get_ssh, mock_time):
             def capturing_close():
                 written_data[path] = buf.getvalue()
                 original_close()
+
             buf.close = capturing_close
             return buf
         return MagicMock()
 
     with patch("builtins.open", side_effect=capturing_open):
         from deploy.fase2_deploy import main
+
         main()
 
     assert len(written_data) == 4
@@ -148,6 +157,7 @@ def test_main_docker_cp_each_workflow(mock_get_ssh, mock_time):
     mock_get_ssh.return_value = ssh
 
     from deploy.fase2_deploy import main
+
     main()
 
     commands = [c[0][0] for c in ssh.exec_command.call_args_list]
@@ -164,6 +174,7 @@ def test_main_prints_firewall_stdout(mock_get_ssh, mock_time, capsys):
     mock_get_ssh.return_value = ssh
 
     from deploy.fase2_deploy import main
+
     main()
 
     captured = capsys.readouterr()
@@ -179,6 +190,7 @@ def test_main_prints_firewall_and_import_errors(mock_get_ssh, mock_time, capsys)
     mock_get_ssh.return_value = ssh
 
     from deploy.fase2_deploy import main
+
     main()
 
     captured = capsys.readouterr()

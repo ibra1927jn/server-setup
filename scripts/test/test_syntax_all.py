@@ -1,4 +1,5 @@
 """Verify all Python scripts in the repo parse without syntax errors."""
+
 import ast
 from pathlib import Path
 
@@ -13,9 +14,7 @@ def _collect_py_files():
     for root, _dirs, files in SCRIPTS_DIR.walk():
         if "__pycache__" in str(root):
             continue
-        py_files.extend(
-            str(root / f) for f in files if f.endswith(".py")
-        )
+        py_files.extend(str(root / f) for f in files if f.endswith(".py"))
     return sorted(py_files)
 
 

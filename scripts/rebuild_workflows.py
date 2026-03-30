@@ -4,6 +4,7 @@ create a SIMPLE workflow that definitely works and replace the broken ones.
 Step 1: Test if a minimal workflow with just Cron + Telegram works.
 Step 2: If yes, rebuild each workflow as minimal working versions.
 """
+
 import contextlib
 import json
 import time
@@ -32,13 +33,11 @@ def build_crypto_workflow(chat_id, tg_cred):
         "active": True,
         "nodes": [
             {
-                "parameters": {
-                    "rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}
-                },
+                "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}},
                 "name": "Every Hour",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
-                "position": [250, 300]
+                "position": [250, 300],
             },
             {
                 "parameters": {
@@ -47,12 +46,12 @@ def build_crypto_workflow(chat_id, tg_cred):
                         "?ids=bitcoin,ethereum,solana,ripple,dogecoin"
                         "&vs_currencies=usd&include_24hr_change=true"
                     ),
-                    "options": {}
+                    "options": {},
                 },
                 "name": "Get Prices",
                 "type": "n8n-nodes-base.httpRequest",
                 "typeVersion": 4.2,
-                "position": [470, 300]
+                "position": [470, 300],
             },
             {
                 "parameters": {
@@ -71,23 +70,19 @@ def build_crypto_workflow(chat_id, tg_cred):
                         "({{ $json.dogecoin.usd_24h_change?.toFixed(1) }}%)\n\n"
                         "🕐 {{ new Date().toLocaleString('es-ES') }}"
                     ),
-                    "additionalFields": {"parse_mode": "Markdown"}
+                    "additionalFields": {"parse_mode": "Markdown"},
                 },
                 "name": "Send Telegram",
                 "type": "n8n-nodes-base.telegram",
                 "typeVersion": 1.2,
                 "position": [690, 300],
-                "credentials": {"telegramApi": tg_cred}
-            }
+                "credentials": {"telegramApi": tg_cred},
+            },
         ],
         "connections": {
-            "Every Hour": {
-                "main": [[{"node": "Get Prices", "type": "main", "index": 0}]]
-            },
-            "Get Prices": {
-                "main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]
-            }
-        }
+            "Every Hour": {"main": [[{"node": "Get Prices", "type": "main", "index": 0}]]},
+            "Get Prices": {"main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]},
+        },
     }
 
 
@@ -102,47 +97,43 @@ def build_daily_workflow(chat_id, ssh_cred, tg_cred):
                 "name": "8AM Daily",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
-                "position": [250, 300]
+                "position": [250, 300],
             },
             {
                 "parameters": {
                     "command": (
-                        "echo \"UPTIME: $(uptime)\""
-                        " && echo \"DISK: $(df -h / | tail -1)\""
-                        " && echo \"MEM: $(free -h | grep Mem)\""
-                        " && echo \"DOCKER: $(docker ps"
+                        'echo "UPTIME: $(uptime)"'
+                        ' && echo "DISK: $(df -h / | tail -1)"'
+                        ' && echo "MEM: $(free -h | grep Mem)"'
+                        ' && echo "DOCKER: $(docker ps'
                         " --format '{{.Names}}: {{.Status}}'"
                         " | tr '\\n' ', ')\""
                     ),
-                    "authentication": "password"
+                    "authentication": "password",
                 },
                 "name": "Server Stats",
                 "type": "n8n-nodes-base.ssh",
                 "typeVersion": 1,
                 "position": [470, 300],
-                "credentials": {"sshPassword": ssh_cred}
+                "credentials": {"sshPassword": ssh_cred},
             },
             {
                 "parameters": {
                     "chatId": chat_id,
                     "text": "=🌅 *Daily Briefing*\n\n{{ $json.stdout }}",
-                    "additionalFields": {"parse_mode": "Markdown"}
+                    "additionalFields": {"parse_mode": "Markdown"},
                 },
                 "name": "Send Telegram",
                 "type": "n8n-nodes-base.telegram",
                 "typeVersion": 1.2,
                 "position": [690, 300],
-                "credentials": {"telegramApi": tg_cred}
-            }
+                "credentials": {"telegramApi": tg_cred},
+            },
         ],
         "connections": {
-            "8AM Daily": {
-                "main": [[{"node": "Server Stats", "type": "main", "index": 0}]]
-            },
-            "Server Stats": {
-                "main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]
-            }
-        }
+            "8AM Daily": {"main": [[{"node": "Server Stats", "type": "main", "index": 0}]]},
+            "Server Stats": {"main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]},
+        },
     }
 
 
@@ -153,13 +144,11 @@ def build_uptime_workflow(chat_id, ssh_cred, tg_cred):
         "active": True,
         "nodes": [
             {
-                "parameters": {
-                    "rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}
-                },
+                "parameters": {"rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}},
                 "name": "Every 5 Min",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
-                "position": [250, 300]
+                "position": [250, 300],
             },
             {
                 "parameters": {
@@ -170,23 +159,23 @@ def build_uptime_workflow(chat_id, ssh_cred, tg_cred):
                         " host=$(echo $s | cut -d: -f1);"
                         " port=$(echo $s | cut -d: -f2);"
                         " if timeout 5 bash -c"
-                        " \"echo > /dev/tcp/$host/$port\""
+                        ' "echo > /dev/tcp/$host/$port"'
                         " 2>/dev/null;"
-                        " then report=\"$report\\n"
-                        "✅ $host:$port UP\";"
-                        " else report=\"$report\\n"
-                        "❌ $host:$port DOWN\";"
+                        ' then report="$report\\n'
+                        '✅ $host:$port UP";'
+                        ' else report="$report\\n'
+                        '❌ $host:$port DOWN";'
                         " failed=$((failed+1)); fi; done;"
-                        " echo \"FAILED=$failed\";"
-                        " echo -e \"$report\""
+                        ' echo "FAILED=$failed";'
+                        ' echo -e "$report"'
                     ),
-                    "authentication": "password"
+                    "authentication": "password",
                 },
                 "name": "Check Services",
                 "type": "n8n-nodes-base.ssh",
                 "typeVersion": 1,
                 "position": [470, 300],
-                "credentials": {"sshPassword": ssh_cred}
+                "credentials": {"sshPassword": ssh_cred},
             },
             {
                 "parameters": {
@@ -196,59 +185,48 @@ def build_uptime_workflow(chat_id, ssh_cred, tg_cred):
                             "leftValue": "",
                             "typeValidation": "strict",
                         },
-                        "conditions": [{
-                            "leftValue": "={{ $json.stdout }}",
-                            "rightValue": "FAILED=0",
-                            "operator": {
-                                "type": "string",
-                                "operation": "notContains",
-                            },
-                        }],
-                        "combinator": "and"
+                        "conditions": [
+                            {
+                                "leftValue": "={{ $json.stdout }}",
+                                "rightValue": "FAILED=0",
+                                "operator": {
+                                    "type": "string",
+                                    "operation": "notContains",
+                                },
+                            }
+                        ],
+                        "combinator": "and",
                     }
                 },
                 "name": "Has Failures?",
                 "type": "n8n-nodes-base.if",
                 "typeVersion": 2,
-                "position": [690, 300]
+                "position": [690, 300],
             },
             {
                 "parameters": {
                     "chatId": chat_id,
-                    "text": (
-                        "=🚨 *ALERTA: Servicio Caido!*"
-                        "\n\n{{ $('Check Services').item.json.stdout }}"
-                    ),
-                    "additionalFields": {"parse_mode": "Markdown"}
+                    "text": ("=🚨 *ALERTA: Servicio Caido!*\n\n{{ $('Check Services').item.json.stdout }}"),
+                    "additionalFields": {"parse_mode": "Markdown"},
                 },
                 "name": "Alert Down",
                 "type": "n8n-nodes-base.telegram",
                 "typeVersion": 1.2,
                 "position": [910, 200],
-                "credentials": {"telegramApi": tg_cred}
+                "credentials": {"telegramApi": tg_cred},
             },
-            {
-                "parameters": {},
-                "name": "All OK",
-                "type": "n8n-nodes-base.noOp",
-                "typeVersion": 1,
-                "position": [910, 400]
-            }
+            {"parameters": {}, "name": "All OK", "type": "n8n-nodes-base.noOp", "typeVersion": 1, "position": [910, 400]},
         ],
         "connections": {
-            "Every 5 Min": {
-                "main": [[{"node": "Check Services", "type": "main", "index": 0}]]
-            },
-            "Check Services": {
-                "main": [[{"node": "Has Failures?", "type": "main", "index": 0}]]
-            },
+            "Every 5 Min": {"main": [[{"node": "Check Services", "type": "main", "index": 0}]]},
+            "Check Services": {"main": [[{"node": "Has Failures?", "type": "main", "index": 0}]]},
             "Has Failures?": {
                 "main": [
                     [{"node": "Alert Down", "type": "main", "index": 0}],
                     [{"node": "All OK", "type": "main", "index": 0}],
                 ]
-            }
-        }
+            },
+        },
     }
 
 
@@ -259,13 +237,11 @@ def build_github_workflow(chat_id, tg_cred):
         "active": True,
         "nodes": [
             {
-                "parameters": {
-                    "rule": {"interval": [{"field": "hours", "hoursInterval": 12}]}
-                },
+                "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 12}]}},
                 "name": "Every 12h",
                 "type": "n8n-nodes-base.scheduleTrigger",
                 "typeVersion": 1.2,
-                "position": [250, 300]
+                "position": [250, 300],
             },
             {
                 "parameters": {
@@ -273,16 +249,18 @@ def build_github_workflow(chat_id, tg_cred):
                     "authentication": "genericCredentialType",
                     "genericAuthType": "httpHeaderAuth",
                     "sendHeaders": True,
-                    "headerParameters": {"parameters": [
-                        {"name": "Authorization", "value": f"Bearer {GITHUB_PAT}"},
-                        {"name": "User-Agent", "value": "AgenticOS"}
-                    ]},
-                    "options": {}
+                    "headerParameters": {
+                        "parameters": [
+                            {"name": "Authorization", "value": f"Bearer {GITHUB_PAT}"},
+                            {"name": "User-Agent", "value": "AgenticOS"},
+                        ]
+                    },
+                    "options": {},
                 },
                 "name": "Get Repos",
                 "type": "n8n-nodes-base.httpRequest",
                 "typeVersion": 4.2,
-                "position": [470, 300]
+                "position": [470, 300],
             },
             {
                 "parameters": {
@@ -292,23 +270,19 @@ def build_github_workflow(chat_id, tg_cred):
                         "Repos checked: {{ $json.length || 'N/A' }}\n"
                         "🕐 {{ new Date().toLocaleString('es-ES') }}"
                     ),
-                    "additionalFields": {"parse_mode": "Markdown"}
+                    "additionalFields": {"parse_mode": "Markdown"},
                 },
                 "name": "Send Report",
                 "type": "n8n-nodes-base.telegram",
                 "typeVersion": 1.2,
                 "position": [690, 300],
-                "credentials": {"telegramApi": tg_cred}
-            }
+                "credentials": {"telegramApi": tg_cred},
+            },
         ],
         "connections": {
-            "Every 12h": {
-                "main": [[{"node": "Get Repos", "type": "main", "index": 0}]]
-            },
-            "Get Repos": {
-                "main": [[{"node": "Send Report", "type": "main", "index": 0}]]
-            }
-        }
+            "Every 12h": {"main": [[{"node": "Get Repos", "type": "main", "index": 0}]]},
+            "Get Repos": {"main": [[{"node": "Send Report", "type": "main", "index": 0}]]},
+        },
     }
 
 
@@ -325,10 +299,7 @@ def import_all_workflows(ssh, workflows):
         sftp.put(local, remote)
         ssh.exec_command(f"docker cp {remote} n8n-n8n-1:/tmp/{fname}")
         time.sleep(1)
-        cmd = (
-            "docker exec n8n-n8n-1 n8n import:workflow"
-            f" --input=/tmp/{fname}"
-        )
+        cmd = f"docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/{fname}"
         _, o, _e = ssh.exec_command(cmd)
         print(f"  {o.read().decode().strip()}")
 
@@ -336,10 +307,7 @@ def import_all_workflows(ssh, workflows):
     ssh.exec_command("docker restart n8n-n8n-1")
     time.sleep(15)
 
-    cmd = (
-        "docker exec n8n-n8n-1 n8n update:workflow"
-        " --all --active=true"
-    )
+    cmd = "docker exec n8n-n8n-1 n8n update:workflow --all --active=true"
     _, o, _ = ssh.exec_command(cmd)
     o.read()
     print("All activated!")
@@ -356,9 +324,7 @@ def test_crypto_workflow(ssh):
         if "Crypto" in line:
             wid = line.split("|")[0].strip()
             print(f"  Executing {wid}...")
-            _, o, _e = ssh.exec_command(
-                f"docker exec n8n-n8n-1 n8n execute --id={wid} 2>&1", timeout=30
-            )
+            _, o, _e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n execute --id={wid} 2>&1", timeout=30)
             with contextlib.suppress(Exception):
                 print(f"  OUT: {o.read().decode().strip()[:300]}")
 

@@ -1,4 +1,5 @@
 """Tests for patch_workflow.py node filtering, construction, and connection logic."""
+
 import json
 
 # --- Node filtering (mirrors patch_workflow.py line 24) ---
@@ -37,6 +38,7 @@ def test_filter_all_same_name():
 
 
 # --- Chat model node construction (mirrors patch_workflow.py lines 27-49) ---
+
 
 def _make_chat_model_node(model, cred_id, cred_name, temp=0.7, max_tokens=500):
     """Build a replacement chat model node."""
@@ -85,15 +87,12 @@ def test_chat_model_node_serializable():
 
 # --- Connection management (mirrors patch_workflow.py lines 53-70) ---
 
+
 def _fix_connections(conns, model_name="OpenAI Chat Model", target_agent="AI Agent1"):
     """Remove existing model connection and re-create it pointing to agent."""
     if model_name in conns:
         del conns[model_name]
-    conns[model_name] = {
-        "ai_languageModel": [
-            [{"node": target_agent, "type": "ai_languageModel", "index": 0}]
-        ]
-    }
+    conns[model_name] = {"ai_languageModel": [[{"node": target_agent, "type": "ai_languageModel", "index": 0}]]}
     return conns
 
 
@@ -126,6 +125,7 @@ def test_fix_connections_custom_agent():
 
 # --- Full patch pipeline ---
 
+
 def test_full_patch_pipeline():
     """Simulate the full node replacement and connection fix."""
     wf_data = {
@@ -136,11 +136,7 @@ def test_full_patch_pipeline():
         ],
         "connections": {
             "Trigger": {"main": [[{"node": "AI Agent1", "type": "main", "index": 0}]]},
-            "OpenAI Chat Model": {
-                "ai_languageModel": [[
-                    {"node": "AI Agent1", "type": "ai_languageModel", "index": 0}
-                ]]
-            },
+            "OpenAI Chat Model": {"ai_languageModel": [[{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]]},
         },
     }
     # Filter + add new model
@@ -158,6 +154,7 @@ def test_full_patch_pipeline():
 
 
 # --- Response parsing (mirrors patch_workflow.py lines 96-101) ---
+
 
 def test_response_parsing_success():
     result = json.dumps({"data": {"id": "wf123", "name": "Test"}})

@@ -4,6 +4,7 @@ Minimal absolute test:
 2. Execute it
 3. Check if message arrives
 """
+
 import json
 
 from shared_config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, get_ssh_client
@@ -45,8 +46,8 @@ print(f"  CoinGecko: {o.read().decode().strip()}")
 print("\n=== STEP 3: DNS from n8n container ===")
 n8n_tg_cmd = (
     'docker exec n8n-n8n-1 sh -c "wget -q -O-'
-    ' https://api.telegram.org/bot{BOT}/getMe 2>&1'
-    ' || curl -s https://api.telegram.org/bot{BOT}/getMe 2>&1'
+    " https://api.telegram.org/bot{BOT}/getMe 2>&1"
+    " || curl -s https://api.telegram.org/bot{BOT}/getMe 2>&1"
     ' || echo NO_CURL_NO_WGET"'
 ).replace("{BOT}", BOT)
 _, o, _ = ssh.exec_command(n8n_tg_cmd)

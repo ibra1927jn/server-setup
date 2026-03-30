@@ -1,4 +1,5 @@
 """Tests for execute_daily_briefing.py find_workflow_id function"""
+
 import json
 from unittest.mock import MagicMock, patch
 

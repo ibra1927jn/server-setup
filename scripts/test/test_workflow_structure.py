@@ -1,4 +1,5 @@
 """Tests for workflow structure validation (fase2_deploy, rebuild_v2 patterns)."""
+
 import json
 import random
 import string
@@ -6,7 +7,7 @@ import string
 
 def gen_id():
     """Replicate the gen_id() function from fase2_deploy.py / rebuild_v2.py."""
-    return ''.join(random.choices(string.ascii_letters + string.digits, k=16))
+    return "".join(random.choices(string.ascii_letters + string.digits, k=16))
 
 
 def _build_daily_briefing(chat_id="123", tg_cred_id="abc", ssh_cred_id="xyz"):
@@ -17,14 +18,18 @@ def _build_daily_briefing(chat_id="123", tg_cred_id="abc", ssh_cred_id="xyz"):
         "nodes": [
             {
                 "parameters": {"rule": {"interval": [{"triggerAtHour": 8}]}},
-                "id": gen_id(), "name": "Cron 8AM",
-                "type": "n8n-nodes-base.scheduleTrigger", "typeVersion": 1.2,
+                "id": gen_id(),
+                "name": "Cron 8AM",
+                "type": "n8n-nodes-base.scheduleTrigger",
+                "typeVersion": 1.2,
                 "position": [250, 300],
             },
             {
                 "parameters": {"command": "uptime && df -h /"},
-                "id": gen_id(), "name": "Check Server",
-                "type": "n8n-nodes-base.executeCommand", "typeVersion": 1,
+                "id": gen_id(),
+                "name": "Check Server",
+                "type": "n8n-nodes-base.executeCommand",
+                "typeVersion": 1,
                 "position": [470, 300],
                 "credentials": {"sshPassword": {"id": ssh_cred_id, "name": "SSH"}},
             },
@@ -34,8 +39,10 @@ def _build_daily_briefing(chat_id="123", tg_cred_id="abc", ssh_cred_id="xyz"):
                     "text": "Daily report",
                     "additionalFields": {"parse_mode": "Markdown"},
                 },
-                "id": gen_id(), "name": "Telegram Briefing",
-                "type": "n8n-nodes-base.telegram", "typeVersion": 1.2,
+                "id": gen_id(),
+                "name": "Telegram Briefing",
+                "type": "n8n-nodes-base.telegram",
+                "typeVersion": 1.2,
                 "position": [690, 300],
                 "credentials": {"telegramApi": {"id": tg_cred_id, "name": "Bot"}},
             },
@@ -55,37 +62,64 @@ def _build_uptime_monitor(chat_id="123", tg_cred_id="abc"):
         "id": gen_id(),
         "name": "Uptime Monitor",
         "nodes": [
-            {"id": gen_id(), "name": "Every 5min",
-             "type": "n8n-nodes-base.scheduleTrigger", "typeVersion": 1.2,
-             "parameters": {"rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}},
-             "position": [250, 300]},
-            {"id": gen_id(), "name": "Ping Services",
-             "type": "n8n-nodes-base.executeCommand", "typeVersion": 1,
-             "parameters": {"command": "echo test"}, "position": [470, 300]},
-            {"id": gen_id(), "name": "Any Failed?",
-             "type": "n8n-nodes-base.if", "typeVersion": 2,
-             "parameters": {}, "position": [690, 300]},
-            {"id": gen_id(), "name": "Alert Telegram",
-             "type": "n8n-nodes-base.telegram", "typeVersion": 1.2,
-             "parameters": {"chatId": chat_id}, "position": [910, 200],
-             "credentials": {"telegramApi": {"id": tg_cred_id, "name": "Bot"}}},
-            {"id": gen_id(), "name": "All OK",
-             "type": "n8n-nodes-base.noOp", "typeVersion": 1,
-             "parameters": {}, "position": [910, 400]},
+            {
+                "id": gen_id(),
+                "name": "Every 5min",
+                "type": "n8n-nodes-base.scheduleTrigger",
+                "typeVersion": 1.2,
+                "parameters": {"rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}},
+                "position": [250, 300],
+            },
+            {
+                "id": gen_id(),
+                "name": "Ping Services",
+                "type": "n8n-nodes-base.executeCommand",
+                "typeVersion": 1,
+                "parameters": {"command": "echo test"},
+                "position": [470, 300],
+            },
+            {
+                "id": gen_id(),
+                "name": "Any Failed?",
+                "type": "n8n-nodes-base.if",
+                "typeVersion": 2,
+                "parameters": {},
+                "position": [690, 300],
+            },
+            {
+                "id": gen_id(),
+                "name": "Alert Telegram",
+                "type": "n8n-nodes-base.telegram",
+                "typeVersion": 1.2,
+                "parameters": {"chatId": chat_id},
+                "position": [910, 200],
+                "credentials": {"telegramApi": {"id": tg_cred_id, "name": "Bot"}},
+            },
+            {
+                "id": gen_id(),
+                "name": "All OK",
+                "type": "n8n-nodes-base.noOp",
+                "typeVersion": 1,
+                "parameters": {},
+                "position": [910, 400],
+            },
         ],
         "connections": {
             "Every 5min": {"main": [[{"node": "Ping Services", "type": "main", "index": 0}]]},
             "Ping Services": {"main": [[{"node": "Any Failed?", "type": "main", "index": 0}]]},
-            "Any Failed?": {"main": [
-                [{"node": "Alert Telegram", "type": "main", "index": 0}],
-                [{"node": "All OK", "type": "main", "index": 0}],
-            ]},
+            "Any Failed?": {
+                "main": [
+                    [{"node": "Alert Telegram", "type": "main", "index": 0}],
+                    [{"node": "All OK", "type": "main", "index": 0}],
+                ]
+            },
         },
         "active": True,
     }
 
 
 # --- gen_id tests ---
+
 
 def test_gen_id_length():
     assert len(gen_id()) == 16
@@ -103,6 +137,7 @@ def test_gen_id_unique():
 
 
 # --- Daily Briefing workflow ---
+
 
 def test_daily_briefing_has_three_nodes():
     wf = _build_daily_briefing()
@@ -152,6 +187,7 @@ def test_daily_briefing_serializable():
 
 
 # --- Uptime Monitor workflow ---
+
 
 def test_uptime_monitor_has_five_nodes():
     wf = _build_uptime_monitor()

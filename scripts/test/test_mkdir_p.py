@@ -1,4 +1,5 @@
 """Tests for _mkdir_p() in deploy/deploy_ct4.py"""
+
 from unittest.mock import MagicMock
 
 from deploy.deploy_ct4 import _mkdir_p
@@ -37,6 +38,7 @@ def test_mixed_existing_and_new():
         if path == "/root":
             return MagicMock()
         raise FileNotFoundError
+
     sftp.stat.side_effect = stat_side_effect
     _mkdir_p(sftp, "/root/newdir")
     sftp.mkdir.assert_called_once_with("/root/newdir")

@@ -1,4 +1,5 @@
 """Investigate existing n8n on Hetzner and fix secure cookie"""
+
 from shared_config import get_ssh_client
 
 
@@ -8,9 +9,7 @@ def main():
     cmds = [
         (
             "All docker containers",
-            "docker ps -a --format"
-            " 'table {{.Names}}\t{{.Status}}"
-            "\t{{.Ports}}\t{{.Image}}'",
+            "docker ps -a --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}\t{{.Image}}'",
         ),
         (
             "ultra_n8n env vars",
@@ -29,8 +28,7 @@ def main():
         ),
         (
             "Docker compose files",
-            "find /opt /root -name 'docker-compose*'"
-            " -type f 2>/dev/null | head -10",
+            "find /opt /root -name 'docker-compose*' -type f 2>/dev/null | head -10",
         ),
         ("n8n health", "curl -s http://localhost:5678/healthz 2>/dev/null"),
     ]

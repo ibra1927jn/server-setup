@@ -1,4 +1,5 @@
 """Fix and import the missing workflows into Hetzner n8n"""
+
 import json
 import os
 
@@ -16,30 +17,25 @@ def main():
         filepath = os.path.join(FLOWS_DIR, f)
         print(f"\n=== Importing {f} ===")
 
-        with open(filepath, encoding='utf-8') as fh:
+        with open(filepath, encoding="utf-8") as fh:
             raw_data = json.load(fh)
 
         # Strip everything except core properties n8n expects
         payload = {
-            "name": raw_data.get("name", f.replace('.json', '')),
+            "name": raw_data.get("name", f.replace(".json", "")),
             "nodes": raw_data.get("nodes", []),
             "connections": raw_data.get("connections", {}),
             "settings": raw_data.get("settings", {}),
             "staticData": raw_data.get("staticData", None),
-            "tags": raw_data.get("tags", [])
+            "tags": raw_data.get("tags", []),
         }
 
-        resp = requests.post(
-            f"{N8N_URL}/api/v1/workflows",
-            headers=headers,
-            json=payload,
-            timeout=30
-        )
+        resp = requests.post(f"{N8N_URL}/api/v1/workflows", headers=headers, json=payload, timeout=30)
         print(f"  Status: {resp.status_code}")
 
         if resp.status_code in [200, 201]:
             result = resp.json()
-            wf_id = result.get('id', 'unknown')
+            wf_id = result.get("id", "unknown")
             print(f"  ✅ Created! ID: {wf_id}")
 
             # Activate it
@@ -51,7 +47,7 @@ def main():
     print("\n=== FINAL VERIFICATION ===")
     resp = requests.get(f"{N8N_URL}/api/v1/workflows", headers=headers, timeout=30)
     if resp.status_code == 200:
-        workflows = resp.json().get('data', [])
+        workflows = resp.json().get("data", [])
         for wf in workflows:
             print(f"  - {wf.get('name')} | ID: {wf.get('id')} | Active: {wf.get('active')}")
         print(f"Total: {len(workflows)} workflows")

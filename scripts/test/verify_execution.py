@@ -1,4 +1,5 @@
 """Check execution result and logs after workflow rebuild"""
+
 import time
 
 from shared_config import get_ssh_client

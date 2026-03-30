@@ -7,7 +7,7 @@ def main():
     ssh = get_ssh_client()
 
     # Rename the folder just to be safe
-    ssh.exec_command('mv /var/www/dashboard /var/www/status_panel')
+    ssh.exec_command("mv /var/www/dashboard /var/www/status_panel")
 
     nginx_config = """server {
     listen 80;
@@ -59,17 +59,17 @@ server {
 """.replace("__NIP__", _NIP_HOST).replace("__VPS__", VPS_HOST)
 
     sftp = ssh.open_sftp()
-    local_path = r'C:\Users\ibrab\Desktop\set up\scripts\temp_nginx5'
-    with open(local_path, 'w', encoding='utf-8') as f:
+    local_path = r"C:\Users\ibrab\Desktop\set up\scripts\temp_nginx5"
+    with open(local_path, "w", encoding="utf-8") as f:
         f.write(nginx_config)
-    sftp.put(local_path, '/etc/nginx/sites-available/n8n')
+    sftp.put(local_path, "/etc/nginx/sites-available/n8n")
     sftp.close()
 
-    _, o, _e = ssh.exec_command('nginx -t && systemctl reload nginx')
-    print('NGINX:', o.read().decode())
+    _, o, _e = ssh.exec_command("nginx -t && systemctl reload nginx")
+    print("NGINX:", o.read().decode())
 
     _, o, _ = ssh.exec_command(f'curl -s -k -H "Host: {VPS_HOST}" https://127.0.0.1/status_panel/ | head -n 5')
-    print('=== STATUS PANEL HTML ===')
+    print("=== STATUS PANEL HTML ===")
     print(o.read().decode())
 
     ssh.close()

@@ -1,4 +1,5 @@
 """Tests for upgrade_agent_node.py functions"""
+
 import json
 
 from upgrade_agent_node import parse_workflow, patch_agent_nodes
@@ -8,7 +9,8 @@ def _workflow_dict(nodes=None):
     """Create a sample workflow as a dict."""
     return {
         "name": "AI Agent Base",
-        "nodes": nodes or [
+        "nodes": nodes
+        or [
             {"name": "Trigger", "type": "n8n-nodes-base.telegramTrigger", "typeVersion": 1},
             {"name": "AI Agent1", "type": "@n8n/n8n-nodes-langchain.agent", "typeVersion": 1.6},
             {"name": "Chat Model", "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi", "typeVersion": 1},
@@ -65,9 +67,11 @@ def test_patch_agent_preserves_other_nodes():
 
 def test_patch_no_agent_returns_false():
     """Should return False when no agent nodes exist."""
-    wf = _workflow_dict(nodes=[
-        {"name": "Trigger", "type": "n8n-nodes-base.start", "typeVersion": 1},
-    ])
+    wf = _workflow_dict(
+        nodes=[
+            {"name": "Trigger", "type": "n8n-nodes-base.start", "typeVersion": 1},
+        ]
+    )
     assert patch_agent_nodes(wf) is False
 
 
@@ -83,10 +87,12 @@ def test_patch_missing_nodes_key():
 
 def test_patch_multiple_agents():
     """Should patch all agent nodes."""
-    wf = _workflow_dict(nodes=[
-        {"name": "Agent1", "type": "langchain.agent", "typeVersion": 1.0},
-        {"name": "Agent2", "type": "custom.agent.v2", "typeVersion": 1.5},
-    ])
+    wf = _workflow_dict(
+        nodes=[
+            {"name": "Agent1", "type": "langchain.agent", "typeVersion": 1.0},
+            {"name": "Agent2", "type": "custom.agent.v2", "typeVersion": 1.5},
+        ]
+    )
     assert patch_agent_nodes(wf) is True
     assert wf["nodes"][0]["typeVersion"] == 2.1
     assert wf["nodes"][1]["typeVersion"] == 2.1
@@ -94,17 +100,21 @@ def test_patch_multiple_agents():
 
 def test_patch_case_insensitive():
     """Detection should be case-insensitive."""
-    wf = _workflow_dict(nodes=[
-        {"name": "MyAgent", "type": "some.AGENT.node", "typeVersion": 1},
-    ])
+    wf = _workflow_dict(
+        nodes=[
+            {"name": "MyAgent", "type": "some.AGENT.node", "typeVersion": 1},
+        ]
+    )
     assert patch_agent_nodes(wf) is True
 
 
 def test_missing_type_field():
     """Nodes without type should not match."""
-    wf = _workflow_dict(nodes=[
-        {"name": "NoType", "typeVersion": 1},
-    ])
+    wf = _workflow_dict(
+        nodes=[
+            {"name": "NoType", "typeVersion": 1},
+        ]
+    )
     assert patch_agent_nodes(wf) is False
 
 

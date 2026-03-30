@@ -1,4 +1,5 @@
 """Tests for patch_workflow.py extracted functions"""
+
 from patch_workflow import (
     build_chat_model_node,
     filter_and_replace_model_node,
@@ -44,9 +45,7 @@ class TestFilterAndReplaceModelNode:
             {"name": "Remove", "type": "old"},
             {"name": "Keep2", "type": "t2"},
         ]
-        result = filter_and_replace_model_node(
-            nodes, "Remove", {"name": "Remove", "type": "new"}
-        )
+        result = filter_and_replace_model_node(nodes, "Remove", {"name": "Remove", "type": "new"})
         kept = [n for n in result if n["name"].startswith("Keep")]
         assert len(kept) == 2
 

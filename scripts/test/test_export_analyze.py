@@ -8,19 +8,18 @@ def _sample_export_response():
             "id": "WiTcSI66bHwdSgkd",
             "name": "AI Agent Base",
             "nodes": [
-                {"name": "Telegram Trigger", "type": "n8n-nodes-base.telegramTrigger",
-                 "typeVersion": 1},
-                {"name": "AI Agent1", "type": "@n8n/n8n-nodes-langchain.agent",
-                 "typeVersion": 1.6},
-                {"name": "OpenAI Chat Model", "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-                 "typeVersion": 1,
-                 "credentials": {"openAiApi": {"id": "cred1", "name": "OpenAI"}}},
+                {"name": "Telegram Trigger", "type": "n8n-nodes-base.telegramTrigger", "typeVersion": 1},
+                {"name": "AI Agent1", "type": "@n8n/n8n-nodes-langchain.agent", "typeVersion": 1.6},
+                {
+                    "name": "OpenAI Chat Model",
+                    "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+                    "typeVersion": 1,
+                    "credentials": {"openAiApi": {"id": "cred1", "name": "OpenAI"}},
+                },
             ],
             "connections": {
                 "Telegram Trigger": {"main": [[{"node": "AI Agent1", "type": "main", "index": 0}]]},
-                "OpenAI Chat Model": {"ai_languageModel": [
-                    [{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]
-                ]},
+                "OpenAI Chat Model": {"ai_languageModel": [[{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]]},
             },
         }
     }
@@ -33,10 +32,7 @@ def _extract_workflow_data(response):
 
 def _list_nodes(wf_data):
     """Extract node info list."""
-    return [
-        {"name": n["name"], "type": n["type"], "version": n.get("typeVersion")}
-        for n in wf_data.get("nodes", [])
-    ]
+    return [{"name": n["name"], "type": n["type"], "version": n.get("typeVersion")} for n in wf_data.get("nodes", [])]
 
 
 def _get_connections(wf_data):
@@ -52,6 +48,7 @@ def _get_connections(wf_data):
 
 
 # --- extract workflow data ---
+
 
 def test_extract_from_data_wrapper():
     resp = _sample_export_response()
@@ -75,6 +72,7 @@ def test_extract_preserves_all_fields():
 
 
 # --- list nodes ---
+
 
 def test_list_nodes_count():
     resp = _sample_export_response()
@@ -105,6 +103,7 @@ def test_list_nodes_missing_version():
 
 
 # --- connections ---
+
 
 def test_get_connections_main():
     resp = _sample_export_response()
@@ -138,8 +137,7 @@ def test_credential_extraction_from_nodes():
     creds = []
     for node in wf.get("nodes", []):
         for cred_type, cred_info in node.get("credentials", {}).items():
-            creds.append({"type": cred_type, "id": cred_info.get("id"),
-                          "name": cred_info.get("name")})
+            creds.append({"type": cred_type, "id": cred_info.get("id"), "name": cred_info.get("name")})
     assert creds == [{"type": "openAiApi", "id": "cred1", "name": "OpenAI"}]
 
 

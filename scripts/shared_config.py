@@ -41,12 +41,8 @@ GITHUB_PAT: str = os.getenv("GITHUB_PAT", "")
 
 # --- n8n Workflow IDs ---
 N8N_AI_WORKFLOW_ID: str = os.getenv("N8N_AI_WORKFLOW_ID", "WiTcSI66bHwdSgkd")
-N8N_TELEGRAM_BOT_WORKFLOW_ID: str = os.getenv(
-    "N8N_TELEGRAM_BOT_WORKFLOW_ID", "07a5ed10579849f6"
-)
-N8N_BRIEFING_WORKFLOW_ID: str = os.getenv(
-    "N8N_BRIEFING_WORKFLOW_ID", "O5sU2uD0f5SngbIu"
-)
+N8N_TELEGRAM_BOT_WORKFLOW_ID: str = os.getenv("N8N_TELEGRAM_BOT_WORKFLOW_ID", "07a5ed10579849f6")
+N8N_BRIEFING_WORKFLOW_ID: str = os.getenv("N8N_BRIEFING_WORKFLOW_ID", "O5sU2uD0f5SngbIu")
 
 # --- n8n Credential IDs ---
 N8N_CRED_OPENROUTER: str = os.getenv("N8N_CRED_OPENROUTER", "KViDucLPeGURRcAd")
@@ -91,20 +87,28 @@ def get_ssh_client(
     if key_path and Path(key_path).exists():
         # Autenticacion por llave SSH
         client.connect(
-            hostname=host, username=user,
-            key_filename=key_path, timeout=timeout,
+            hostname=host,
+            username=user,
+            key_filename=key_path,
+            timeout=timeout,
         )
     elif password:
         # Autenticacion por password
         client.connect(
-            hostname=host, username=user, password=password,
-            look_for_keys=False, timeout=timeout,
+            hostname=host,
+            username=user,
+            password=password,
+            look_for_keys=False,
+            timeout=timeout,
         )
     else:
         # Fallback: usa agente SSH del sistema operativo
         client.connect(
-            hostname=host, username=user, allow_agent=True,
-            look_for_keys=True, timeout=timeout,
+            hostname=host,
+            username=user,
+            allow_agent=True,
+            look_for_keys=True,
+            timeout=timeout,
         )
 
     return client

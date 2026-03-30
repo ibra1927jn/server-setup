@@ -1,4 +1,5 @@
 """Tests that directly import and test patch_workflow.py functions."""
+
 import scripts.patch_workflow as pw
 
 # ---------- filter_and_replace_model_node ----------
@@ -41,6 +42,7 @@ class TestFilterAndReplace:
 
 # ---------- fix_model_connections ----------
 
+
 class TestFixModelConnections:
     def test_replaces_existing_connection(self):
         conns = {"Model": {"old": "data"}, "Trigger": {"main": []}}
@@ -72,6 +74,7 @@ class TestFixModelConnections:
 
 
 # ---------- build_chat_model_node ----------
+
 
 class TestBuildChatModelNode:
     def test_default_model(self):

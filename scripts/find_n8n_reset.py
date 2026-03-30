@@ -18,8 +18,8 @@ def main():
     help_text = o2.read().decode()
     print("=== N8N CLI COMMANDS ===")
     # Filter for relevant lines
-    for line in help_text.split('\n'):
-        if 'user' in line.lower() or 'pass' in line.lower() or 'reset' in line.lower():
+    for line in help_text.split("\n"):
+        if "user" in line.lower() or "pass" in line.lower() or "reset" in line.lower():
             print(line)
 
     ssh.close()

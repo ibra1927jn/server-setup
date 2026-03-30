@@ -1,4 +1,5 @@
 """Tests for workflow patching operations (filter nodes, fix connections, build nodes)."""
+
 import json
 
 
@@ -7,19 +8,31 @@ def _sample_workflow():
     return {
         "name": "AI Agent Base",
         "nodes": [
-            {"name": "Telegram Trigger", "type": "n8n-nodes-base.telegramTrigger",
-             "typeVersion": 1, "position": [250, 300], "parameters": {}},
-            {"name": "AI Agent1", "type": "@n8n/n8n-nodes-langchain.agent",
-             "typeVersion": 1.6, "position": [450, 300], "parameters": {}},
-            {"name": "OpenAI Chat Model", "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-             "typeVersion": 1, "position": [280, 500], "parameters": {
-                 "model": "gpt-4", "options": {"temperature": 0.7}}},
+            {
+                "name": "Telegram Trigger",
+                "type": "n8n-nodes-base.telegramTrigger",
+                "typeVersion": 1,
+                "position": [250, 300],
+                "parameters": {},
+            },
+            {
+                "name": "AI Agent1",
+                "type": "@n8n/n8n-nodes-langchain.agent",
+                "typeVersion": 1.6,
+                "position": [450, 300],
+                "parameters": {},
+            },
+            {
+                "name": "OpenAI Chat Model",
+                "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+                "typeVersion": 1,
+                "position": [280, 500],
+                "parameters": {"model": "gpt-4", "options": {"temperature": 0.7}},
+            },
         ],
         "connections": {
             "Telegram Trigger": {"main": [[{"node": "AI Agent1", "type": "main", "index": 0}]]},
-            "OpenAI Chat Model": {"ai_languageModel": [
-                [{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]
-            ]},
+            "OpenAI Chat Model": {"ai_languageModel": [[{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]]},
         },
         "active": True,
     }
@@ -52,8 +65,7 @@ def test_filter_nonexistent_node_keeps_all():
 def test_build_chat_model_node():
     """Building a chat model node should include all required fields."""
     node = {
-        "parameters": {"model": "z-ai/glm-4.5-air:free",
-                       "options": {"temperature": 0.7, "maxTokens": 500}},
+        "parameters": {"model": "z-ai/glm-4.5-air:free", "options": {"temperature": 0.7, "maxTokens": 500}},
         "id": "e4f8d5bc-3306-4649-8b4e-250327fcdbc1",
         "name": "OpenAI Chat Model",
         "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
@@ -75,7 +87,8 @@ def test_replace_node_in_workflow():
     replacement = {
         "name": "OpenAI Chat Model",
         "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-        "typeVersion": 1, "position": [280, 500],
+        "typeVersion": 1,
+        "position": [280, 500],
         "parameters": {"model": "new-model"},
     }
     wf["nodes"].append(replacement)
@@ -93,9 +106,7 @@ def test_connection_delete_and_recreate():
         del conns["OpenAI Chat Model"]
     assert "OpenAI Chat Model" not in conns
     # Recreate
-    conns["OpenAI Chat Model"] = {
-        "ai_languageModel": [[{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]]
-    }
+    conns["OpenAI Chat Model"] = {"ai_languageModel": [[{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]]}
     assert "OpenAI Chat Model" in conns
     assert conns["OpenAI Chat Model"]["ai_languageModel"][0][0]["node"] == "AI Agent1"
 

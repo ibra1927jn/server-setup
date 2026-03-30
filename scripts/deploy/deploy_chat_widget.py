@@ -9,7 +9,7 @@ def main():
     current_html = o.read().decode()
 
     # Chat widget code to inject before </body>
-    chat_widget = '''
+    chat_widget = """
 <!-- AI Chat Widget -->
 <style>
   #chat-toggle {
@@ -159,13 +159,13 @@ def main():
     btn.disabled = false;
   }
 </script>
-'''
+"""
 
     # Inject before </body>
-    new_html = current_html.replace('</body>', chat_widget + '\n</body>')
+    new_html = current_html.replace("</body>", chat_widget + "\n</body>")
 
     # Upload via SFTP
-    with ssh.open_sftp() as sftp, sftp.file('/var/www/dashboard/index.html', 'w') as f:
+    with ssh.open_sftp() as sftp, sftp.file("/var/www/dashboard/index.html", "w") as f:
         f.write(new_html)
 
     print("Chat widget deployed to dashboard!")

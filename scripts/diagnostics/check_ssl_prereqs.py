@@ -1,4 +1,5 @@
 """Check DNS, ports, and nginx status on Hetzner"""
+
 from shared_config import get_ssh_client
 
 

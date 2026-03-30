@@ -21,9 +21,9 @@ def main():
 
     # Test the webhook
     print("\n=== TESTING WEBHOOK ===")
-    cmd = '''curl -s -X POST http://127.0.0.1:5678/webhook/ai-agent \
+    cmd = """curl -s -X POST http://127.0.0.1:5678/webhook/ai-agent \
       -H "Content-Type: application/json" \
-      -d '{"chatInput": "Di simplemente OK"}' --max-time 45'''
+      -d '{"chatInput": "Di simplemente OK"}' --max-time 45"""
     _, o2, _ = ssh.exec_command(cmd)
     time.sleep(30)
     response = o2.read().decode()
