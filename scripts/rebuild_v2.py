@@ -5,7 +5,7 @@ los workflows existentes con los nodos correctos.
 import json
 import time
 
-from shared_config import get_ssh_client, TELEGRAM_chat_id, GITHUB_PAT
+from shared_config import get_ssh_client, TELEGRAM_CHAT_ID, GITHUB_PAT
 
 
 def fetch_credentials(ssh):
@@ -291,7 +291,7 @@ def test_crypto_workflow(ssh):
 
 
 def main():
-    chat_id = TELEGRAM_chat_id
+    chat_id = TELEGRAM_CHAT_ID
     ssh = get_ssh_client()
 
     tg_cred, ssh_cred = fetch_credentials(ssh)
