@@ -10,69 +10,9 @@ import requests
 from shared_config import VPS_HOST, get_ssh_client
 
 
-def main():
-    host = VPS_HOST
-    ssh = get_ssh_client()
-
-    # ====================================================
-    # PASO 1: DuckDNS - Dominio gratuito
-    # ====================================================
-    print("=" * 50)
-    print("PASO 1: DUCKDNS SETUP")
-    print("=" * 50)
-
-    # Register agenticosvps.duckdns.org → VPS_HOST
-    # DuckDNS API: just need to create a token and update
-    # We'll do it via their API
-    duck_domain = "agenticosvps"
-
-    # First try to register via their API
-    print("  Registering agenticosvps.duckdns.org...")
-    r = requests.get(f"https://www.duckdns.org/update?domains={duck_domain}&token=&ip={host}&verbose=true", timeout=30)
-    print(f"  Response: {r.text.strip()}")
-
-    # DuckDNS requires a token. Let's set it up on the server instead with a script
-    # We'll use the server itself to register
-    print("\n  Setting up DuckDNS from server...")
-    duck_setup = """
-    # Install DuckDNS updater
-    mkdir -p /opt/duckdns
-    cat > /opt/duckdns/duck.sh << 'DUCKEOF'
-    #!/bin/bash
-    # DuckDNS auto-update script
-    # Token will be set after manual registration
-    DOMAIN="agenticosvps"
-    TOKEN="placeholder"
-    echo url="https://www.duckdns.org/update?domains=$DOMAIN&token=$TOKEN&ip=" | curl -k -o /opt/duckdns/duck.log -K -
-    DUCKEOF
-    chmod +x /opt/duckdns/duck.sh
-    echo "DuckDNS script created"
-    """
-    _, o, e = ssh.exec_command(duck_setup)
-    o.read()
-    e.read()
-
-    # Since DuckDNS needs manual token creation, let's use a different approach
-    # Use nip.io which doesn't need registration - it auto-resolves
-    # <ip-with-dashes>.nip.io → <ip> (automatic!)
-    nip_domain = f"{host.replace('.', '-')}.nip.io"
-    print(f"\n  Using nip.io instead: {nip_domain}")
-    print("  nip.io auto-resolves IPs embedded in the domain name - no registration needed!")
-
-    # Verify it resolves
-    _, o, _ = ssh.exec_command(f"host {nip_domain} 2>/dev/null || dig +short {nip_domain} 2>/dev/null || echo 'DNS_CHECK_FAILED'")
-    dns_result = o.read().decode().strip()
-    print(f"  DNS check: {dns_result}")
-
-    # ====================================================
-    # PASO 2: Let's Encrypt SSL
-    # ====================================================
-    print("\n" + "=" * 50)
-    print("PASO 2: LET'S ENCRYPT SSL")
-    print("=" * 50)
-
-    # Update nginx config with the nip.io domain
-    nginx_config = f"""
+def _build_nginx_config(nip_domain, host):
+    """Build nginx config for n8n with SSL and dashboard."""
+    return f"""
     # n8n with SSL
     server {{
         listen 80;
@@ -129,65 +69,10 @@ def main():
     }}
     """
 
-    print("  Writing nginx config...")
-    _, o, e = ssh.exec_command(f"cat > /etc/nginx/sites-available/n8n << 'NGINXEOF'\n{nginx_config}\nNGINXEOF")
-    o.read()
-    e.read()
 
-    # Create certbot webroot
-    ssh.exec_command("mkdir -p /var/www/certbot")
-
-    # Test nginx
-    print("  Testing nginx...")
-    _, o, e = ssh.exec_command("nginx -t 2>&1")
-    test = o.read().decode().strip() + e.read().decode().strip()
-    print(f"  {test}")
-
-    if "successful" in test:
-        ssh.exec_command("systemctl reload nginx")
-        print("  Nginx reloaded!")
-
-        # Try Let's Encrypt (may fail with nip.io but worth trying)
-        print("\n  Attempting Let's Encrypt certificate...")
-        certbot_cmd = (
-            f"certbot certonly --webroot -w /var/www/certbot"
-            f" -d {nip_domain} --non-interactive --agree-tos"
-            " --email admin@agenticosvps.local"
-            " --no-eff-email 2>&1"
-        )
-        _, o, _ = ssh.exec_command(certbot_cmd)
-        certbot_result = o.read().decode().strip()
-        print(f"  Certbot: {certbot_result[:300]}")
-
-        if "Congratulations" in certbot_result or "Successfully" in certbot_result:
-            print("  SSL certificate obtained!")
-            # Update nginx to use real cert
-            ssh.exec_command(
-                "sed -i 's|/etc/ssl/n8n/self-signed.crt"
-                f"|/etc/letsencrypt/live/{nip_domain}"
-                "/fullchain.pem|'"
-                " /etc/nginx/sites-available/n8n"
-            )
-            ssh.exec_command(
-                "sed -i 's|/etc/ssl/n8n/self-signed.key"
-                f"|/etc/letsencrypt/live/{nip_domain}"
-                "/privkey.pem|'"
-                " /etc/nginx/sites-available/n8n"
-            )
-            ssh.exec_command("systemctl reload nginx")
-            print("  Nginx updated with real SSL!")
-        else:
-            print("  Let's Encrypt failed (normal for nip.io - rate limits).")
-            print("  Self-signed cert remains active - HTTPS works but browser shows warning.")
-
-    # ====================================================
-    # PASO 3: DASHBOARD WEB DE MONITOREO
-    # ====================================================
-    print("\n" + "=" * 50)
-    print("PASO 3: DASHBOARD WEB")
-    print("=" * 50)
-
-    dashboard_html = """<!DOCTYPE html>
+def _build_dashboard_html():
+    """Build the monitoring dashboard HTML."""
+    return """<!DOCTYPE html>
     <html lang="es">
     <head>
         <meta charset="UTF-8">
@@ -391,7 +276,116 @@ def main():
     </body>
     </html>"""
 
-    # Deploy dashboard to server
+
+def _setup_duckdns(ssh, host):
+    """PASO 1: Set up DuckDNS and nip.io domain resolution."""
+    print("=" * 50)
+    print("PASO 1: DUCKDNS SETUP")
+    print("=" * 50)
+
+    duck_domain = "agenticosvps"
+
+    print("  Registering agenticosvps.duckdns.org...")
+    r = requests.get(
+        f"https://www.duckdns.org/update?domains={duck_domain}&token=&ip={host}&verbose=true",
+        timeout=30,
+    )
+    print(f"  Response: {r.text.strip()}")
+
+    print("\n  Setting up DuckDNS from server...")
+    duck_setup = """
+    # Install DuckDNS updater
+    mkdir -p /opt/duckdns
+    cat > /opt/duckdns/duck.sh << 'DUCKEOF'
+    #!/bin/bash
+    # DuckDNS auto-update script
+    # Token will be set after manual registration
+    DOMAIN="agenticosvps"
+    TOKEN="placeholder"
+    echo url="https://www.duckdns.org/update?domains=$DOMAIN&token=$TOKEN&ip=" | curl -k -o /opt/duckdns/duck.log -K -
+    DUCKEOF
+    chmod +x /opt/duckdns/duck.sh
+    echo "DuckDNS script created"
+    """
+    _, o, e = ssh.exec_command(duck_setup)
+    o.read()
+    e.read()
+
+    nip_domain = f"{host.replace('.', '-')}.nip.io"
+    print(f"\n  Using nip.io instead: {nip_domain}")
+    print("  nip.io auto-resolves IPs embedded in the domain name - no registration needed!")
+
+    _, o, _ = ssh.exec_command(f"host {nip_domain} 2>/dev/null || dig +short {nip_domain} 2>/dev/null || echo 'DNS_CHECK_FAILED'")
+    dns_result = o.read().decode().strip()
+    print(f"  DNS check: {dns_result}")
+
+    return nip_domain
+
+
+def _setup_ssl_nginx(ssh, nip_domain, host):
+    """PASO 2: Configure nginx with SSL and attempt Let's Encrypt."""
+    print("\n" + "=" * 50)
+    print("PASO 2: LET'S ENCRYPT SSL")
+    print("=" * 50)
+
+    nginx_config = _build_nginx_config(nip_domain, host)
+
+    print("  Writing nginx config...")
+    _, o, e = ssh.exec_command(f"cat > /etc/nginx/sites-available/n8n << 'NGINXEOF'\n{nginx_config}\nNGINXEOF")
+    o.read()
+    e.read()
+
+    ssh.exec_command("mkdir -p /var/www/certbot")
+
+    print("  Testing nginx...")
+    _, o, e = ssh.exec_command("nginx -t 2>&1")
+    test = o.read().decode().strip() + e.read().decode().strip()
+    print(f"  {test}")
+
+    if "successful" in test:
+        ssh.exec_command("systemctl reload nginx")
+        print("  Nginx reloaded!")
+
+        print("\n  Attempting Let's Encrypt certificate...")
+        certbot_cmd = (
+            f"certbot certonly --webroot -w /var/www/certbot"
+            f" -d {nip_domain} --non-interactive --agree-tos"
+            " --email admin@agenticosvps.local"
+            " --no-eff-email 2>&1"
+        )
+        _, o, _ = ssh.exec_command(certbot_cmd)
+        certbot_result = o.read().decode().strip()
+        print(f"  Certbot: {certbot_result[:300]}")
+
+        if "Congratulations" in certbot_result or "Successfully" in certbot_result:
+            print("  SSL certificate obtained!")
+            ssh.exec_command(
+                "sed -i 's|/etc/ssl/n8n/self-signed.crt"
+                f"|/etc/letsencrypt/live/{nip_domain}"
+                "/fullchain.pem|'"
+                " /etc/nginx/sites-available/n8n"
+            )
+            ssh.exec_command(
+                "sed -i 's|/etc/ssl/n8n/self-signed.key"
+                f"|/etc/letsencrypt/live/{nip_domain}"
+                "/privkey.pem|'"
+                " /etc/nginx/sites-available/n8n"
+            )
+            ssh.exec_command("systemctl reload nginx")
+            print("  Nginx updated with real SSL!")
+        else:
+            print("  Let's Encrypt failed (normal for nip.io - rate limits).")
+            print("  Self-signed cert remains active - HTTPS works but browser shows warning.")
+
+
+def _deploy_dashboard(ssh, host):
+    """PASO 3: Deploy the monitoring dashboard HTML to the server."""
+    print("\n" + "=" * 50)
+    print("PASO 3: DASHBOARD WEB")
+    print("=" * 50)
+
+    dashboard_html = _build_dashboard_html()
+
     print("  Creating dashboard directory...")
     ssh.exec_command("mkdir -p /var/www/dashboard")
 
@@ -403,8 +397,6 @@ def main():
     sftp.put(local_path, "/var/www/dashboard/index.html")
     print("  Dashboard deployed!")
 
-    # Update nginx to serve dashboard at /dashboard
-    # Already in the config above, just need to reload
     _, o, e = ssh.exec_command("nginx -t 2>&1")
     test = o.read().decode().strip() + e.read().decode().strip()
     print(f"  Nginx test: {test}")
@@ -412,29 +404,26 @@ def main():
         ssh.exec_command("systemctl reload nginx")
         print("  Nginx reloaded with dashboard route!")
 
-    # ====================================================
-    # FINAL CHECK
-    # ====================================================
+    return sftp
+
+
+def _verify_deployment(ssh, host):
+    """Final verification of all deployed services."""
     print("\n" + "=" * 50)
     print("VERIFICACION FINAL")
     print("=" * 50)
 
-    # Test dashboard access
     _, o, _ = ssh.exec_command("curl -s -o /dev/null -w '%{http_code}' http://localhost/dashboard/")
     print(f"  Dashboard HTTP: {o.read().decode().strip()}")
 
     _, o, _ = ssh.exec_command("curl -sk -o /dev/null -w '%{http_code}' https://localhost/dashboard/")
     print(f"  Dashboard HTTPS: {o.read().decode().strip()}")
 
-    # n8n still working?
     _, o, _ = ssh.exec_command("curl -s -o /dev/null -w '%{http_code}' http://localhost:5678/")
     print(f"  n8n direct: {o.read().decode().strip()}")
 
     _, o, _ = ssh.exec_command("curl -sk -o /dev/null -w '%{http_code}' https://localhost/")
     print(f"  n8n via HTTPS: {o.read().decode().strip()}")
-
-    sftp.close()
-    ssh.close()
 
     print(f"""
     ====================================================
@@ -443,6 +432,19 @@ def main():
     n8n:       https://{host} (self-signed SSL)
     Dashboard: https://{host}/dashboard/
     """)
+
+
+def main():
+    host = VPS_HOST
+    ssh = get_ssh_client()
+
+    nip_domain = _setup_duckdns(ssh, host)
+    _setup_ssl_nginx(ssh, nip_domain, host)
+    sftp = _deploy_dashboard(ssh, host)
+    _verify_deployment(ssh, host)
+
+    sftp.close()
+    ssh.close()
 
 
 if __name__ == "__main__":
