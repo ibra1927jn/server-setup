@@ -1,32 +1,35 @@
 """Upload credentials to Hetzner n8n"""
-import requests
 import json
+
+import requests
 from shared_config import N8N_URL, N8N_HEADERS
 
-CRED_FILE = r"C:\AgenticOS\credentials-export.json"
 
-headers = N8N_HEADERS
+def main():
+    cred_file = r"C:\AgenticOS\credentials-export.json"
 
-with open(CRED_FILE, 'r', encoding='utf-8') as f:
-    creds = json.load(f)
+    headers = N8N_HEADERS
 
-for c in creds:
-    payload = {
-        "name": c["name"],
-        "type": c["type"],
-        "data": c["data"]
-    }
+    with open(cred_file, 'r', encoding='utf-8') as f:
+        creds = json.load(f)
 
-    # If the user's PC turns off, the Hetzner node won't reach localhost.
-    # However, for now we just import it as is.
-    # For Ollama, we might need to use Ngrok later if we don't install it on Hetzner.
+    for c in creds:
+        payload = {
+            "name": c["name"],
+            "type": c["type"],
+            "data": c["data"]
+        }
 
-    print(f"Uploading credential: {c['name']} ({c['type']})...")
-    resp = requests.post(f"{N8N_URL}/api/v1/credentials", headers=headers, json=payload)
+        print(f"Uploading credential: {c['name']} ({c['type']})...")
+        resp = requests.post(f"{N8N_URL}/api/v1/credentials", headers=headers, json=payload)
 
-    if resp.status_code in [200, 201]:
-        print(f"  ✅ Success - ID: {resp.json().get('id')}")
-    else:
-        print(f"  ❌ Error: {resp.text[:300]}")
+        if resp.status_code in [200, 201]:
+            print(f"  Success - ID: {resp.json().get('id')}")
+        else:
+            print(f"  Error: {resp.text[:300]}")
 
-print("\n=== UPLOAD COMPLETE ===")
+    print("\n=== UPLOAD COMPLETE ===")
+
+
+if __name__ == "__main__":
+    main()

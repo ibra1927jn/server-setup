@@ -1,11 +1,14 @@
 import time
+
 from shared_config import get_ssh_client, N8N_EMAIL, N8N_PASSWORD
 
-ssh = get_ssh_client()
 
-# Crear script remoto inyectando la password desde shared_config
-# Se usa .replace() para evitar conflictos con f-strings del script remoto
-reset_script_template = '''
+def main():
+    ssh = get_ssh_client()
+
+    # Crear script remoto inyectando la password desde shared_config
+    # Se usa .replace() para evitar conflictos con f-strings del script remoto
+    reset_script_template = '''
 import subprocess, json, sqlite3 as db
 
 # Generate bcrypt hash inside the container
@@ -38,27 +41,31 @@ else:
     print(f"stderr: {result.stderr}")
 '''
 
-# Inyectar credenciales reales
-reset_script = reset_script_template.replace('__N8N_PW__', N8N_PASSWORD)
+    # Inyectar credenciales reales
+    reset_script = reset_script_template.replace('__N8N_PW__', N8N_PASSWORD)
 
-with ssh.open_sftp() as sftp:
-    with sftp.file('/tmp/reset_pw.py', 'w') as f:
-        f.write(reset_script)
+    with ssh.open_sftp() as sftp:
+        with sftp.file('/tmp/reset_pw.py', 'w') as f:
+            f.write(reset_script)
 
-time.sleep(1)
-_, o, e = ssh.exec_command("python3 /tmp/reset_pw.py")
-time.sleep(10)
-print("STDOUT:", o.read().decode())
-print("STDERR:", e.read().decode())
+    time.sleep(1)
+    _, o, e = ssh.exec_command("python3 /tmp/reset_pw.py")
+    time.sleep(10)
+    print("STDOUT:", o.read().decode())
+    print("STDERR:", e.read().decode())
 
-# Now test login
-time.sleep(1)
-login_cmd = f'''curl -s -X POST http://127.0.0.1:5678/rest/login \
-  -H "Content-Type: application/json" \
-  -d '{{"emailOrLdapLoginId":"{N8N_EMAIL}","password":"{N8N_PASSWORD}"}}' '''
-_, o2, _ = ssh.exec_command(login_cmd)
-time.sleep(3)
-print("\n=== LOGIN TEST ===")
-print(o2.read().decode()[:300])
+    # Now test login
+    time.sleep(1)
+    login_cmd = f'''curl -s -X POST http://127.0.0.1:5678/rest/login \
+      -H "Content-Type: application/json" \
+      -d '{{"emailOrLdapLoginId":"{N8N_EMAIL}","password":"{N8N_PASSWORD}"}}' '''
+    _, o2, _ = ssh.exec_command(login_cmd)
+    time.sleep(3)
+    print("\n=== LOGIN TEST ===")
+    print(o2.read().decode()[:300])
 
-ssh.close()
+    ssh.close()
+
+
+if __name__ == "__main__":
+    main()
