@@ -10,19 +10,19 @@ config = o.read().decode()
 # Replace the dashboard block with a correct alias/root block
 # Using `root /var/www;` instead of `alias` is safer for this mapping
 new_config = config.replace(
-'''    # Dashboard
+    '''    # Dashboard
     location /dashboard {
         alias /var/www/dashboard;
         index index.html;
         try_files $uri $uri/ /dashboard/index.html;
     }''',
-'''    # Dashboard
+    '''    # Dashboard
     location /dashboard/ {
         alias /var/www/dashboard/;
         index index.html;
         try_files $uri $uri/ =404;
     }
-    
+
     # Exact match for /dashboard without trailing slash
     location = /dashboard {
         return 301 /dashboard/;

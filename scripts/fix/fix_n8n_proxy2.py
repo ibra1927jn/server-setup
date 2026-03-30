@@ -16,17 +16,17 @@ for line in current_env.split('\\n'):
     if line.startswith('WEBHOOK_URL='):
         lines.append('WEBHOOK_URL=https://95.217.158.7/')
     elif line.startswith('N8N_PROXY_HOPS='):
-        pass # we'll add it below
+        pass  # we'll add it below
     elif line.startswith('N8N_SECURE_COOKIE='):
         lines.append('N8N_SECURE_COOKIE=false')
     else:
         if line.strip():
             lines.append(line)
-            
+
 # Ensure proxy hops
 if not any('N8N_PROXY_HOPS' in line for line in lines):
     lines.append('N8N_PROXY_HOPS=1')
-    
+
 new_env = '\\n'.join(lines)
 print('=== NEW ENV ===')
 print(new_env)

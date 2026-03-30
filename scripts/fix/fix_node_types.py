@@ -32,7 +32,7 @@ for wf in all_wfs:
     name = wf.get("name", "")
     if name not in ["Daily Briefing", "Uptime Monitor"]:
         continue
-    
+
     print(f"\n=== FIXING: {name} ===")
     changed = False
     for node in wf.get("nodes", []):
@@ -40,7 +40,7 @@ for wf in all_wfs:
             old_cmd = node["parameters"].get("command", "")
             print("  Replacing executeCommand -> ssh")
             print(f"  Command: {old_cmd[:100]}...")
-            
+
             # Change to SSH node type
             node["type"] = "n8n-nodes-base.ssh"
             node["typeVersion"] = 1
@@ -55,17 +55,17 @@ for wf in all_wfs:
                 }
             }
             changed = True
-    
+
     if changed:
         local_path = f"C:\\Users\\ibrab\\Desktop\\set up\\scripts\\fixed_{name.replace(' ', '_').lower()}.json"
         with open(local_path, "w", encoding="utf-8") as f:
             json.dump(wf, f)
-        
+
         remote_path = f"/tmp/n8n-import/fixed_{name.replace(' ', '_').lower()}.json"
         sftp.put(local_path, remote_path)
         ssh.exec_command(f"docker cp {remote_path} n8n-n8n-1:{remote_path}")
         time.sleep(1)
-        
+
         _, o, e = ssh.exec_command(f"docker exec n8n-n8n-1 n8n import:workflow --input={remote_path}")
         print(f"  Import: {o.read().decode().strip()}")
         err = e.read().decode().strip()

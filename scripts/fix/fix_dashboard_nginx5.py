@@ -8,11 +8,11 @@ ssh.exec_command('mv /var/www/dashboard /var/www/status_panel')
 nginx_config = """server {
     listen 80;
     server_name 95-217-158-7.nip.io 95.217.158.7;
-    
+
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
     }
-    
+
     location / {
         return 301 https://$host$request_uri;
     }
@@ -26,7 +26,7 @@ server {
     ssl_certificate_key /etc/ssl/n8n/self-signed.key;
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_ciphers HIGH:!aNULL:!MD5;
-    
+
     # Dashboard API
     location /api/dashboard/ {
         proxy_pass http://127.0.0.1:5678/api/v1/;

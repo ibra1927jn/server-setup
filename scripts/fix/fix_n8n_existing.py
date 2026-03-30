@@ -4,6 +4,7 @@ from shared_config import get_ssh_client
 
 ssh = get_ssh_client()
 
+
 def run(cmd, label=""):
     if label:
         print(f"\n=== {label} ===")
@@ -16,6 +17,7 @@ def run(cmd, label=""):
         print(f"[err] {err}")
     return out
 
+
 # Stop ALL n8n containers
 run("docker stop ultra_n8n 2>/dev/null; docker rm ultra_n8n 2>/dev/null", "Stop ultra_n8n")
 run("docker stop n8n 2>/dev/null; docker rm n8n 2>/dev/null", "Stop n8n")
@@ -27,7 +29,7 @@ run("ss -tlnp | grep 5678 || echo 'Port 5678 is FREE'", "Port check")
 # Clean up /opt/n8n
 run("cd /opt/n8n && docker compose down 2>&1; rm -rf /opt/n8n", "Clean /opt/n8n")
 
-# Start from /root/n8n with the correct compose  
+# Start from /root/n8n with the correct compose
 run("cd /root/n8n && docker compose up -d 2>&1", "Start n8n")
 
 print("\nWaiting 20s...")

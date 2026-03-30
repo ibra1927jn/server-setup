@@ -44,13 +44,13 @@ for wf in all_wfs:
     name = wf.get("name", "")
     if name not in workflows_to_fix:
         continue
-    
+
     print(f"\n--- {name} ---")
     changed = False
-    
+
     for node in wf.get("nodes", []):
         ntype = node.get("type", "")
-        
+
         # Fix Telegram credentials
         if "telegram" in ntype.lower():
             old_cred = node.get("credentials", {}).get("telegramApi", {})
@@ -62,7 +62,7 @@ for wf in all_wfs:
                 }
             }
             changed = True
-        
+
         # Fix SSH credentials
         if "ssh" in ntype.lower() and ssh_cred.get("id"):
             old_cred = node.get("credentials", {}).get("sshPassword", {})
@@ -74,15 +74,15 @@ for wf in all_wfs:
                 }
             }
             changed = True
-    
+
     if changed:
         fname = name.lower().replace(" ", "_") + "_fixed.json"
         local_path = f"C:\\Users\\ibrab\\Desktop\\set up\\scripts\\{fname}"
         remote_path = f"/tmp/{fname}"
-        
+
         with open(local_path, "w", encoding="utf-8") as f:
             json.dump(wf, f)
-        
+
         sftp.put(local_path, remote_path)
         ssh.exec_command(f"docker cp {remote_path} n8n-n8n-1:/tmp/{fname}")
         time.sleep(1)

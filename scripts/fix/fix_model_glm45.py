@@ -27,14 +27,14 @@ for node in wf.get('nodes', []):
         old_model = node['parameters'].get('model', {})
         print(f"\nNodo: {node['name']}")
         print(f"  Modelo ANTERIOR: {json.dumps(old_model)}")
-        
+
         # Set the correct model as an expression
         node['parameters']['model'] = {
             "__rl": True,
             "value": f"={CORRECT_MODEL}",
             "mode": "raw"
         }
-        
+
         print(f"  Modelo NUEVO: {CORRECT_MODEL}")
         print(f"  Credenciales: {json.dumps(node.get('credentials', {}))}")
 
@@ -82,9 +82,10 @@ ssh.close()
 # Test webhook
 print("\n=== TESTING WEBHOOK ===")
 try:
-    r = requests.post(f'http://{VPS_HOST}:5678/webhook/ai-agent',
-                       json={'chatInput': 'Hola! Dime que modelo de IA eres y confirma que estas online.'}, 
-                       timeout=60)
+    r = requests.post(
+        f'http://{VPS_HOST}:5678/webhook/ai-agent',
+        json={'chatInput': 'Hola! Dime que modelo de IA eres y confirma que estas online.'},
+        timeout=60)
     print(f"Status: {r.status_code}")
     print(f"Response: {r.text[:500]}")
 except Exception as ex:

@@ -16,14 +16,14 @@ if 'proxy_read_timeout' not in nginx_conf:
         'proxy_set_header Connection "upgrade";',
         'proxy_set_header Connection "upgrade";\n        proxy_read_timeout 120s;\n        proxy_connect_timeout 120s;\n        proxy_send_timeout 120s;'
     )
-    
+
     with ssh.open_sftp() as sftp:
         with sftp.file('/etc/nginx/sites-available/n8n', 'w') as f:
             f.write(nginx_conf)
-    
+
     _, o, e = ssh.exec_command("nginx -t")
     print("NGINX TEST:", e.read().decode())
-    
+
     ssh.exec_command("systemctl reload nginx")
     time.sleep(2)
     print("Nginx reloaded with 120s timeout")
