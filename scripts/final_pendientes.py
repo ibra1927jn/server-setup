@@ -16,7 +16,7 @@ print("PASO 1: PUBLICANDO WORKFLOWS")
 print("=" * 50)
 
 # Use curl from inside the container to hit the internal API
-# First, get all workflow IDs 
+# First, get all workflow IDs
 _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n list:workflow")
 lines = o.read().decode().strip().split("\n")
 wf_ids = []

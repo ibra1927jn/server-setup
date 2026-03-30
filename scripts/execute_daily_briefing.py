@@ -14,7 +14,7 @@ try:
         if wf['name'] == 'Daily Briefing':
             briefing_id = wf['id']
             break
-            
+
     if briefing_id:
         print(f"Found Daily Briefing ID: {briefing_id}")
         print("Executing workflow...")

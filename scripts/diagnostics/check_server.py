@@ -1,6 +1,7 @@
 """Diagnostico del VPS: disco, RAM, Docker, Nginx, puertos"""
 from shared_config import get_ssh_client, VPS_HOST
 
+
 def run(ssh, cmd, label=""):
     if label:
         print(f"\n=== {label} ===")
@@ -13,6 +14,7 @@ def run(ssh, cmd, label=""):
     if err:
         print(f"[stderr] {err}")
     return out
+
 
 def main():
     print(f"Connecting to {VPS_HOST}...")
@@ -28,6 +30,7 @@ def main():
 
     ssh.close()
     print("\n=== DONE ===")
+
 
 if __name__ == "__main__":
     main()

@@ -27,7 +27,7 @@ echo "" >> /tmp/diag.txt
 echo "=== N8N CONTAINER SEND MESSAGE ===" >> /tmp/diag.txt
 docker exec n8n-n8n-1 sh -c 'curl -s -X POST "https://api.telegram.org/bot{BOT}/sendMessage" -H "Content-Type: application/json" -d \\'{{"chat_id": {CHAT_ID}, "text": "FROM N8N CONTAINER"}}\\' 2>/dev/null || echo "CURL NOT AVAILABLE"' >> /tmp/diag.txt 2>&1
 
-echo "" >> /tmp/diag.txt  
+echo "" >> /tmp/diag.txt
 echo "=== WORKFLOW LIST ===" >> /tmp/diag.txt
 docker exec n8n-n8n-1 n8n list:workflow >> /tmp/diag.txt 2>&1
 
