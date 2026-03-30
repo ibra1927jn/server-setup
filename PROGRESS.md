@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-03-30] | Heartbeat #26: extracted 4 workflow builders from fase2_deploy.py main() (build_daily_briefing, build_uptime_monitor, build_crypto_alerts, build_github_backup), simplified else-if to elif in 2 fix scripts (PLR5501), replaced exit() with sys.exit() (PLR1722), merged duplicate comparisons (PLR1714), replaced unnecessary lambda (PLW0108), enabled PLC/PLE/PLW/PLR/FURB/C4/FLY rule sets in ruff. 487/487 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #25: prefixed 18 unused stderr vars with underscore (RUF059) in 12 scripts, replaced 24 list-comprehension-[0] patterns with next() (RUF015) in 11 test files, enabled RUF rule set in ruff config, removed 2 stale noqa directives, replaced if-in-del with dict.pop (RUF051). 487/487 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #24: replaced last 4 hardcoded IPs in test scripts (verify_fase3, test.py, test_explicit_file, test_webhook_direct) with VPS_HOST from shared_config, wrapped verify_fase3.py and test.py in main() with __name__ guard. 487/487 passing, 99% coverage, 0 lint errors. Zero hardcoded IPs remain in entire codebase
 - [2026-03-30] | Heartbeat #23: replaced last hardcoded IP (95.217.158.7) in fase3_ssl_dashboard.py — NIP_DOMAIN now derived from VPS_HOST, dashboard HTML uses placeholder. 487/487 passing, 99% coverage, 0 lint errors
