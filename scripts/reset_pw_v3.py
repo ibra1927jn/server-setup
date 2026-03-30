@@ -11,7 +11,11 @@ import subprocess, json, sqlite3 as db
 # Generate bcrypt hash inside the container
 result = subprocess.run(
     ["docker", "exec", "n8n-n8n-1", "node", "-e",
-     "const b=require('/usr/local/lib/node_modules/n8n/node_modules/.pnpm/bcryptjs@2.4.3/node_modules/bcryptjs');b.hash('__N8N_PW__',10,(e,h)=>{console.log(h)})"],
+     "const b=require('/usr/local/lib/node_modules/n8n"
+     "/node_modules/.pnpm/bcryptjs@2.4.3"
+     "/node_modules/bcryptjs');"
+     "b.hash('__N8N_PW__',10,(e,h)=>"
+     "{console.log(h)})"],
     capture_output=True, text=True
 )
 pw_hash = result.stdout.strip()

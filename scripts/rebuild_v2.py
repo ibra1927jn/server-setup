@@ -51,7 +51,11 @@ if "Crypto Portfolio Alerts" in wf_ids:
             },
             {
                 "parameters": {
-                    "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple,dogecoin&vs_currencies=usd&include_24hr_change=true",
+                    "url": (
+                        "https://api.coingecko.com/api/v3/simple/price"
+                        "?ids=bitcoin,ethereum,solana,ripple,dogecoin"
+                        "&vs_currencies=usd&include_24hr_change=true"
+                    ),
                     "options": {}
                 },
                 "name": "Get Prices",
@@ -63,7 +67,19 @@ if "Crypto Portfolio Alerts" in wf_ids:
             {
                 "parameters": {
                     "chatId": CHAT_ID,
-                    "text": "=📊 *Crypto Portfolio*\n\n💰 BTC: ${{ $json.bitcoin.usd }} ({{ $json.bitcoin.usd_24h_change.toFixed(1) }}%)\n💠 ETH: ${{ $json.ethereum.usd }} ({{ $json.ethereum.usd_24h_change.toFixed(1) }}%)\n☀️ SOL: ${{ $json.solana.usd }} ({{ $json.solana.usd_24h_change.toFixed(1) }}%)\n🪙 XRP: ${{ $json.ripple.usd }} ({{ $json.ripple.usd_24h_change.toFixed(1) }}%)\n🐕 DOGE: ${{ $json.dogecoin.usd }} ({{ $json.dogecoin.usd_24h_change.toFixed(1) }}%)",
+                    "text": (
+                        "=📊 *Crypto Portfolio*\n\n"
+                        "💰 BTC: ${{ $json.bitcoin.usd }} "
+                        "({{ $json.bitcoin.usd_24h_change.toFixed(1) }}%)\n"
+                        "💠 ETH: ${{ $json.ethereum.usd }} "
+                        "({{ $json.ethereum.usd_24h_change.toFixed(1) }}%)\n"
+                        "☀️ SOL: ${{ $json.solana.usd }} "
+                        "({{ $json.solana.usd_24h_change.toFixed(1) }}%)\n"
+                        "🪙 XRP: ${{ $json.ripple.usd }} "
+                        "({{ $json.ripple.usd_24h_change.toFixed(1) }}%)\n"
+                        "🐕 DOGE: ${{ $json.dogecoin.usd }} "
+                        "({{ $json.dogecoin.usd_24h_change.toFixed(1) }}%)"
+                    ),
                     "additionalFields": {"parse_mode": "Markdown"}
                 },
                 "name": "Send Telegram",
@@ -97,7 +113,12 @@ if "Daily Briefing" in wf_ids:
             },
             {
                 "parameters": {
-                    "command": "uptime && df -h / | tail -1 && free -h | grep Mem && docker ps --format '{{.Names}}: {{.Status}}'",
+                    "command": (
+                        "uptime && df -h / | tail -1"
+                        " && free -h | grep Mem"
+                        " && docker ps --format"
+                        " '{{.Names}}: {{.Status}}'"
+                    ),
                     "authentication": "password"
                 },
                 "name": "Server Stats",
@@ -203,7 +224,11 @@ if "GitHub Auto-Backup" in wf_ids:
             {
                 "parameters": {
                     "chatId": CHAT_ID,
-                    "text": "=🗂️ *GitHub Backup Report*\n\nRepos recientes revisados\n🕐 {{ new Date().toLocaleString('es-ES') }}",
+                    "text": (
+                        "=🗂️ *GitHub Backup Report*\n\n"
+                        "Repos recientes revisados\n"
+                        "🕐 {{ new Date().toLocaleString('es-ES') }}"
+                    ),
                     "additionalFields": {"parse_mode": "Markdown"}
                 },
                 "name": "Send Report",

@@ -27,7 +27,12 @@ telegram_ai_workflow = {
         {
             "parameters": {
                 "options": {
-                    "systemMessage": "Eres un asistente de IA conciso y útil llamado AgenticOS. Responde en español. Sé breve y directo, máximo 2 párrafos. Si no sabes algo, dilo honestamente."
+                    "systemMessage": (
+                        "Eres un asistente de IA conciso y útil llamado"
+                        " AgenticOS. Responde en español. Sé breve y"
+                        " directo, máximo 2 párrafos. Si no sabes algo,"
+                        " dilo honestamente."
+                    )
                 }
             },
             "type": "@n8n/n8n-nodes-langchain.agent",

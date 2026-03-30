@@ -43,7 +43,12 @@ for wf in all_wfs:
 
 # 3. Check execution history - look for errors
 print("\n=== ULTIMAS EJECUCIONES ===")
-_, o, _ = ssh.exec_command("""docker exec n8n-n8n-1 sh -c "sqlite3 /home/node/.n8n/database.sqlite 'SELECT id, workflowId, status, stoppedAt FROM execution_entity ORDER BY id DESC LIMIT 15;'" """)
+_, o, _ = ssh.exec_command(
+    'docker exec n8n-n8n-1 sh -c "sqlite3'
+    " /home/node/.n8n/database.sqlite"
+    " 'SELECT id, workflowId, status, stoppedAt"
+    ' FROM execution_entity ORDER BY id DESC LIMIT 15;\'"'
+)
 execs = o.read().decode().strip()
 print(execs if execs else "  (no sqlite3 or no data)")
 
@@ -65,7 +70,12 @@ except Exception:
 # Try sending via curl with known bot token from previous session
 # The bot token was in the credential "AgenticOS Bot"
 print("\n  Testing via API...")
-test_cmd = """docker exec n8n-n8n-1 sh -c 'curl -s "https://api.telegram.org/bot$(cat /tmp/tg_test 2>/dev/null || echo NOTOKEN)/getMe" 2>/dev/null' """
+test_cmd = (
+    "docker exec n8n-n8n-1 sh -c 'curl -s"
+    ' "https://api.telegram.org/bot$(cat /tmp/tg_test'
+    " 2>/dev/null || echo NOTOKEN)/getMe\""
+    " 2>/dev/null'"
+)
 _, o, _ = ssh.exec_command(test_cmd)
 print(f"  {o.read().decode().strip()[:200]}")
 

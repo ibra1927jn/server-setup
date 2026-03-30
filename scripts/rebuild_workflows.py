@@ -40,7 +40,11 @@ crypto_wf = {
         },
         {
             "parameters": {
-                "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple,dogecoin&vs_currencies=usd&include_24hr_change=true",
+                "url": (
+                    "https://api.coingecko.com/api/v3/simple/price"
+                    "?ids=bitcoin,ethereum,solana,ripple,dogecoin"
+                    "&vs_currencies=usd&include_24hr_change=true"
+                ),
                 "options": {}
             },
             "name": "Get Prices",
@@ -51,7 +55,20 @@ crypto_wf = {
         {
             "parameters": {
                 "chatId": CHAT_ID,
-                "text": "=📊 *Crypto Portfolio*\n\n💰 BTC: ${{ $json.bitcoin.usd }} ({{ $json.bitcoin.usd_24h_change?.toFixed(1) }}%)\n💠 ETH: ${{ $json.ethereum.usd }} ({{ $json.ethereum.usd_24h_change?.toFixed(1) }}%)\n☀️ SOL: ${{ $json.solana.usd }} ({{ $json.solana.usd_24h_change?.toFixed(1) }}%)\n🪙 XRP: ${{ $json.ripple.usd }} ({{ $json.ripple.usd_24h_change?.toFixed(1) }}%)\n🐕 DOGE: ${{ $json.dogecoin.usd }} ({{ $json.dogecoin.usd_24h_change?.toFixed(1) }}%)\n\n🕐 {{ new Date().toLocaleString('es-ES') }}",
+                "text": (
+                    "=📊 *Crypto Portfolio*\n\n"
+                    "💰 BTC: ${{ $json.bitcoin.usd }} "
+                    "({{ $json.bitcoin.usd_24h_change?.toFixed(1) }}%)\n"
+                    "💠 ETH: ${{ $json.ethereum.usd }} "
+                    "({{ $json.ethereum.usd_24h_change?.toFixed(1) }}%)\n"
+                    "☀️ SOL: ${{ $json.solana.usd }} "
+                    "({{ $json.solana.usd_24h_change?.toFixed(1) }}%)\n"
+                    "🪙 XRP: ${{ $json.ripple.usd }} "
+                    "({{ $json.ripple.usd_24h_change?.toFixed(1) }}%)\n"
+                    "🐕 DOGE: ${{ $json.dogecoin.usd }} "
+                    "({{ $json.dogecoin.usd_24h_change?.toFixed(1) }}%)\n\n"
+                    "🕐 {{ new Date().toLocaleString('es-ES') }}"
+                ),
                 "additionalFields": {"parse_mode": "Markdown"}
             },
             "name": "Send Telegram",
@@ -81,7 +98,14 @@ daily_wf = {
         },
         {
             "parameters": {
-                "command": "echo \"UPTIME: $(uptime)\" && echo \"DISK: $(df -h / | tail -1)\" && echo \"MEM: $(free -h | grep Mem)\" && echo \"DOCKER: $(docker ps --format '{{.Names}}: {{.Status}}' | tr '\\n' ', ')\"",
+                "command": (
+                    "echo \"UPTIME: $(uptime)\""
+                    " && echo \"DISK: $(df -h / | tail -1)\""
+                    " && echo \"MEM: $(free -h | grep Mem)\""
+                    " && echo \"DOCKER: $(docker ps"
+                    " --format '{{.Names}}: {{.Status}}'"
+                    " | tr '\\n' ', ')\""
+                ),
                 "authentication": "password"
             },
             "name": "Server Stats",
@@ -123,7 +147,23 @@ uptime_wf = {
         },
         {
             "parameters": {
-                "command": "services='n8n:5678 alz.agency:443'; failed=0; report=''; for s in $services; do host=$(echo $s | cut -d: -f1); port=$(echo $s | cut -d: -f2); if timeout 5 bash -c \"echo > /dev/tcp/$host/$port\" 2>/dev/null; then report=\"$report\\n✅ $host:$port UP\"; else report=\"$report\\n❌ $host:$port DOWN\"; failed=$((failed+1)); fi; done; echo \"FAILED=$failed\"; echo -e \"$report\"",
+                "command": (
+                    "services='n8n:5678 alz.agency:443';"
+                    " failed=0; report='';"
+                    " for s in $services; do"
+                    " host=$(echo $s | cut -d: -f1);"
+                    " port=$(echo $s | cut -d: -f2);"
+                    " if timeout 5 bash -c"
+                    " \"echo > /dev/tcp/$host/$port\""
+                    " 2>/dev/null;"
+                    " then report=\"$report\\n"
+                    "✅ $host:$port UP\";"
+                    " else report=\"$report\\n"
+                    "❌ $host:$port DOWN\";"
+                    " failed=$((failed+1)); fi; done;"
+                    " echo \"FAILED=$failed\";"
+                    " echo -e \"$report\""
+                ),
                 "authentication": "password"
             },
             "name": "Check Services",
@@ -136,7 +176,14 @@ uptime_wf = {
             "parameters": {
                 "conditions": {
                     "options": {"caseSensitive": True, "leftValue": "", "typeValidation": "strict"},
-                    "conditions": [{"leftValue": "={{ $json.stdout }}", "rightValue": "FAILED=0", "operator": {"type": "string", "operation": "notContains"}}],
+                    "conditions": [{
+                        "leftValue": "={{ $json.stdout }}",
+                        "rightValue": "FAILED=0",
+                        "operator": {
+                            "type": "string",
+                            "operation": "notContains",
+                        },
+                    }],
                     "combinator": "and"
                 }
             },
@@ -168,7 +215,12 @@ uptime_wf = {
     "connections": {
         "Every 5 Min": {"main": [[{"node": "Check Services", "type": "main", "index": 0}]]},
         "Check Services": {"main": [[{"node": "Has Failures?", "type": "main", "index": 0}]]},
-        "Has Failures?": {"main": [[{"node": "Alert Down", "type": "main", "index": 0}], [{"node": "All OK", "type": "main", "index": 0}]]}
+        "Has Failures?": {
+            "main": [
+                [{"node": "Alert Down", "type": "main", "index": 0}],
+                [{"node": "All OK", "type": "main", "index": 0}],
+            ]
+        }
     }
 }
 
@@ -204,7 +256,11 @@ github_wf = {
         {
             "parameters": {
                 "chatId": CHAT_ID,
-                "text": "=🗂️ *GitHub Backup Report*\n\nRepos checked: {{ $json.length || 'N/A' }}\n🕐 {{ new Date().toLocaleString('es-ES') }}",
+                "text": (
+                    "=🗂️ *GitHub Backup Report*\n\n"
+                    "Repos checked: {{ $json.length || 'N/A' }}\n"
+                    "🕐 {{ new Date().toLocaleString('es-ES') }}"
+                ),
                 "additionalFields": {"parse_mode": "Markdown"}
             },
             "name": "Send Report",

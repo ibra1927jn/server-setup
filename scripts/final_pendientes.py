@@ -31,7 +31,12 @@ for line in lines:
 for wf_id, wf_name in wf_ids:
     print(f"\n  Publishing: {wf_name}...")
     # Use the internal n8n API - PATCH to activate
-    cmd = f'''docker exec n8n-n8n-1 sh -c "curl -s -X PATCH http://localhost:5678/api/v1/workflows/{wf_id} -H 'Content-Type: application/json' -d '{{\\"active\\": true}}' 2>/dev/null | head -c 200"'''
+    cmd = (
+        f'docker exec n8n-n8n-1 sh -c "curl -s -X PATCH '
+        f"http://localhost:5678/api/v1/workflows/{wf_id} "
+        f"-H 'Content-Type: application/json' "
+        f"""-d '{{\\\"active\\\": true}}' 2>/dev/null | head -c 200\""""
+    )
     _, o, e = ssh.exec_command(cmd)
     out = o.read().decode().strip()
     if "active" in out:
@@ -110,7 +115,11 @@ if err:
 
 # Set up cron job - daily at 3:00 AM
 print("  Setting up daily cron (3:00 AM)...")
-cron_cmd = '(crontab -l 2>/dev/null | grep -v n8n-backup; echo "0 3 * * * /root/n8n-backup.sh >> /var/log/n8n-backup.log 2>&1") | crontab -'
+cron_cmd = (
+    '(crontab -l 2>/dev/null | grep -v n8n-backup; '
+    'echo "0 3 * * * /root/n8n-backup.sh '
+    '>> /var/log/n8n-backup.log 2>&1") | crontab -'
+)
 _, o, e = ssh.exec_command(cron_cmd)
 o.read()
 e.read()

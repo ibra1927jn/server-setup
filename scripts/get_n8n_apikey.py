@@ -7,7 +7,12 @@ _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 cat /home/node/.n8n/.env 2>/de
 print(o.read().decode())
 
 # Try to get API key from n8n settings
-_, o, _ = ssh.exec_command("docker exec n8n-n8n-1 grep -r 'N8N_API_KEY\\|api_key' /home/node/.n8n/ 2>/dev/null | head -5")
+grep_cmd = (
+    "docker exec n8n-n8n-1 grep -r"
+    " 'N8N_API_KEY\\|api_key' /home/node/.n8n/"
+    " 2>/dev/null | head -5"
+)
+_, o, _ = ssh.exec_command(grep_cmd)
 print(o.read().decode())
 
 # Check env vars from docker-compose

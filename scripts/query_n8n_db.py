@@ -14,8 +14,15 @@ print(o.read().decode())
 print(e.read().decode())
 
 # Get execution data with error details
-cmd2 = '''docker exec n8n-n8n-1 sqlite3 /home/node/.n8n/database.sqlite \
-  "SELECT substr(data, 1, 2000) FROM execution_data WHERE executionId = (SELECT id FROM execution_entity ORDER BY id DESC LIMIT 1);"'''
+cmd2 = (
+    'docker exec n8n-n8n-1 sqlite3'
+    ' /home/node/.n8n/database.sqlite'
+    ' "SELECT substr(data, 1, 2000)'
+    ' FROM execution_data'
+    ' WHERE executionId ='
+    ' (SELECT id FROM execution_entity'
+    ' ORDER BY id DESC LIMIT 1);"'
+)
 _, o2, e2 = ssh.exec_command(cmd2)
 time.sleep(2)
 print("\n=== LAST EXECUTION DATA ===")

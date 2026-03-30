@@ -8,11 +8,21 @@ w_id = 'WiTcSI66bHwdSgkd'
 print("=== DEACTIVATING TELEGRAM BOT ===")
 # Execute command in n8n container to update workflow active state
 # Or just use sqlite directly!
-sqlite_cmd = '''docker exec n8n-n8n-1 sqlite3 /home/node/.n8n/database.sqlite "UPDATE workflow_entity SET active = 0 WHERE id = '07a5ed10579849f6';" '''
+sqlite_cmd = (
+    'docker exec n8n-n8n-1 sqlite3'
+    ' /home/node/.n8n/database.sqlite'
+    " \"UPDATE workflow_entity SET active = 0"
+    " WHERE id = '07a5ed10579849f6';\""
+)
 ssh.exec_command(sqlite_cmd)
 
 # And AI Agent Base might be active, let's keep it active
-sqlite_cmd2 = f'''docker exec n8n-n8n-1 sqlite3 /home/node/.n8n/database.sqlite "UPDATE workflow_entity SET active = 1 WHERE id = '{w_id}';" '''
+sqlite_cmd2 = (
+    "docker exec n8n-n8n-1 sqlite3"
+    " /home/node/.n8n/database.sqlite"
+    f" \"UPDATE workflow_entity SET active = 1"
+    f" WHERE id = '{w_id}';\""
+)
 ssh.exec_command(sqlite_cmd2)
 
 time.sleep(1)

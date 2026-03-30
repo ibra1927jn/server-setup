@@ -61,7 +61,12 @@ server {
 print("  Generating self-signed SSL certificate...")
 ssl_cmds = [
     "mkdir -p /etc/ssl/n8n",
-    'openssl req -x509 -nodes -days 365 -newkey rsa:2048 -keyout /etc/ssl/n8n/self-signed.key -out /etc/ssl/n8n/self-signed.crt -subj "/CN=95.217.158.7/O=AgenticOS"',
+    (
+        'openssl req -x509 -nodes -days 365 -newkey rsa:2048'
+        ' -keyout /etc/ssl/n8n/self-signed.key'
+        ' -out /etc/ssl/n8n/self-signed.crt'
+        ' -subj "/CN=95.217.158.7/O=AgenticOS"'
+    ),
 ]
 for cmd in ssl_cmds:
     _, o, e = ssh.exec_command(cmd)
@@ -187,7 +192,10 @@ if github_token:
             sftp.put(local_path, "/tmp/github_backup_fixed.json")
             ssh.exec_command("docker cp /tmp/github_backup_fixed.json n8n-n8n-1:/tmp/github_backup_fixed.json")
             time.sleep(1)
-            _, o, e = ssh.exec_command("docker exec n8n-n8n-1 n8n import:workflow --input=/tmp/github_backup_fixed.json")
+            _, o, e = ssh.exec_command(
+                "docker exec n8n-n8n-1 n8n import:workflow"
+                " --input=/tmp/github_backup_fixed.json"
+            )
             print(f"    Import: {o.read().decode().strip()}")
             sftp.close()
             break
@@ -203,7 +211,12 @@ print("VERIFICACION: RESULTADOS DE TESTS E2E")
 print("=" * 50)
 
 # Check n8n execution history via API
-_, o, _ = ssh.exec_command("""docker exec n8n-n8n-1 sh -c 'curl -s http://localhost:5678/api/v1/executions?limit=10 2>/dev/null | python3 -m json.tool 2>/dev/null || echo "API_UNAVAILABLE"'""")
+_, o, _ = ssh.exec_command(
+    "docker exec n8n-n8n-1 sh -c "
+    "'curl -s http://localhost:5678/api/v1/executions?limit=10"
+    " 2>/dev/null | python3 -m json.tool 2>/dev/null"
+    ' || echo "API_UNAVAILABLE"\''
+)
 exec_result = o.read().decode().strip()
 
 if "API_UNAVAILABLE" not in exec_result:
