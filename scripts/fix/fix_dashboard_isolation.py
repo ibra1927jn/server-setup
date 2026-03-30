@@ -5,11 +5,9 @@ from shared_config import VPS_HOST, get_ssh_client
 _NIP_HOST = VPS_HOST.replace(".", "-") + ".nip.io"
 
 
-def main():
-    ssh = get_ssh_client()
-
-    # Create systemd service for python http server
-    service_file = """[Unit]
+def _build_systemd_service():
+    """Build the systemd unit file for the dashboard HTTP server."""
+    return """[Unit]
 Description=Dashboard HTTP Server
 After=network.target
 
@@ -24,19 +22,10 @@ Restart=on-failure
 WantedBy=multi-user.target
 """
 
-    sftp = ssh.open_sftp()
-    local_path = r"C:\Users\ibrab\Desktop\set up\scripts\dashboard_service"
-    with open(local_path, "w", encoding="utf-8") as f:
-        f.write(service_file)
-    sftp.put(local_path, "/etc/systemd/system/dashboard.service")
-    sftp.close()
 
-    ssh.exec_command("systemctl daemon-reload")
-    ssh.exec_command("systemctl enable dashboard")
-    ssh.exec_command("systemctl restart dashboard")
-
-    # Proxy from nginx
-    nginx_config = """server {
+def _build_nginx_config():
+    """Build the nginx config with dashboard proxy and n8n routes."""
+    return """server {
     listen 80;
     server_name __NIP__ __VPS__;
 
@@ -90,20 +79,33 @@ server {
 }
 """.replace("__NIP__", _NIP_HOST).replace("__VPS__", VPS_HOST)
 
+
+def main():
+    ssh = get_ssh_client()
+
+    sftp = ssh.open_sftp()
+    local_path = r"C:\Users\ibrab\Desktop\set up\scripts\dashboard_service"
+    with open(local_path, "w", encoding="utf-8") as f:
+        f.write(_build_systemd_service())
+    sftp.put(local_path, "/etc/systemd/system/dashboard.service")
+    sftp.close()
+
+    ssh.exec_command("systemctl daemon-reload")
+    ssh.exec_command("systemctl enable dashboard")
+    ssh.exec_command("systemctl restart dashboard")
+
     sftp = ssh.open_sftp()
     local_path = r"C:\Users\ibrab\Desktop\set up\scripts\temp_nginx6"
     with open(local_path, "w", encoding="utf-8") as f:
-        f.write(nginx_config)
+        f.write(_build_nginx_config())
     sftp.put(local_path, "/etc/nginx/sites-available/n8n")
     sftp.close()
 
-    # Also move status_panel back to dashboard folder for python server
     ssh.exec_command("mv /var/www/status_panel /var/www/dashboard")
     ssh.exec_command('sed -i "s/status_panel/dashboard/g" /etc/systemd/system/dashboard.service')
     ssh.exec_command("systemctl daemon-reload && systemctl restart dashboard")
     ssh.exec_command("nginx -t && systemctl reload nginx")
 
-    # Wait for service to start
     time.sleep(3)
 
     print("=== LOCAL CURL DASHBOARD ===")

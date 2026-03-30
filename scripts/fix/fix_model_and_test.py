@@ -9,26 +9,9 @@ from shared_config import (
 )
 
 
-def main():
-    ssh = get_ssh_client()
-
-    # First verify the correct model works
-    cmd = (
-        f"curl -s https://openrouter.ai/api/v1/chat/completions"
-        f' -H "Authorization: Bearer {OPENROUTER_API_KEY}"'
-        f' -H "Content-Type: application/json"'
-        ' -d \'{"model": "z-ai/glm-4.5-air:free",'
-        ' "messages": [{"role": "user", "content": "Di solamente OK"}],'
-        ' "max_tokens": 50}\' --max-time 30'
-    )
-    _, o, _ = ssh.exec_command(cmd)
-    time.sleep(20)
-    result = o.read().decode()
-    print("=== TEST WITH z-ai/glm-4.5-air:free ===")
-    print(result[:500])
-
-    # Now fix the workflow with the correct model
-    fixed_workflow = {
+def _build_ai_agent_workflow():
+    """Build the AI Agent Base workflow definition with correct model."""
+    return {
         "id": N8N_AI_WORKFLOW_ID,
         "name": "AI Agent Base - Template con Memoria",
         "active": True,
@@ -91,7 +74,27 @@ def main():
         "settings": {"executionOrder": "v1"},
     }
 
-    workflow_json = json.dumps([fixed_workflow])
+
+def main():
+    ssh = get_ssh_client()
+
+    # First verify the correct model works
+    cmd = (
+        f"curl -s https://openrouter.ai/api/v1/chat/completions"
+        f' -H "Authorization: Bearer {OPENROUTER_API_KEY}"'
+        f' -H "Content-Type: application/json"'
+        ' -d \'{"model": "z-ai/glm-4.5-air:free",'
+        ' "messages": [{"role": "user", "content": "Di solamente OK"}],'
+        ' "max_tokens": 50}\' --max-time 30'
+    )
+    _, o, _ = ssh.exec_command(cmd)
+    time.sleep(20)
+    result = o.read().decode()
+    print("=== TEST WITH z-ai/glm-4.5-air:free ===")
+    print(result[:500])
+
+    # Now fix the workflow with the correct model
+    workflow_json = json.dumps([_build_ai_agent_workflow()])
 
     with ssh.open_sftp() as sftp, sftp.file("/tmp/fixed_ai_agent_v2.json", "w") as f:
         f.write(workflow_json)
@@ -105,17 +108,14 @@ def main():
     print("\n=== IMPORT ===")
     print(o2.read().decode())
 
-    # Restart n8n to apply changes
     print("Restarting n8n...")
     ssh.exec_command("cd /root/n8n && docker compose restart")
     time.sleep(20)
 
-    # Activate workflow
     _, o3, _ = ssh.exec_command(f"docker exec n8n-n8n-1 n8n update:workflow --id={N8N_AI_WORKFLOW_ID} --active=true")
     time.sleep(3)
     print("ACTIVATE:", o3.read().decode())
 
-    # Test webhook
     print("\n=== TESTING WEBHOOK ===")
     cmd2 = """curl -s -X POST http://127.0.0.1:5678/webhook/ai-agent \
   -H "Content-Type: application/json" \
