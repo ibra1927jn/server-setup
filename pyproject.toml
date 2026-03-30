@@ -44,6 +44,9 @@ select = [
     "N",      # pep8-naming
     "ARG",    # flake8-unused-arguments
     "FBT",    # flake8-boolean-trap
+    "FIX",    # flake8-fixme (no TODO/FIXME/HACK markers)
+    "ERA",    # eradicate (no commented-out code)
+    "ICN",    # flake8-import-conventions
 ]
 ignore = [
     "S603",   # subprocess-without-shell-check (false positives)
