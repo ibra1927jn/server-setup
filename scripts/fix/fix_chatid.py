@@ -22,6 +22,7 @@ def test_send_message(url, chat_id, text):
             "text": text,
             "parse_mode": "Markdown",
         },
+        timeout=30,
     )
     print(f"  Status: {r.status_code}")
     print(f"  Response: {r.text[:300]}")
@@ -86,7 +87,7 @@ def main():
             "https://api.telegram.org"
             f"/bot{TELEGRAM_BOT_TOKEN}/getUpdates?limit=5"
         )
-        r2 = requests.get(url2)
+        r2 = requests.get(url2, timeout=30)
         print(f"  Updates: {r2.text[:500]}")
 
     print(f"\n=== TEST: chatID incorrecto ({WRONG_CHAT_ID}) ===")

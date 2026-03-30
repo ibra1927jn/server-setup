@@ -46,7 +46,8 @@ def main():
         json={
             "chat_id": TELEGRAM_CHAT_ID,
             "text": "Test directo - si ves esto, Telegram funciona OK",
-        }
+        },
+        timeout=30
     )
     print(f"  Status: {r.status_code}")
     print(f"  Response: {r.text[:300]}")

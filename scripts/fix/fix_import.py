@@ -32,7 +32,8 @@ def main():
         resp = requests.post(
             f"{N8N_URL}/api/v1/workflows",
             headers=headers,
-            json=payload
+            json=payload,
+            timeout=30
         )
         print(f"  Status: {resp.status_code}")
 
@@ -42,13 +43,13 @@ def main():
             print(f"  ✅ Created! ID: {wf_id}")
 
             # Activate it
-            requests.patch(f"{N8N_URL}/api/v1/workflows/{wf_id}", headers=headers, json={"active": True})
+            requests.patch(f"{N8N_URL}/api/v1/workflows/{wf_id}", headers=headers, json={"active": True}, timeout=30)
             print("  ✅ Activated")
         else:
             print(f"  ❌ Error: {resp.text[:300]}")
 
     print("\n=== FINAL VERIFICATION ===")
-    resp = requests.get(f"{N8N_URL}/api/v1/workflows", headers=headers)
+    resp = requests.get(f"{N8N_URL}/api/v1/workflows", headers=headers, timeout=30)
     if resp.status_code == 200:
         workflows = resp.json().get('data', [])
         for wf in workflows:

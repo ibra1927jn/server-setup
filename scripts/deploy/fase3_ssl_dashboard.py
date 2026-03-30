@@ -27,7 +27,7 @@ def main():
 
     # First try to register via their API
     print("  Registering agenticosvps.duckdns.org...")
-    r = requests.get(f"https://www.duckdns.org/update?domains={DUCK_DOMAIN}&token=&ip={HOST}&verbose=true")
+    r = requests.get(f"https://www.duckdns.org/update?domains={DUCK_DOMAIN}&token=&ip={HOST}&verbose=true", timeout=30)
     print(f"  Response: {r.text.strip()}")
 
     # DuckDNS requires a token. Let's set it up on the server instead with a script

@@ -24,7 +24,7 @@ def main():
     }
 
     print("Creating OpenRouter credential...")
-    resp = requests.post(f"{N8N_URL}/api/v1/credentials", headers=headers, json=payload)
+    resp = requests.post(f"{N8N_URL}/api/v1/credentials", headers=headers, json=payload, timeout=30)
 
     if resp.status_code in [200, 201]:
         res_data = resp.json()
@@ -45,7 +45,7 @@ def main():
     }
 
     print("Creating Hetzner SSH credential...")
-    resp2 = requests.post(f"{N8N_URL}/api/v1/credentials", headers=headers, json=ssh_payload)
+    resp2 = requests.post(f"{N8N_URL}/api/v1/credentials", headers=headers, json=ssh_payload, timeout=30)
 
     if resp2.status_code in [200, 201]:
         print(f"SSH Success! Credential ID: {resp2.json().get('id')}")

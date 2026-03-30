@@ -21,7 +21,7 @@ def main():
         }
 
         print(f"Uploading credential: {c['name']} ({c['type']})...")
-        resp = requests.post(f"{N8N_URL}/api/v1/credentials", headers=headers, json=payload)
+        resp = requests.post(f"{N8N_URL}/api/v1/credentials", headers=headers, json=payload, timeout=30)
 
         if resp.status_code in [200, 201]:
             print(f"  Success - ID: {resp.json().get('id')}")

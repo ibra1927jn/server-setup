@@ -28,7 +28,8 @@ def import_workflow(base_url, headers, workflow_data):
     resp = requests.post(
         f"{base_url}/api/v1/workflows",
         headers=headers,
-        json=workflow_data
+        json=workflow_data,
+        timeout=30
     )
     if resp.status_code in [200, 201]:
         result = resp.json()
@@ -41,7 +42,8 @@ def activate_workflow(base_url, headers, wf_id):
     resp = requests.patch(
         f"{base_url}/api/v1/workflows/{wf_id}",
         headers=headers,
-        json={"active": True}
+        json={"active": True},
+        timeout=30
     )
     return resp.status_code == 200
 
@@ -51,7 +53,7 @@ def main():
 
     # Test API access first
     print("=== Testing API access ===")
-    resp = requests.get(f"{N8N_URL}/api/v1/workflows", headers=headers)
+    resp = requests.get(f"{N8N_URL}/api/v1/workflows", headers=headers, timeout=30)
     print(f"GET /workflows: {resp.status_code}")
     if resp.status_code == 200:
         existing = resp.json().get('data', [])
@@ -89,7 +91,7 @@ def main():
 
     # Final listing
     print("\n=== Final workflow list ===")
-    resp = requests.get(f"{N8N_URL}/api/v1/workflows", headers=headers)
+    resp = requests.get(f"{N8N_URL}/api/v1/workflows", headers=headers, timeout=30)
     if resp.status_code == 200:
         workflows = resp.json().get('data', [])
         for wf in workflows:
