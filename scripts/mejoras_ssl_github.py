@@ -5,6 +5,7 @@ MEJORAS 2 y 3:
 - Verificar ejecuciones de los tests E2E
 """
 
+import contextlib
 import json
 import time
 
@@ -102,18 +103,15 @@ server {
 def find_github_token():
     """Search for GitHub token in .env or local Python scripts."""
     github_token = None
-    try:
-        with open(r"C:\AgenticOS\.env", encoding="utf-8") as f:
-            for line in f:
-                if "GITHUB" in line.upper() and "TOKEN" in line.upper() and "=" in line:
-                    github_token = line.split("=", 1)[1].strip().strip('"').strip("'")
-                    break
-    except Exception:
-        pass
+    with contextlib.suppress(Exception), open(r"C:\AgenticOS\.env", encoding="utf-8") as f:
+        for line in f:
+            if "GITHUB" in line.upper() and "TOKEN" in line.upper() and "=" in line:
+                github_token = line.split("=", 1)[1].strip().strip('"').strip("'")
+                break
 
     if not github_token:
         print("  No GitHub token found in .env, checking for PAT...")
-        try:
+        with contextlib.suppress(Exception):
             import glob
             import re
 
@@ -126,8 +124,6 @@ def find_github_token():
                             github_token = match.group(1)
                             print(f"  Found token in {f}")
                             break
-        except Exception:
-            pass
 
     return github_token
 
