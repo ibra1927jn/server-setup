@@ -18,3 +18,5 @@ send_hcom.py
 ultra-system-temp/
 mission-control/node_modules/
 *.bak
+test_key.txt
+.env_backup
