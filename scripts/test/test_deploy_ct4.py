@@ -91,6 +91,40 @@ def test_deploy_uploads_files(mock_get_ssh, mock_walk, mock_size):
     )
 
 
+@patch("deploy.deploy_ct4.os.path.getsize", return_value=100)
+@patch("deploy.deploy_ct4.os.walk")
+@patch("deploy.deploy_ct4.get_ssh_client")
+@patch("deploy.deploy_ct4.LOCAL_DIR", "/fake/local")
+@patch("deploy.deploy_ct4.REMOTE_DIR", "/root/bot")
+def test_deploy_creates_subdir_when_missing(mock_get_ssh, mock_walk, mock_size):
+    """deploy() should call _mkdir_p for subdirs that don't exist on remote."""
+    from deploy.deploy_ct4 import deploy
+
+    ssh = _mock_ssh(stdout="ok")
+    sftp = MagicMock()
+
+    def stat_side_effect(path):
+        # Subdir /root/bot/sub doesn't exist; everything else does
+        if path == "/root/bot/sub":
+            raise FileNotFoundError
+        return MagicMock()
+
+    sftp.stat.side_effect = stat_side_effect
+    ssh.open_sftp.return_value = sftp
+    mock_get_ssh.return_value = ssh
+
+    mock_walk.return_value = [
+        ("/fake/local", ["sub"], ["a.py"]),
+        ("/fake/local/sub", [], ["b.py"]),
+    ]
+
+    deploy()
+
+    # Should have uploaded both files and created the subdir
+    assert sftp.put.call_count == 2
+    sftp.mkdir.assert_called_with("/root/bot/sub")
+
+
 @patch("deploy.deploy_ct4.os.path.getsize", return_value=11 * 1024 * 1024)
 @patch("deploy.deploy_ct4.os.walk")
 @patch("deploy.deploy_ct4.get_ssh_client")

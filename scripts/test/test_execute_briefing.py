@@ -67,6 +67,22 @@ def test_main_found_and_executed(mock_get_ssh):
 
 
 @patch("execute_daily_briefing.get_ssh_client")
+def test_main_found_with_stderr(mock_get_ssh, capsys):
+    workflows = [{"name": "Daily Briefing", "id": "wf123"}]
+    ssh = MagicMock()
+    mock_get_ssh.return_value = ssh
+    ssh.exec_command.side_effect = [
+        _mock_exec(json.dumps(workflows)),
+        _mock_exec("Execution was successful", "some warning"),
+    ]
+    main()
+    captured = capsys.readouterr()
+    assert "ERROR:" in captured.out
+    assert "some warning" in captured.out
+    ssh.close.assert_called_once()
+
+
+@patch("execute_daily_briefing.get_ssh_client")
 def test_main_workflow_not_found(mock_get_ssh, capsys):
     workflows = [{"name": "Other", "id": "x"}]
     ssh = MagicMock()
