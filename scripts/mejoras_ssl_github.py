@@ -10,12 +10,8 @@ import time
 from shared_config import get_ssh_client
 
 
-def main():
-    ssh = get_ssh_client()
-
-    # ====================================================
-    # MEJORA 2: Nginx reverse proxy con SSL
-    # ====================================================
+def setup_nginx_ssl(ssh):
+    """Configure Nginx reverse proxy with self-signed SSL for n8n."""
     print("=" * 50)
     print("MEJORA 2: NGINX REVERSE PROXY + SSL")
     print("=" * 50)
@@ -56,7 +52,6 @@ server {
 }
 """
 
-    # Generate self-signed cert
     print("  Generating self-signed SSL certificate...")
     ssl_cmds = [
         "mkdir -p /etc/ssl/n8n",
@@ -73,25 +68,21 @@ server {
         e.read()
         print(f"    OK: {cmd[:60]}...")
 
-    # Check if there's an existing nginx config that might conflict
     print("\n  Checking existing nginx config...")
     _, o, _ = ssh.exec_command("ls /etc/nginx/sites-enabled/")
     existing = o.read().decode().strip()
     print(f"    Existing sites: {existing}")
 
-    # Write the n8n nginx config
     print("  Writing n8n nginx config...")
     write_cmd = "cat > /etc/nginx/sites-available/n8n << 'NGINXCONF'\n" + nginx_config + "\nNGINXCONF"
     _, o, e = ssh.exec_command(write_cmd)
     o.read()
     e.read()
 
-    # Enable the site
     _, o, e = ssh.exec_command("ln -sf /etc/nginx/sites-available/n8n /etc/nginx/sites-enabled/n8n")
     o.read()
     e.read()
 
-    # Test nginx config
     print("  Testing nginx config...")
     _, o, e = ssh.exec_command("nginx -t 2>&1")
     test_result = o.read().decode().strip() + e.read().decode().strip()
@@ -106,13 +97,9 @@ server {
     else:
         print("    [WARN] Nginx config test failed, skipping reload")
 
-    # ====================================================
-    # MEJORA 3: GitHub token en el workflow
-    # ====================================================
-    print("\n" + "=" * 50)
-    print("MEJORA 3: GITHUB TOKEN EN AUTO-BACKUP")
-    print("=" * 50)
 
+def find_github_token():
+    """Search for GitHub token in .env or local Python scripts."""
     github_token = None
     try:
         with open(r"C:\AgenticOS\.env", "r") as f:
@@ -127,11 +114,11 @@ server {
         print("  No GitHub token found in .env, checking for PAT...")
         try:
             import glob
+            import re
             for f in glob.glob(r"C:\Users\ibrab\Desktop\set up\scripts\*.py"):
                 with open(f, "r") as fh:
                     content = fh.read()
                     if "ghp_" in content or "github_pat_" in content:
-                        import re
                         match = re.search(r'(ghp_[A-Za-z0-9_]+|github_pat_[A-Za-z0-9_]+)', content)
                         if match:
                             github_token = match.group(1)
@@ -140,65 +127,62 @@ server {
         except Exception:
             pass
 
-    if github_token:
-        print("  Token found: ***")
+    return github_token
 
-        # Update the GitHub Auto-Backup workflow to include the auth header
-        _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:workflow --all")
-        raw = o.read().decode().strip()
-        all_wfs = json.loads(raw)
 
-        for wf in all_wfs:
-            if "GitHub" in wf.get("name", ""):
-                print(f"  Updating workflow: {wf['name']}")
-                for node in wf.get("nodes", []):
-                    if node.get("name") == "Get Repos":
-                        print(f"    Fixing node: {node['name']}")
-                        node["parameters"]["authentication"] = "genericCredentialType"
-                        node["parameters"]["genericAuthType"] = "httpHeaderAuth"
-                        node["parameters"]["sendHeaders"] = True
-                        node["parameters"]["headerParameters"] = {
-                            "parameters": [
-                                {
-                                    "name": "Authorization",
-                                    "value": f"Bearer {github_token}"
-                                },
-                                {
-                                    "name": "User-Agent",
-                                    "value": "AgenticOS-Backup"
-                                }
-                            ]
-                        }
-                        if "authentication" in node["parameters"]:
-                            node["parameters"]["authentication"] = "none"
-                        if "genericAuthType" in node["parameters"]:
-                            del node["parameters"]["genericAuthType"]
+def update_github_workflow_token(ssh, github_token):
+    """Update the GitHub Auto-Backup workflow with the given token."""
+    _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:workflow --all")
+    raw = o.read().decode().strip()
+    all_wfs = json.loads(raw)
 
-                        print("    Headers added with GitHub token")
+    for wf in all_wfs:
+        if "GitHub" in wf.get("name", ""):
+            print(f"  Updating workflow: {wf['name']}")
+            for node in wf.get("nodes", []):
+                if node.get("name") == "Get Repos":
+                    print(f"    Fixing node: {node['name']}")
+                    node["parameters"]["authentication"] = "genericCredentialType"
+                    node["parameters"]["genericAuthType"] = "httpHeaderAuth"
+                    node["parameters"]["sendHeaders"] = True
+                    node["parameters"]["headerParameters"] = {
+                        "parameters": [
+                            {
+                                "name": "Authorization",
+                                "value": f"Bearer {github_token}"
+                            },
+                            {
+                                "name": "User-Agent",
+                                "value": "AgenticOS-Backup"
+                            }
+                        ]
+                    }
+                    if "authentication" in node["parameters"]:
+                        node["parameters"]["authentication"] = "none"
+                    if "genericAuthType" in node["parameters"]:
+                        del node["parameters"]["genericAuthType"]
 
-                # Save and reimport
-                local_path = r"C:\Users\ibrab\Desktop\set up\scripts\github_backup_fixed.json"
-                with open(local_path, "w", encoding="utf-8") as f:
-                    json.dump(wf, f)
+                    print("    Headers added with GitHub token")
 
-                sftp = ssh.open_sftp()
-                sftp.put(local_path, "/tmp/github_backup_fixed.json")
-                ssh.exec_command("docker cp /tmp/github_backup_fixed.json n8n-n8n-1:/tmp/github_backup_fixed.json")
-                time.sleep(1)
-                _, o, e = ssh.exec_command(
-                    "docker exec n8n-n8n-1 n8n import:workflow"
-                    " --input=/tmp/github_backup_fixed.json"
-                )
-                print(f"    Import: {o.read().decode().strip()}")
-                sftp.close()
-                break
-    else:
-        print("  [SKIP] No GitHub token found. You can add one manually later.")
-        print("  To add: Open GitHub Auto-Backup in n8n > Get Repos node > add Authorization header")
+            local_path = r"C:\Users\ibrab\Desktop\set up\scripts\github_backup_fixed.json"
+            with open(local_path, "w", encoding="utf-8") as f:
+                json.dump(wf, f)
 
-    # ====================================================
-    # VERIFICAR TEST E2E: Check last execution results
-    # ====================================================
+            sftp = ssh.open_sftp()
+            sftp.put(local_path, "/tmp/github_backup_fixed.json")
+            ssh.exec_command("docker cp /tmp/github_backup_fixed.json n8n-n8n-1:/tmp/github_backup_fixed.json")
+            time.sleep(1)
+            _, o, e = ssh.exec_command(
+                "docker exec n8n-n8n-1 n8n import:workflow"
+                " --input=/tmp/github_backup_fixed.json"
+            )
+            print(f"    Import: {o.read().decode().strip()}")
+            sftp.close()
+            break
+
+
+def verify_e2e_executions(ssh):
+    """Check last execution results and SSL status."""
     print("\n" + "=" * 50)
     print("VERIFICACION: RESULTADOS DE TESTS E2E")
     print("=" * 50)
@@ -229,7 +213,6 @@ server {
         _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n list:workflow")
         print(o.read().decode().strip())
 
-    # Final SSL test
     print("\n" + "=" * 50)
     print("TEST: NGINX SSL")
     print("=" * 50)
@@ -241,6 +224,26 @@ server {
         print("  SSL reverse proxy WORKING!")
     else:
         print(f"  Status: {code}")
+
+
+def main():
+    ssh = get_ssh_client()
+
+    setup_nginx_ssl(ssh)
+
+    print("\n" + "=" * 50)
+    print("MEJORA 3: GITHUB TOKEN EN AUTO-BACKUP")
+    print("=" * 50)
+
+    github_token = find_github_token()
+    if github_token:
+        print("  Token found: ***")
+        update_github_workflow_token(ssh, github_token)
+    else:
+        print("  [SKIP] No GitHub token found. You can add one manually later.")
+        print("  To add: Open GitHub Auto-Backup in n8n > Get Repos node > add Authorization header")
+
+    verify_e2e_executions(ssh)
 
     ssh.close()
     print("\nCOMPLETADO!")
