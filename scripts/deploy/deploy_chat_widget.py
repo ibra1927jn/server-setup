@@ -1,15 +1,9 @@
 from shared_config import get_ssh_client
 
 
-def main():
-    ssh = get_ssh_client()
-
-    # Read current dashboard
-    _, o, _ = ssh.exec_command("cat /var/www/dashboard/index.html")
-    current_html = o.read().decode()
-
-    # Chat widget code to inject before </body>
-    chat_widget = """
+def _build_chat_widget():
+    """Build the AI chat widget HTML/CSS/JS to inject into the dashboard."""
+    return """
 <!-- AI Chat Widget -->
 <style>
   #chat-toggle {
@@ -161,7 +155,16 @@ def main():
 </script>
 """
 
+
+def main():
+    ssh = get_ssh_client()
+
+    # Read current dashboard
+    _, o, _ = ssh.exec_command("cat /var/www/dashboard/index.html")
+    current_html = o.read().decode()
+
     # Inject before </body>
+    chat_widget = _build_chat_widget()
     new_html = current_html.replace("</body>", chat_widget + "\n</body>")
 
     # Upload via SFTP
