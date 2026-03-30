@@ -44,7 +44,11 @@ fixed_workflow = {
                 "promptType": "define",
                 "text": "={{ $json.body.chatInput }}",
                 "options": {
-                    "systemMessage": "Eres AgenticOS, un asistente de IA conciso. Responde en español. Sé breve, máximo 2 párrafos."
+                    "systemMessage": (
+                        "Eres AgenticOS, un asistente de IA"
+                        " conciso. Responde en español."
+                        " Sé breve, máximo 2 párrafos."
+                    )
                 }
             },
             "type": "@n8n/n8n-nodes-langchain.agent",

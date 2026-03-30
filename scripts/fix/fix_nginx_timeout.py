@@ -14,7 +14,10 @@ if 'proxy_read_timeout' not in nginx_conf:
     # Add timeout settings inside the server block, after proxy_pass
     nginx_conf = nginx_conf.replace(
         'proxy_set_header Connection "upgrade";',
-        'proxy_set_header Connection "upgrade";\n        proxy_read_timeout 120s;\n        proxy_connect_timeout 120s;\n        proxy_send_timeout 120s;'
+        'proxy_set_header Connection "upgrade";\n'
+        '        proxy_read_timeout 120s;\n'
+        '        proxy_connect_timeout 120s;\n'
+        '        proxy_send_timeout 120s;'
     )
 
     with ssh.open_sftp() as sftp:
