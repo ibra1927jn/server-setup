@@ -5,8 +5,11 @@ los workflows existentes con los nodos correctos.
 
 import json
 import time
+from pathlib import Path
 
 from shared_config import GITHUB_PAT, TELEGRAM_CHAT_ID, VPS_HOST, fetch_n8n_credentials, get_ssh_client
+
+_SCRIPTS_DIR = Path(__file__).resolve().parent
 
 
 def fetch_workflow_ids(ssh):
@@ -235,7 +238,7 @@ def import_and_deploy_workflows(ssh, workflows):
     for name, wf_data in workflows.items():
         print(f"\nUpdating: {name} (ID: {wf_data['id']})...")
         fname = f"update_{name.lower().replace(' ', '_')}.json"
-        local = f"C:\\Users\\ibrab\\Desktop\\set up\\scripts\\{fname}"
+        local = str(_SCRIPTS_DIR / fname)
         remote = f"/tmp/{fname}"
         with open(local, "w", encoding="utf-8") as f:
             json.dump(wf_data, f)

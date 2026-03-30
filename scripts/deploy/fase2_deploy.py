@@ -7,8 +7,11 @@ import json
 import random
 import string
 import time
+from pathlib import Path
 
 from shared_config import N8N_CRED_SSH, N8N_CRED_TELEGRAM_BOT, TELEGRAM_CHAT_ID, VPS_HOST, get_ssh_client
+
+_SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 
 
 def gen_id():
@@ -444,7 +447,7 @@ def _import_workflows(ssh):
 
     for filename, wf_data in workflows.items():
         print(f"\n--- {wf_data['name']} ---")
-        local_path = f"C:\\Users\\ibrab\\Desktop\\set up\\scripts\\{filename}"
+        local_path = str(_SCRIPTS_DIR / filename)
         remote_path = f"/tmp/n8n-import/{filename}"
 
         with open(local_path, "w", encoding="utf-8") as f:

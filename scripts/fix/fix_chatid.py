@@ -6,9 +6,12 @@ Primero test directo, luego parchar todos los workflows.
 
 import json
 import time
+from pathlib import Path
 
 import requests
 from shared_config import TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID, get_ssh_client
+
+_SCRIPTS_DIR = Path(__file__).resolve().parent.parent
 
 REAL_CHAT_ID = TELEGRAM_CHAT_ID
 WRONG_CHAT_ID = "6915862027"
@@ -50,7 +53,7 @@ def fix_workflow_chat_ids(wf):
 def upload_and_import_fix(ssh, sftp, wf, name):
     """Upload fixed workflow and import into n8n."""
     fname = f"fix_{name.lower().replace(' ', '_')}.json"
-    local_path = f"C:\\Users\\ibrab\\Desktop\\set up\\scripts\\{fname}"
+    local_path = str(_SCRIPTS_DIR / fname)
     remote_path = f"/tmp/{fname}"
 
     with open(local_path, "w", encoding="utf-8") as f:

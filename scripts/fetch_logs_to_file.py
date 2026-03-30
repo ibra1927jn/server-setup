@@ -1,4 +1,9 @@
+from pathlib import Path
+
 from shared_config import get_ssh_client
+
+_SCRIPTS_DIR = Path(__file__).resolve().parent
+_LOG_FILE = _SCRIPTS_DIR / "n8n_full_logs.txt"
 
 
 def main():
@@ -9,13 +14,13 @@ def main():
     logs = stdout.read().decode()
     errs = stderr.read().decode()
 
-    with open(r"C:\Users\ibrab\Desktop\set up\scripts\n8n_full_logs.txt", "w", encoding="utf-8") as f:
+    with open(_LOG_FILE, "w", encoding="utf-8") as f:
         f.write("=== STDOUT ===\n")
         f.write(logs)
         f.write("\n=== STDERR ===\n")
         f.write(errs)
 
-    print("Logs saved to C:\\Users\\ibrab\\Desktop\\set up\\scripts\\n8n_full_logs.txt")
+    print(f"Logs saved to {_LOG_FILE}")
     ssh.close()
 
 
