@@ -3,13 +3,15 @@ import time
 
 from shared_config import get_ssh_client, TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
 
-ssh = get_ssh_client()
 
-BOT = TELEGRAM_BOT_TOKEN
-CHAT_ID = TELEGRAM_CHAT_ID
+def main():
+    ssh = get_ssh_client()
 
-# Run all diagnostics and save to file
-diag_script = f"""
+    BOT = TELEGRAM_BOT_TOKEN
+    CHAT_ID = TELEGRAM_CHAT_ID
+
+    # Run all diagnostics and save to file
+    diag_script = f"""
 echo "=== CURL TELEGRAM FROM SERVER ===" > /tmp/diag.txt
 curl -s -X POST "https://api.telegram.org/bot{BOT}/sendMessage" \\
   -H "Content-Type: application/json" \\
@@ -42,17 +44,21 @@ docker exec n8n-n8n-1 n8n list:workflow >> /tmp/diag.txt 2>&1
 echo "DONE" >> /tmp/diag.txt
 """
 
-print("Running diagnostics on server...")
-_, o, e = ssh.exec_command(f"bash -c '{diag_script}'")
-o.read()
-e.read()
+    print("Running diagnostics on server...")
+    _, o, e = ssh.exec_command(f"bash -c '{diag_script}'")
+    o.read()
+    e.read()
 
-time.sleep(5)
+    time.sleep(5)
 
-# Read results
-print("\n=== RESULTS ===")
-_, o, _ = ssh.exec_command("cat /tmp/diag.txt")
-results = o.read().decode().strip()
-print(results)
+    # Read results
+    print("\n=== RESULTS ===")
+    _, o, _ = ssh.exec_command("cat /tmp/diag.txt")
+    results = o.read().decode().strip()
+    print(results)
 
-ssh.close()
+    ssh.close()
+
+
+if __name__ == "__main__":
+    main()
