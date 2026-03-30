@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-03-30] | Heartbeat #15: fixed TELEGRAM_chat_id→TELEGRAM_CHAT_ID import bug (rebuild_workflows, rebuild_v2), replaced hardcoded IP with VPS_HOST, wrapped fase3_ssl_dashboard.py in main(), removed unused DUCK_TOKEN var, wrapped 10 fix scripts in main(), fixed 2 unused stdin vars, 7 new tests for fase2_deploy main() (12%→96%). 469/469 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #14: refactored 3 large main() functions (rebuild_workflows 319→25 lines, rebuild_v2 285→30 lines, mejoras_ssl_github 234→20 lines) into 17 extracted helper functions. 461/461 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #13: 52 new tests for main() functions (export_analyze, final_pendientes, patch_workflow, upgrade_agent, telegram bots v1/v2/v3, import_workflows) via mocked SSH/requests. 461/461 passing, 99% coverage (was 88%)
 - [2026-03-30] | Heartbeat #12: 42 new tests (telegram bot builders v1/v2/v3, patch_workflow direct imports), added .coverage and .pytest_cache to .gitignore. 409/409 passing, 88% coverage (was 87%)
