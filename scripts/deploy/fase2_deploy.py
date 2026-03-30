@@ -392,12 +392,8 @@ def build_github_backup():
     }
 
 
-def main():
-    ssh = get_ssh_client()
-
-    # =====================================================
-    # PASO 1: FIREWALL
-    # =====================================================
+def _configure_firewall(ssh):
+    """PASO 1: Install and configure UFW firewall rules."""
     print("=" * 60)
     print("PASO 1: CONFIGURANDO FIREWALL")
     print("=" * 60)
@@ -426,32 +422,25 @@ def main():
 
     print("\n✅ Firewall configurado!")
 
-    # =====================================================
-    # PASO 2: CREAR WORKFLOWS AVANZADOS
-    # =====================================================
+
+def _import_workflows(ssh):
+    """PASO 2: Build, upload, and import all 4 workflows into n8n."""
     print("\n" + "=" * 60)
     print("PASO 2: CREANDO WORKFLOWS AVANZADOS")
     print("=" * 60)
 
-    daily_briefing = build_daily_briefing()
-    uptime_monitor = build_uptime_monitor()
-    crypto_alerts = build_crypto_alerts()
-    github_backup = build_github_backup()
+    workflows = {
+        "daily_briefing.json": build_daily_briefing(),
+        "uptime_monitor.json": build_uptime_monitor(),
+        "crypto_alerts.json": build_crypto_alerts(),
+        "github_backup.json": build_github_backup(),
+    }
 
-    # =====================================================
-    # IMPORTAR TODOS LOS WORKFLOWS
-    # =====================================================
     print("\n" + "=" * 60)
     print("IMPORTANDO WORKFLOWS")
     print("=" * 60)
 
     sftp = ssh.open_sftp()
-    workflows = {
-        "daily_briefing.json": daily_briefing,
-        "uptime_monitor.json": uptime_monitor,
-        "crypto_alerts.json": crypto_alerts,
-        "github_backup.json": github_backup,
-    }
 
     for filename, wf_data in workflows.items():
         print(f"\n--- {wf_data['name']} ---")
@@ -486,17 +475,28 @@ def main():
     ssh.exec_command("docker restart n8n-n8n-1")
     time.sleep(12)
 
-    # Final listing
+    return sftp
+
+
+def _print_final_status(ssh):
+    """Print final workflow listing and firewall status."""
     print("\n" + "=" * 60)
     print("ESTADO FINAL")
     print("=" * 60)
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n list:workflow")
     print(o.read().decode().strip())
 
-    # Firewall status
     print("\n--- FIREWALL ---")
     _, o, _ = ssh.exec_command("ufw status")
     print(o.read().decode().strip())
+
+
+def main():
+    ssh = get_ssh_client()
+
+    _configure_firewall(ssh)
+    sftp = _import_workflows(ssh)
+    _print_final_status(ssh)
 
     sftp.close()
     ssh.close()
