@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-03-30] | Heartbeat #36: applied ruff format to test_shared_config.py, removed redundant sys.path.insert from test_fix_telegram_creds.py (conftest.py already handles it), normalized scripts.* imports to direct module imports in 2 test files, added requirements-dev.txt for test/lint dependencies. 489/489 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #35: fixed broken import (fetch_n8n_credentials missing from shared_config.py, used by rebuild_workflows/rebuild_v2), removed redundant authentication overwrites in mejoras_ssl_github.py, added 2 tests for fetch_n8n_credentials (shared_config 79%→98%), wrapped 4 operational test scripts in main() with __name__ guard (minimal_test, verify_nginx, verify_login, verify_execution). 489/489 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #34: replaced 2 silent except-pass with contextlib.suppress in mejoras_ssl_github.py, moved late glob/re imports to top-level, extracted helpers from fix_model_glm45.py main() (86→64 lines, 2 helpers) and fix_telegram_creds.py main() (89→30 lines, 2 helpers), fixed unused var (RUF059). 487/487 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #33: extracted _build_fixed_workflow() from fix_ai_agent_workflow.py main() (100→30 lines), added encoding='utf-8' to 5 open() calls in operational scripts (get_ai_agent_full, mejoras_ssl_github, fix_n8n_proxy, fix_n8n_proxy2). 487/487 passing, 99% coverage, 0 lint errors
