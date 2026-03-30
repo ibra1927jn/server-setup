@@ -108,7 +108,8 @@ def main():
 
     # 7. Verify
     run(ssh, "docker ps --filter name=n8n --format 'table {{.Names}}\t{{.Status}}\t{{.Ports}}'", "Container status")
-    run(ssh, "curl -s -o /dev/null -w '%{http_code}' http://localhost:5678/ 2>/dev/null || echo 'NOT_READY'", "Health check")
+    health_cmd = "curl -s -o /dev/null -w '%{http_code}' http://localhost:5678/ 2>/dev/null || echo 'NOT_READY'"
+    run(ssh, health_cmd, "Health check")
 
     sftp.close()
     ssh.close()
