@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-03-30] | Heartbeat #32: refactored 4 oversized main() functions — fase3_ssl_dashboard.py (430→10 lines, 6 helpers), fase2_deploy.py (109→8 lines, 3 helpers), fix_dashboard_isolation.py (106→30 lines, 2 helpers), fix_model_and_test.py (116→40 lines, 1 helper), deploy_chat_widget.py (170→15 lines, 1 helper). Simplified test_gen_id.py (removed unnecessary mock SSH setup). 487/487 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #31: applied ruff formatter to 122 files for consistent code style, added *.bak to .gitignore, added ruff format config (double-quote, space-indent) to pyproject.toml. 487/487 passing, 99% coverage, 0 lint errors. Codebase fully formatted and all meaningful lint rules enforced
 - [2026-03-30] | Heartbeat #30: extracted exception string literal to variable in shared_config.py (EM101/TRY003), enabled EM (flake8-errmsg) and TRY (tryceratops) rule sets. 487/487 passing, 99% coverage, 0 lint errors. Ruff config now has 54 rule sets — remaining unenabled (D, ANN, COM, Q, T20, INP) are stylistic or inapplicable to this project
 - [2026-03-30] | Heartbeat #29: enabled BLE (blind-except) and PTH (pathlib) rule sets with per-file-ignores for operational scripts, removed stale E402/S113 global ignores (now enforced). 487/487 passing, 99% coverage, 0 lint errors. Ruff config now has 52 rule sets — all meaningful rules enabled, remaining (D, ANN, COM, Q, T20, EM, TRY, INP) are stylistic or inapplicable
