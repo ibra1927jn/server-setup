@@ -1,4 +1,5 @@
 """Fix n8n secure cookie issue on Hetzner"""
+import time
 from shared_config import get_ssh_client
 
 DOCKER_COMPOSE = """version: '3.8'
@@ -39,7 +40,6 @@ print("Restarting n8n container...")
 _, o, e = ssh.exec_command("cd /opt/n8n && docker compose down && docker compose up -d 2>&1", timeout=60)
 print(o.read().decode())
 
-import time
 print("Waiting 15s for n8n to start...")
 time.sleep(15)
 

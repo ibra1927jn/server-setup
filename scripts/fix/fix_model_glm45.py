@@ -2,7 +2,10 @@
 FIX: Corregir el modelo del OpenAI Chat Model a z-ai/glm-4.5-air:free
 El browser subagent puso gpt-5-mini por error. El usuario eligio GLM-4.5 Air.
 """
-import json, time
+import json
+import time
+
+import requests
 from shared_config import get_ssh_client, VPS_HOST
 
 ssh = get_ssh_client()
@@ -78,7 +81,6 @@ ssh.close()
 
 # Test webhook
 print("\n=== TESTING WEBHOOK ===")
-import requests
 try:
     r = requests.post(f'http://{VPS_HOST}:5678/webhook/ai-agent',
                        json={'chatInput': 'Hola! Dime que modelo de IA eres y confirma que estas online.'}, 

@@ -1,3 +1,4 @@
+import time
 from shared_config import get_ssh_client
 
 ssh = get_ssh_client()
@@ -98,7 +99,6 @@ ssh.exec_command('systemctl daemon-reload && systemctl restart dashboard')
 ssh.exec_command('nginx -t && systemctl reload nginx')
 
 # Wait for service to start
-import time
 time.sleep(3)
 
 print('=== LOCAL CURL DASHBOARD ===')

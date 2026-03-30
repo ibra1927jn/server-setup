@@ -1,3 +1,4 @@
+import time
 from shared_config import get_ssh_client
 
 ssh = get_ssh_client()
@@ -20,7 +21,6 @@ with ssh.open_sftp() as sftp:
 print("Fixed! Changed 'message' -> 'chatInput' in webhook payload")
 
 # Test the webhook with the correct field
-import time
 time.sleep(1)
 cmd = '''curl -s -k -X POST https://127.0.0.1/webhook/ai-agent \
   -H "Content-Type: application/json" \
