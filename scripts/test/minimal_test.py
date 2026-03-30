@@ -24,7 +24,12 @@ print(f"TG Cred: {tg_cred}")
 
 # Step 1: Try sending directly from the server via curl
 print("\n=== STEP 1: Direct curl from server ===")
-cmd = f'curl -s -X POST "https://api.telegram.org/bot{BOT}/sendMessage" -H "Content-Type: application/json" -d \'{{"chat_id": {CHAT_ID}, "text": "Direct from Hetzner server via curl"}}\''
+cmd = (
+    f'curl -s -X POST "https://api.telegram.org/bot{BOT}/sendMessage"'
+    f' -H "Content-Type: application/json"'
+    f' -d \'{{"chat_id": {CHAT_ID},'
+    f' "text": "Direct from Hetzner server via curl"}}\''
+)
 _, o, e = ssh.exec_command(cmd)
 result = o.read().decode().strip()
 print(f"  Result: {result[:300]}")
@@ -37,7 +42,13 @@ print(f"  CoinGecko: {o.read().decode().strip()}")
 
 # Step 3: Check if n8n can resolve DNS
 print("\n=== STEP 3: DNS from n8n container ===")
-_, o, _ = ssh.exec_command('docker exec n8n-n8n-1 sh -c "wget -q -O- https://api.telegram.org/bot{BOT}/getMe 2>&1 || curl -s https://api.telegram.org/bot{BOT}/getMe 2>&1 || echo NO_CURL_NO_WGET"'.replace("{BOT}", BOT))
+n8n_tg_cmd = (
+    'docker exec n8n-n8n-1 sh -c "wget -q -O-'
+    ' https://api.telegram.org/bot{BOT}/getMe 2>&1'
+    ' || curl -s https://api.telegram.org/bot{BOT}/getMe 2>&1'
+    ' || echo NO_CURL_NO_WGET"'
+).replace("{BOT}", BOT)
+_, o, _ = ssh.exec_command(n8n_tg_cmd)
 print(f"  n8n container telegram: {o.read().decode().strip()[:200]}")
 
 # Step 4: Check workflow execution from the DB
@@ -46,7 +57,8 @@ db_cmd = """docker exec n8n-n8n-1 sh -c 'node -e "
 const sqlite3 = require(\\\"better-sqlite3\\\");
 try {
   const db = new sqlite3(\\\"/home/node/.n8n/database.sqlite\\\");
-  const rows = db.prepare(\\\"SELECT id, workflowId, finished, mode, status FROM execution_entity ORDER BY id DESC LIMIT 8\\\").all();
+  const q = \\\"SELECT id, workflowId, finished, mode, status FROM execution_entity ORDER BY id DESC LIMIT 8\\\";
+  const rows = db.prepare(q).all();
   console.log(JSON.stringify(rows, null, 2));
 } catch(e) { console.log(e.message); }
 "'"""

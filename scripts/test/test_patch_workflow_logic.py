@@ -136,7 +136,11 @@ def test_full_patch_pipeline():
         ],
         "connections": {
             "Trigger": {"main": [[{"node": "AI Agent1", "type": "main", "index": 0}]]},
-            "OpenAI Chat Model": {"ai_languageModel": [[{"node": "AI Agent1", "type": "ai_languageModel", "index": 0}]]},
+            "OpenAI Chat Model": {
+                "ai_languageModel": [[
+                    {"node": "AI Agent1", "type": "ai_languageModel", "index": 0}
+                ]]
+            },
         },
     }
     # Filter + add new model

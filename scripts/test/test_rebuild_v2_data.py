@@ -108,7 +108,11 @@ def _make_crypto_workflow(wf_id, chat_id, tg_cred):
             },
             {
                 "parameters": {
-                    "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple,dogecoin&vs_currencies=usd&include_24hr_change=true",
+                    "url": (
+                        "https://api.coingecko.com/api/v3/simple/price"
+                        "?ids=bitcoin,ethereum,solana,ripple,dogecoin"
+                        "&vs_currencies=usd&include_24hr_change=true"
+                    ),
                     "options": {},
                 },
                 "name": "Get Prices",

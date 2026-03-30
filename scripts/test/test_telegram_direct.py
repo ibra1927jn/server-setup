@@ -40,7 +40,11 @@ def main():
         print("\n=== Test sendMessage ===")
         chat_id = TELEGRAM_CHAT_ID
         message = "Test AgenticOS - Si ves esto, Telegram funciona correctamente!"
-        cmd2 = f'curl -s -X POST "https://api.telegram.org/bot{telegram_token}/sendMessage" -d "chat_id={chat_id}&text={message}"'
+        cmd2 = (
+            f'curl -s -X POST'
+            f' "https://api.telegram.org/bot{telegram_token}/sendMessage"'
+            f' -d "chat_id={chat_id}&text={message}"'
+        )
         _, o, _ = ssh.exec_command(cmd2)
         result2 = o.read().decode().strip()
         print(f"  {result2[:300]}")
@@ -64,7 +68,11 @@ def main():
 
     # Also check n8n logs for the latest execution
     print("\n=== N8N LOGS (telegram related) ===")
-    _, o, _ = ssh.exec_command("docker logs n8n-n8n-1 --tail 50 2>&1 | grep -i -E '(telegram|error|fail|cred)' | tail -10")
+    docker_log_cmd = (
+        "docker logs n8n-n8n-1 --tail 50 2>&1"
+        " | grep -i -E '(telegram|error|fail|cred)' | tail -10"
+    )
+    _, o, _ = ssh.exec_command(docker_log_cmd)
     logs = o.read().decode().strip()
     print(logs if logs else "  (no relevant logs)")
 

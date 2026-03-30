@@ -10,7 +10,11 @@ def main():
     time.sleep(2)
 
     print('=== EXPLICIT FILE REQUEST ===')
-    _, o, _ = ssh.exec_command('curl -s -k -H "Host: 95.217.158.7" https://localhost/status_panel/index.html | head -n 5')
+    curl_cmd = (
+        'curl -s -k -H "Host: 95.217.158.7"'
+        ' https://localhost/status_panel/index.html | head -n 5'
+    )
+    _, o, _ = ssh.exec_command(curl_cmd)
     print(o.read().decode())
 
     print('=== NGINX ERROR LOG ===')
