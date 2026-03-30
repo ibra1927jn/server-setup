@@ -1,3 +1,43 @@
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+select = [
+    "E",      # pycodestyle errors
+    "F",      # pyflakes
+    "W",      # pycodestyle warnings
+    "B",      # flake8-bugbear
+    "S",      # flake8-bandit (security)
+    "SIM",    # flake8-simplify
+    "C90",    # mccabe complexity
+    "UP",     # pyupgrade
+    "PIE",    # flake8-pie
+    "RET",    # flake8-return
+    "PERF",   # perflint
+]
+ignore = [
+    "S603",   # subprocess-without-shell-check (false positives)
+    "S604",   # call-with-shell-equals-true (operational scripts)
+    "S605",   # start-process-with-a-shell (operational scripts)
+    "S607",   # start-process-with-partial-path
+    "S108",   # hardcoded-temp-file
+    "S110",   # try-except-pass (already using contextlib.suppress)
+    "S101",   # assert (used in tests)
+    "S301",   # suspicious-pickle-usage
+    "S113",   # request-without-timeout (already fixed)
+    "S311",   # suspicious-non-cryptographic-random-usage (IDs, not crypto)
+    "S608",   # possible-sql-injection (config constants, not user input)
+    "S507",   # paramiko-auto-add-policy (controlled environment, single VPS)
+    "UP015",  # redundant-open-modes
+    "E402",   # module-import-not-at-top (required for sys.path setup)
+]
+
+[tool.ruff.lint.per-file-ignores]
+"scripts/test/*.py" = ["S106"]  # test passwords are not real secrets
+
+[tool.ruff.lint.mccabe]
+max-complexity = 10
+
 [tool.pytest.ini_options]
 testpaths = ["scripts/test"]
 python_files = ["test_*.py"]
