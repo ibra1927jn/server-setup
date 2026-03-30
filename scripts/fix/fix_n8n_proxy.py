@@ -28,9 +28,8 @@ def main():
                 pass  # we'll add it below
             elif line.startswith('N8N_SECURE_COOKIE='):
                 lines.append('N8N_SECURE_COOKIE=false')
-            else:
-                if line.strip():
-                    lines.append(line)
+            elif line.strip():
+                lines.append(line)
 
         # Ensure proxy hops
         if not any('N8N_PROXY_HOPS' in line for line in lines):
