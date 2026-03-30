@@ -1,6 +1,7 @@
 """Deploy n8n to Hetzner VPS via Docker Compose"""
 import time
-from shared_config import get_ssh_client, VPS_HOST, N8N_EMAIL, N8N_PASSWORD
+
+from shared_config import N8N_EMAIL, N8N_PASSWORD, VPS_HOST, get_ssh_client
 
 DOCKER_COMPOSE_TEMPLATE = """version: '3.8'
 

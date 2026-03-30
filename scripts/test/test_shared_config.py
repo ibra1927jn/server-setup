@@ -38,10 +38,17 @@ def test_get_ssh_client_requires_host():
 def test_config_values_are_strings():
     """All config values should be strings (not None)."""
     from shared_config import (
-        VPS_HOST, VPS_USER, VPS_PASS, N8N_URL,
-        N8N_EMAIL, N8N_PASSWORD, N8N_API_KEY,
-        TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID,
-        OPENROUTER_API_KEY, GITHUB_PAT,
+        GITHUB_PAT,
+        N8N_API_KEY,
+        N8N_EMAIL,
+        N8N_PASSWORD,
+        N8N_URL,
+        OPENROUTER_API_KEY,
+        TELEGRAM_BOT_TOKEN,
+        TELEGRAM_CHAT_ID,
+        VPS_HOST,
+        VPS_PASS,
+        VPS_USER,
     )
 
     for name, val in [
