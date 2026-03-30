@@ -152,3 +152,33 @@ def test_main_docker_cp_each_workflow(mock_get_ssh, mock_time):
     commands = [c[0][0] for c in ssh.exec_command.call_args_list]
     docker_cp_cmds = [c for c in commands if "docker cp" in c and "n8n-n8n-1" in c]
     assert len(docker_cp_cmds) == 4
+
+
+@patch("builtins.open", mock_open())
+@patch("deploy.fase2_deploy.time")
+@patch("deploy.fase2_deploy.get_ssh_client")
+def test_main_prints_firewall_stdout(mock_get_ssh, mock_time, capsys):
+    """main() prints stdout from firewall commands when non-empty."""
+    ssh = _mock_ssh(stdout="Rules updated")
+    mock_get_ssh.return_value = ssh
+
+    from deploy.fase2_deploy import main
+    main()
+
+    captured = capsys.readouterr()
+    assert "Rules updated" in captured.out
+
+
+@patch("builtins.open", mock_open())
+@patch("deploy.fase2_deploy.time")
+@patch("deploy.fase2_deploy.get_ssh_client")
+def test_main_prints_firewall_and_import_errors(mock_get_ssh, mock_time, capsys):
+    """main() prints ERR when stderr has errors (non-WARNING firewall, import error)."""
+    ssh = _mock_ssh(stderr="error: something failed")
+    mock_get_ssh.return_value = ssh
+
+    from deploy.fase2_deploy import main
+    main()
+
+    captured = capsys.readouterr()
+    assert "ERR: error: something failed" in captured.out

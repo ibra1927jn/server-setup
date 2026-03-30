@@ -27,6 +27,9 @@ omit = [
     "scripts/trigger_*.py",
     "scripts/upload_*.py",
     # Integration test scripts (run against live server, not pytest)
+    # Deploy scripts that run against live server with no extracted helpers
+    "scripts/deploy/deploy_chat_widget.py",
+    "scripts/deploy/fase3_ssl_dashboard.py",
     # Fix scripts (run against live server, not unit-testable)
     "scripts/fix/*.py",
     "scripts/test/test_after_*.py",
