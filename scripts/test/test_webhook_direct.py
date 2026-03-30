@@ -1,14 +1,14 @@
-from shared_config import get_ssh_client
+from shared_config import VPS_HOST, get_ssh_client
 
 
 def main():
     ssh = get_ssh_client()
 
     # Test the webhook directly from the server
-    cmd = '''curl -s -k -X POST https://127.0.0.1/webhook/ai-agent \
+    cmd = f'''curl -s -k -X POST https://127.0.0.1/webhook/ai-agent \
       -H "Content-Type: application/json" \
-      -H "Host: 95.217.158.7" \
-      -d '{"message": "Hola, di simplemente OK"}' '''
+      -H "Host: {VPS_HOST}" \
+      -d '{{"message": "Hola, di simplemente OK"}}' '''
 
     _, o, e = ssh.exec_command(cmd)
     print("=== WEBHOOK RESPONSE ===")

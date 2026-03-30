@@ -1,6 +1,6 @@
 import time
 
-from shared_config import get_ssh_client
+from shared_config import VPS_HOST, get_ssh_client
 
 
 def main():
@@ -12,7 +12,7 @@ def main():
 
     print('=== EXPLICIT FILE REQUEST ===')
     curl_cmd = (
-        'curl -s -k -H "Host: 95.217.158.7"'
+        f'curl -s -k -H "Host: {VPS_HOST}"'
         ' https://localhost/status_panel/index.html | head -n 5'
     )
     _, o, _ = ssh.exec_command(curl_cmd)
