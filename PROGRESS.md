@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-03-30] | Heartbeat #21: wrapped long lines in 28 files (E501), added timeout=30 to 14 requests calls (S113), combined 8 nested with statements (SIM117), replaced try-except-pass with contextlib.suppress (SIM105). 487/487 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #20: fixed 29 lint issues across 12 files (E121/E122/E126 indentation, E226 spacing, E302 blank lines, E306 nested defs, E501 line length). 487/487 passing, 3 remaining are false positives (W503 PEP8-preferred, E402 required sys.path)
 - [2026-03-30] | Heartbeat #19: refactored 3 complex functions (debug_telegram C12→5, fix_chatid C11→5, fix_node_types C11→4) by extracting 11 helpers, fixed unused loop var (B007). 487/487 passing, 99% coverage, 0 lint+complexity errors
 - [2026-03-30] | Heartbeat #18: removed dead code in 3 test helpers (unused route_request function, 2 unreachable else branches), added credential to export_analyze sample data to cover extraction loop. 487/487 passing, 99% coverage (6→2 uncovered lines), 0 lint errors
