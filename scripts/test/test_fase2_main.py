@@ -117,22 +117,21 @@ def test_main_writes_valid_workflow_json(mock_get_ssh, mock_time):
     written_data = {}
 
     def capturing_open(path, *args, **kwargs):
-        if isinstance(path, str) and path.endswith(".json"):
-            from io import StringIO
+        from io import StringIO
 
-            buf = StringIO()
-            buf.name = path
-            buf.__enter__ = lambda s: s
-            buf.__exit__ = lambda s, *a: None
-            original_close = buf.close
+        buf = StringIO()
+        buf.name = str(path)
+        buf.__enter__ = lambda s: s
+        buf.__exit__ = lambda s, *a: None
+        original_close = buf.close
 
-            def capturing_close():
-                written_data[path] = buf.getvalue()
-                original_close()
+        def capturing_close():
+            if str(path).endswith(".json"):
+                written_data[str(path)] = buf.getvalue()
+            original_close()
 
-            buf.close = capturing_close
-            return buf
-        return MagicMock()
+        buf.close = capturing_close
+        return buf
 
     with patch("builtins.open", side_effect=capturing_open):
         from deploy.fase2_deploy import main
