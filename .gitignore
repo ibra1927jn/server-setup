@@ -4,6 +4,8 @@ node_modules/
 __pycache__/
 *.pyc
 *.log
+.coverage
+.pytest_cache/
 n8n_env.txt
 n8n_full_logs.txt
 exported_workflows.json
