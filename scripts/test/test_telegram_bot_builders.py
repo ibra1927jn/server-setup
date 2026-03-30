@@ -1,8 +1,8 @@
 """Tests for build_telegram_ai_workflow() across all three bot script versions."""
 
-import scripts.create_telegram_ai_bot as bot_v1
-import scripts.create_telegram_ai_bot_v2 as bot_v2
-import scripts.create_telegram_ai_bot_v3 as bot_v3
+import create_telegram_ai_bot as bot_v1
+import create_telegram_ai_bot_v2 as bot_v2
+import create_telegram_ai_bot_v3 as bot_v3
 
 # ---------- v1: create_telegram_ai_bot ----------
 
