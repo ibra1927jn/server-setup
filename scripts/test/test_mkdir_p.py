@@ -31,6 +31,7 @@ def test_skips_existing_dirs():
 def test_mixed_existing_and_new():
     sftp = MagicMock()
     # /root exists, /root/newdir does not
+
     def stat_side_effect(path):
         if path == "/root":
             return MagicMock()

@@ -53,7 +53,7 @@ def test_build_chat_model_node():
     """Building a chat model node should include all required fields."""
     node = {
         "parameters": {"model": "z-ai/glm-4.5-air:free",
-                        "options": {"temperature": 0.7, "maxTokens": 500}},
+                       "options": {"temperature": 0.7, "maxTokens": 500}},
         "id": "e4f8d5bc-3306-4649-8b4e-250327fcdbc1",
         "name": "OpenAI Chat Model",
         "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
