@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-03-30] | Heartbeat #34: replaced 2 silent except-pass with contextlib.suppress in mejoras_ssl_github.py, moved late glob/re imports to top-level, extracted helpers from fix_model_glm45.py main() (86→64 lines, 2 helpers) and fix_telegram_creds.py main() (89→30 lines, 2 helpers), fixed unused var (RUF059). 487/487 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #33: extracted _build_fixed_workflow() from fix_ai_agent_workflow.py main() (100→30 lines), added encoding='utf-8' to 5 open() calls in operational scripts (get_ai_agent_full, mejoras_ssl_github, fix_n8n_proxy, fix_n8n_proxy2). 487/487 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #32: refactored 4 oversized main() functions — fase3_ssl_dashboard.py (430→10 lines, 6 helpers), fase2_deploy.py (109→8 lines, 3 helpers), fix_dashboard_isolation.py (106→30 lines, 2 helpers), fix_model_and_test.py (116→40 lines, 1 helper), deploy_chat_widget.py (170→15 lines, 1 helper). Simplified test_gen_id.py (removed unnecessary mock SSH setup). 487/487 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #31: applied ruff formatter to 122 files for consistent code style, added *.bak to .gitignore, added ruff format config (double-quote, space-indent) to pyproject.toml. 487/487 passing, 99% coverage, 0 lint errors. Codebase fully formatted and all meaningful lint rules enforced
