@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-03-30] | Heartbeat #29: enabled BLE (blind-except) and PTH (pathlib) rule sets with per-file-ignores for operational scripts, removed stale E402/S113 global ignores (now enforced). 487/487 passing, 99% coverage, 0 lint errors. Ruff config now has 52 rule sets — all meaningful rules enabled, remaining (D, ANN, COM, Q, T20, EM, TRY, INP) are stylistic or inapplicable
 - [2026-03-30] | Heartbeat #28: fixed N806 uppercase local vars in 4 files, unused mock args (ARG001) in test_deploy_ct4, boolean trap (FBT002) in test_upgrade_agent_main, enabled 14 new ruff rule sets (T10, A, PT, DTZ, TC, ASYNC, SLF, N, ARG, FBT, FIX, ERA, ICN). 487/487 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #27: enabled 11 additional ruff rule sets (ISC, FA, SLOT, LOG, RSE, TID, G, YTT, PGH, INT, EXE) — all pass cleanly, guard against future regressions. 487/487 passing, 99% coverage, 0 lint errors. Codebase fully clean — no dead code, no bare excepts, no hardcoded creds, no TODO/FIXME markers
 - [2026-03-30] | Heartbeat #26: extracted 4 workflow builders from fase2_deploy.py main() (build_daily_briefing, build_uptime_monitor, build_crypto_alerts, build_github_backup), simplified else-if to elif in 2 fix scripts (PLR5501), replaced exit() with sys.exit() (PLR1722), merged duplicate comparisons (PLR1714), replaced unnecessary lambda (PLW0108), enabled PLC/PLE/PLW/PLR/FURB/C4/FLY rule sets in ruff. 487/487 passing, 99% coverage, 0 lint errors
