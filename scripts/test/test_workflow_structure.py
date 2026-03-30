@@ -1,13 +1,8 @@
 """Tests for workflow structure validation (fase2_deploy, rebuild_v2 patterns)."""
 
 import json
-import random
-import string
 
-
-def gen_id():
-    """Replicate the gen_id() function from fase2_deploy.py / rebuild_v2.py."""
-    return "".join(random.choices(string.ascii_letters + string.digits, k=16))
+from deploy.fase2_deploy import gen_id
 
 
 def _build_daily_briefing(chat_id="123", tg_cred_id="abc", ssh_cred_id="xyz"):

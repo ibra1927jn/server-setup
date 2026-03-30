@@ -1,13 +1,8 @@
-"""Tests for fase2_deploy.py workflow data structures and gen_id()"""
+"""Tests for fase2_deploy.py workflow data structures."""
 
 import json
-import random
-import string
 
-
-def gen_id():
-    """Replicate gen_id from fase2_deploy (avoids importing the module which calls SSH)."""
-    return "".join(random.choices(string.ascii_letters + string.digits, k=16))
+from deploy.fase2_deploy import gen_id
 
 
 def test_gen_id_length():
