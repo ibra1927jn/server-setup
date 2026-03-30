@@ -5,15 +5,11 @@ los workflows existentes con los nodos correctos.
 import json
 import time
 
-from shared_config import get_ssh_client, TELEGRAM_CHAT_ID, GITHUB_PAT
+from shared_config import get_ssh_client, TELEGRAM_chat_id, GITHUB_PAT
 
 
-def main():
-    CHAT_ID = TELEGRAM_CHAT_ID
-
-    ssh = get_ssh_client()
-
-    # Get credential IDs
+def fetch_credentials(ssh):
+    """Fetch telegram and SSH credential IDs from n8n."""
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:credentials --all")
     creds = json.loads(o.read().decode().strip())
     tg_cred = None
@@ -23,24 +19,24 @@ def main():
             tg_cred = {"id": c["id"], "name": c["name"]}
         if c["type"] == "sshPassword":
             ssh_cred = {"id": c["id"], "name": c["name"]}
-    print(f"TG: {tg_cred}")
-    print(f"SSH: {ssh_cred}")
+    return tg_cred, ssh_cred
 
-    # Get existing workflow IDs
+
+def fetch_workflow_ids(ssh):
+    """Fetch existing workflow name-to-ID mapping from n8n."""
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n export:workflow --all")
     existing = json.loads(o.read().decode().strip())
     wf_ids = {}
     for wf in existing:
         wf_ids[wf["name"]] = wf["id"]
         print(f"  {wf['name']} -> {wf['id']}")
+    return wf_ids
 
-    # Build correct workflow definitions using existing IDs
-    workflows = {}
 
-    # CRYPTO PORTFOLIO ALERTS
-    if "Crypto Portfolio Alerts" in wf_ids:
-        workflows["Crypto Portfolio Alerts"] = {
-            "id": wf_ids["Crypto Portfolio Alerts"],
+def build_crypto_workflow(wf_id, chat_id, tg_cred):
+    """Build the Crypto Portfolio Alerts workflow definition."""
+    return {
+            "id": wf_id,
             "name": "Crypto Portfolio Alerts",
             "active": True,
             "nodes": [
@@ -69,7 +65,7 @@ def main():
                 },
                 {
                     "parameters": {
-                        "chatId": CHAT_ID,
+                        "chatId": chat_id,
                         "text": (
                             "=📊 *Crypto Portfolio*\n\n"
                             "💰 BTC: ${{ $json.bitcoin.usd }} "
@@ -99,10 +95,10 @@ def main():
             }
         }
 
-    # DAILY BRIEFING
-    if "Daily Briefing" in wf_ids:
-        workflows["Daily Briefing"] = {
-            "id": wf_ids["Daily Briefing"],
+def build_daily_workflow(wf_id, chat_id, ssh_cred, tg_cred):
+    """Build the Daily Briefing workflow definition."""
+    return {
+            "id": wf_id,
             "name": "Daily Briefing",
             "active": True,
             "nodes": [
@@ -133,7 +129,7 @@ def main():
                 },
                 {
                     "parameters": {
-                        "chatId": CHAT_ID,
+                        "chatId": chat_id,
                         "text": "=🌅 *Daily Briefing*\n\n{{ $json.stdout }}",
                         "additionalFields": {"parse_mode": "Markdown"}
                     },
@@ -151,10 +147,10 @@ def main():
             }
         }
 
-    # UPTIME MONITOR
-    if "Uptime Monitor" in wf_ids:
-        workflows["Uptime Monitor"] = {
-            "id": wf_ids["Uptime Monitor"],
+def build_uptime_workflow(wf_id):
+    """Build the Uptime Monitor workflow definition."""
+    return {
+            "id": wf_id,
             "name": "Uptime Monitor",
             "active": True,
             "nodes": [
@@ -193,10 +189,10 @@ def main():
             }
         }
 
-    # GITHUB AUTO-BACKUP
-    if "GitHub Auto-Backup" in wf_ids:
-        workflows["GitHub Auto-Backup"] = {
-            "id": wf_ids["GitHub Auto-Backup"],
+def build_github_workflow(wf_id, chat_id, tg_cred):
+    """Build the GitHub Auto-Backup workflow definition."""
+    return {
+            "id": wf_id,
             "name": "GitHub Auto-Backup",
             "active": True,
             "nodes": [
@@ -226,7 +222,7 @@ def main():
                 },
                 {
                     "parameters": {
-                        "chatId": CHAT_ID,
+                        "chatId": chat_id,
                         "text": (
                             "=🗂️ *GitHub Backup Report*\n\n"
                             "Repos recientes revisados\n"
@@ -248,7 +244,8 @@ def main():
             }
         }
 
-    # IMPORT with existing IDs (overwrite)
+def import_and_deploy_workflows(ssh, workflows):
+    """Import workflows to n8n via SFTP, restart, and activate all."""
     sftp = ssh.open_sftp()
     for name, wf_data in workflows.items():
         print(f"\nUpdating: {name} (ID: {wf_data['id']})...")
@@ -267,16 +264,18 @@ def main():
         if err:
             print(f"  ERR: {err[:100]}")
 
-    # Restart
     print("\nRestarting...")
     ssh.exec_command("docker restart n8n-n8n-1")
     time.sleep(15)
 
-    # Activate all
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n update:workflow --all --active=true")
     o.read()
 
-    # TEST: Execute crypto
+    sftp.close()
+
+
+def test_crypto_workflow(ssh):
+    """Execute the Crypto Portfolio Alerts workflow as a smoke test."""
     print("\n=== TEST FINAL: Crypto Portfolio Alerts ===")
     _, o, _ = ssh.exec_command("docker exec n8n-n8n-1 n8n list:workflow")
     for line in o.read().decode().strip().split("\n"):
@@ -290,7 +289,38 @@ def main():
             except Exception:
                 print("  timeout")
 
-    sftp.close()
+
+def main():
+    chat_id = TELEGRAM_chat_id
+    ssh = get_ssh_client()
+
+    tg_cred, ssh_cred = fetch_credentials(ssh)
+    print(f"TG: {tg_cred}")
+    print(f"SSH: {ssh_cred}")
+
+    wf_ids = fetch_workflow_ids(ssh)
+
+    workflows = {}
+    if "Crypto Portfolio Alerts" in wf_ids:
+        workflows["Crypto Portfolio Alerts"] = build_crypto_workflow(
+            wf_ids["Crypto Portfolio Alerts"], chat_id, tg_cred
+        )
+    if "Daily Briefing" in wf_ids:
+        workflows["Daily Briefing"] = build_daily_workflow(
+            wf_ids["Daily Briefing"], chat_id, ssh_cred, tg_cred
+        )
+    if "Uptime Monitor" in wf_ids:
+        workflows["Uptime Monitor"] = build_uptime_workflow(
+            wf_ids["Uptime Monitor"]
+        )
+    if "GitHub Auto-Backup" in wf_ids:
+        workflows["GitHub Auto-Backup"] = build_github_workflow(
+            wf_ids["GitHub Auto-Backup"], chat_id, tg_cred
+        )
+
+    import_and_deploy_workflows(ssh, workflows)
+    test_crypto_workflow(ssh)
+
     ssh.close()
     print("\nDone! Check Telegram.")
 
