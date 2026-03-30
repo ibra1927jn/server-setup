@@ -2,111 +2,121 @@ import json
 import time
 from shared_config import get_ssh_client, N8N_CRED_TELEGRAM, N8N_CRED_OPENROUTER
 
-ssh = get_ssh_client()
 
-# Build the Telegram AI Bot workflow
-telegram_ai_workflow = {
-    "name": "Telegram AI Bot",
-    "nodes": [
-        {
-            "parameters": {
-                "updates": ["message"]
+def build_telegram_ai_workflow():
+    """Build the Telegram AI Bot workflow definition."""
+    return {
+        "name": "Telegram AI Bot",
+        "nodes": [
+            {
+                "parameters": {
+                    "updates": ["message"]
+                },
+                "type": "n8n-nodes-base.telegramTrigger",
+                "typeVersion": 1.1,
+                "position": [220, 300],
+                "id": "telegram-trigger-node",
+                "name": "Telegram Trigger",
+                "credentials": {
+                    "telegramApi": {
+                        "id": N8N_CRED_TELEGRAM,
+                        "name": "Telegram account"
+                    }
+                }
             },
-            "type": "n8n-nodes-base.telegramTrigger",
-            "typeVersion": 1.1,
-            "position": [220, 300],
-            "id": "telegram-trigger-node",
-            "name": "Telegram Trigger",
-            "credentials": {
-                "telegramApi": {
-                    "id": N8N_CRED_TELEGRAM,
-                    "name": "Telegram account"
+            {
+                "parameters": {
+                    "options": {
+                        "systemMessage": (
+                            "Eres un asistente de IA conciso y útil llamado"
+                            " AgenticOS. Responde en español. Sé breve y"
+                            " directo, máximo 2 párrafos. Si no sabes algo,"
+                            " dilo honestamente."
+                        )
+                    }
+                },
+                "type": "@n8n/n8n-nodes-langchain.agent",
+                "typeVersion": 1.7,
+                "position": [480, 300],
+                "id": "ai-agent-node",
+                "name": "AI Agent"
+            },
+            {
+                "parameters": {
+                    "model": "zhipuai/glm-4.5-air",
+                    "options": {
+                        "maxTokens": 500,
+                        "temperature": 0.7
+                    }
+                },
+                "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
+                "typeVersion": 1.2,
+                "position": [400, 520],
+                "id": "openrouter-model-node",
+                "name": "GLM-4.5 Air",
+                "credentials": {
+                    "openAiApi": {
+                        "id": N8N_CRED_OPENROUTER,
+                        "name": "OpenRouter Account"
+                    }
                 }
             }
-        },
-        {
-            "parameters": {
-                "options": {
-                    "systemMessage": (
-                        "Eres un asistente de IA conciso y útil llamado"
-                        " AgenticOS. Responde en español. Sé breve y"
-                        " directo, máximo 2 párrafos. Si no sabes algo,"
-                        " dilo honestamente."
-                    )
-                }
+        ],
+        "connections": {
+            "Telegram Trigger": {
+                "main": [
+                    [
+                        {
+                            "node": "AI Agent",
+                            "type": "main",
+                            "index": 0
+                        }
+                    ]
+                ]
             },
-            "type": "@n8n/n8n-nodes-langchain.agent",
-            "typeVersion": 1.7,
-            "position": [480, 300],
-            "id": "ai-agent-node",
-            "name": "AI Agent"
-        },
-        {
-            "parameters": {
-                "model": "zhipuai/glm-4.5-air",
-                "options": {
-                    "maxTokens": 500,
-                    "temperature": 0.7
-                }
-            },
-            "type": "@n8n/n8n-nodes-langchain.lmChatOpenAi",
-            "typeVersion": 1.2,
-            "position": [400, 520],
-            "id": "openrouter-model-node",
-            "name": "GLM-4.5 Air",
-            "credentials": {
-                "openAiApi": {
-                    "id": N8N_CRED_OPENROUTER,
-                    "name": "OpenRouter Account"
-                }
+            "GLM-4.5 Air": {
+                "ai_languageModel": [
+                    [
+                        {
+                            "node": "AI Agent",
+                            "type": "ai_languageModel",
+                            "index": 0
+                        }
+                    ]
+                ]
             }
-        }
-    ],
-    "connections": {
-        "Telegram Trigger": {
-            "main": [
-                [
-                    {
-                        "node": "AI Agent",
-                        "type": "main",
-                        "index": 0
-                    }
-                ]
-            ]
         },
-        "GLM-4.5 Air": {
-            "ai_languageModel": [
-                [
-                    {
-                        "node": "AI Agent",
-                        "type": "ai_languageModel",
-                        "index": 0
-                    }
-                ]
-            ]
+        "settings": {
+            "executionOrder": "v1"
         }
-    },
-    "settings": {
-        "executionOrder": "v1"
     }
-}
 
-# Write workflow JSON to server
-workflow_json = json.dumps([telegram_ai_workflow])
-escaped_json = workflow_json.replace("'", "'\\''")
 
-# Write to a temp file on the server
-ssh.exec_command(f"echo '{escaped_json}' > /tmp/telegram_ai_bot.json")
+def main():
+    ssh = get_ssh_client()
 
-time.sleep(1)
+    telegram_ai_workflow = build_telegram_ai_workflow()
 
-# Verify file was written
-_, o, _ = ssh.exec_command("wc -c /tmp/telegram_ai_bot.json")
-print("File size:", o.read().decode().strip())
+    # Write workflow JSON to server
+    workflow_json = json.dumps([telegram_ai_workflow])
+    escaped_json = workflow_json.replace("'", "'\\''")
 
-# Import via CLI
-_, o, e = ssh.exec_command("docker exec -i n8n-n8n-1 n8n import:workflow --input=/tmp/telegram_ai_bot.json")
-print("STDOUT:", o.read().decode())
-print("STDERR:", e.read().decode())
+    # Write to a temp file on the server
+    ssh.exec_command(f"echo '{escaped_json}' > /tmp/telegram_ai_bot.json")
 
-ssh.close()
+    time.sleep(1)
+
+    # Verify file was written
+    _, o, _ = ssh.exec_command("wc -c /tmp/telegram_ai_bot.json")
+    print("File size:", o.read().decode().strip())
+
+    # Import via CLI
+    _, o, e = ssh.exec_command("docker exec -i n8n-n8n-1 n8n import:workflow --input=/tmp/telegram_ai_bot.json")
+    print("STDOUT:", o.read().decode())
+    print("STDERR:", e.read().decode())
+
+    ssh.close()
+
+
+if __name__ == "__main__":
+    main()
