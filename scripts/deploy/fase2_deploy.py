@@ -77,7 +77,16 @@ daily_briefing = {
         },
         {
             "parameters": {
-                "command": "echo '=== SERVER STATUS ===' && uptime && echo '' && echo '=== DISK ===' && df -h / | tail -1 && echo '' && echo '=== MEMORY ===' && free -m | grep Mem && echo '' && echo '=== DOCKER ===' && docker ps --format 'table {{.Names}}\t{{.Status}}' && echo '' && echo '=== N8N WORKFLOWS ===' && docker exec n8n-n8n-1 n8n list:workflow 2>/dev/null || echo 'n8n CLI unavailable'"
+                "command": (
+                    "echo '=== SERVER STATUS ===' && uptime && echo ''"
+                    " && echo '=== DISK ===' && df -h / | tail -1"
+                    " && echo '' && echo '=== MEMORY ===' && free -m"
+                    " | grep Mem && echo '' && echo '=== DOCKER ==='"
+                    " && docker ps --format 'table {{.Names}}\t{{.Status}}'"
+                    " && echo '' && echo '=== N8N WORKFLOWS ==='"
+                    " && docker exec n8n-n8n-1 n8n list:workflow"
+                    " 2>/dev/null || echo 'n8n CLI unavailable'"
+                )
             },
             "id": gen_id(),
             "name": "Check Server",
@@ -94,7 +103,11 @@ daily_briefing = {
         {
             "parameters": {
                 "chatId": "6915862027",
-                "text": "=🌅 **DAILY BRIEFING — AgenticOS**\n📅 {{ $now.format('dd/MM/yyyy HH:mm') }}\n\n{{ $json.stdout }}",
+                "text": (
+                    "=🌅 **DAILY BRIEFING — AgenticOS**\n"
+                    "📅 {{ $now.format('dd/MM/yyyy HH:mm') }}"
+                    "\n\n{{ $json.stdout }}"
+                ),
                 "additionalFields": {"parse_mode": "Markdown"}
             },
             "id": gen_id(),
@@ -136,7 +149,24 @@ uptime_monitor = {
         },
         {
             "parameters": {
-                "command": "services='95.217.158.7:5678 alz.agency'\nresult=''\nfailed=0\nfor svc in $services; do\n  host=$(echo $svc | cut -d: -f1)\n  port=$(echo $svc | cut -d: -f2)\n  if [ -z \"$port\" ]; then port=443; fi\n  if timeout 5 bash -c \"echo > /dev/tcp/$host/$port\" 2>/dev/null; then\n    result=\"$result\\n✅ $svc — UP\"\n  else\n    result=\"$result\\n❌ $svc — DOWN!\"\n    failed=$((failed+1))\n  fi\ndone\necho -e \"$result\"\necho \"FAILED=$failed\""
+                "command": (
+                    "services='95.217.158.7:5678 alz.agency'\n"
+                    "result=''\nfailed=0\n"
+                    "for svc in $services; do\n"
+                    "  host=$(echo $svc | cut -d: -f1)\n"
+                    "  port=$(echo $svc | cut -d: -f2)\n"
+                    "  if [ -z \"$port\" ]; then port=443; fi\n"
+                    "  if timeout 5 bash -c "
+                    "\"echo > /dev/tcp/$host/$port\""
+                    " 2>/dev/null; then\n"
+                    "    result=\"$result\\n✅ $svc — UP\"\n"
+                    "  else\n"
+                    "    result=\"$result\\n❌ $svc — DOWN!\"\n"
+                    "    failed=$((failed+1))\n"
+                    "  fi\ndone\n"
+                    "echo -e \"$result\"\n"
+                    "echo \"FAILED=$failed\""
+                )
             },
             "id": gen_id(),
             "name": "Ping Services",
@@ -173,7 +203,11 @@ uptime_monitor = {
         {
             "parameters": {
                 "chatId": "6915862027",
-                "text": "=🚨 **ALERTA UPTIME — AgenticOS**\n⏰ {{ $now.format('HH:mm') }}\n\n{{ $('Ping Services').item.json.stdout }}",
+                "text": (
+                    "=🚨 **ALERTA UPTIME — AgenticOS**\n"
+                    "⏰ {{ $now.format('HH:mm') }}\n\n"
+                    "{{ $('Ping Services').item.json.stdout }}"
+                ),
                 "additionalFields": {"parse_mode": "Markdown"}
             },
             "id": gen_id(),
@@ -229,7 +263,11 @@ crypto_alerts = {
         },
         {
             "parameters": {
-                "url": "https://api.coingecko.com/api/v3/simple/price?ids=bitcoin,ethereum,solana,ripple,dogecoin&vs_currencies=usd&include_24hr_change=true",
+                "url": (
+                    "https://api.coingecko.com/api/v3/simple/price"
+                    "?ids=bitcoin,ethereum,solana,ripple,dogecoin"
+                    "&vs_currencies=usd&include_24hr_change=true"
+                ),
                 "options": {}
             },
             "id": gen_id(),
@@ -240,7 +278,43 @@ crypto_alerts = {
         },
         {
             "parameters": {
-                "jsCode": "const data = $input.first().json;\nconst alerts = [];\nconst coins = {\n  'bitcoin': 'BTC',\n  'ethereum': 'ETH',\n  'solana': 'SOL',\n  'ripple': 'XRP',\n  'dogecoin': 'DOGE'\n};\n\nlet report = '📊 **CRYPTO PORTFOLIO**\\n';\nreport += `⏰ ${new Date().toLocaleString('es-ES')}\\n\\n`;\n\nlet hasAlert = false;\nfor (const [id, symbol] of Object.entries(coins)) {\n  if (data[id]) {\n    const price = data[id].usd;\n    const change = data[id].usd_24h_change?.toFixed(2) || '0';\n    const emoji = change >= 0 ? '🟢' : '🔴';\n    const alertEmoji = Math.abs(change) > 5 ? '⚠️' : '';\n    report += `${emoji} **${symbol}**: $${price.toLocaleString()} (${change > 0 ? '+' : ''}${change}%) ${alertEmoji}\\n`;\n    if (Math.abs(change) > 5) hasAlert = true;\n  }\n}\n\nreturn [{ json: { report, hasAlert } }];"
+                "jsCode": (
+                    "const data = $input.first().json;\n"
+                    "const alerts = [];\n"
+                    "const coins = {\n"
+                    "  'bitcoin': 'BTC',\n"
+                    "  'ethereum': 'ETH',\n"
+                    "  'solana': 'SOL',\n"
+                    "  'ripple': 'XRP',\n"
+                    "  'dogecoin': 'DOGE'\n"
+                    "};\n\n"
+                    "let report = '📊 **CRYPTO PORTFOLIO**\\n';\n"
+                    "report += `⏰ "
+                    "${new Date().toLocaleString('es-ES')}"
+                    "\\n\\n`;\n\n"
+                    "let hasAlert = false;\n"
+                    "for (const [id, symbol] of "
+                    "Object.entries(coins)) {\n"
+                    "  if (data[id]) {\n"
+                    "    const price = data[id].usd;\n"
+                    "    const change = "
+                    "data[id].usd_24h_change?.toFixed(2)"
+                    " || '0';\n"
+                    "    const emoji = "
+                    "change >= 0 ? '🟢' : '🔴';\n"
+                    "    const alertEmoji = "
+                    "Math.abs(change) > 5 ? '⚠️' : '';\n"
+                    "    report += `${emoji} "
+                    "**${symbol}**: "
+                    "$${price.toLocaleString()} "
+                    "(${change > 0 ? '+' : ''}"
+                    "${change}%) ${alertEmoji}\\n`;\n"
+                    "    if (Math.abs(change) > 5) "
+                    "hasAlert = true;\n"
+                    "  }\n}\n\n"
+                    "return [{ json: "
+                    "{ report, hasAlert } }];"
+                )
             },
             "id": gen_id(),
             "name": "Format Prices",
@@ -307,7 +381,51 @@ github_backup = {
         },
         {
             "parameters": {
-                "jsCode": "const repos = $input.all().map(i => i.json);\nconst now = new Date();\nconst DAYS_THRESHOLD = 7;\nlet report = '🗂️ **GITHUB BACKUP REPORT**\\n';\nreport += `⏰ ${now.toLocaleString('es-ES')}\\n\\n`;\n\nlet inactive = [];\nlet total = 0;\n\nfor (const repo of repos) {\n  if (repo.fork) continue;\n  total++;\n  const pushed = new Date(repo.pushed_at);\n  const daysSince = Math.floor((now - pushed) / (1000*60*60*24));\n  \n  if (daysSince > DAYS_THRESHOLD) {\n    inactive.push(`⚠️ **${repo.name}** — ${daysSince}d sin actividad`);\n  }\n}\n\nreport += `📦 Total repos propios: ${total}\\n`;\nreport += `✅ Activos (< ${DAYS_THRESHOLD}d): ${total - inactive.length}\\n`;\nreport += `⚠️ Inactivos (> ${DAYS_THRESHOLD}d): ${inactive.length}\\n\\n`;\n\nif (inactive.length > 0) {\n  report += '**Repos inactivos:**\\n';\n  report += inactive.slice(0, 10).join('\\n');\n  if (inactive.length > 10) report += `\\n... y ${inactive.length - 10} más`;\n}\n\nreturn [{ json: { report, inactiveCount: inactive.length } }];"
+                "jsCode": (
+                    "const repos = "
+                    "$input.all().map(i => i.json);\n"
+                    "const now = new Date();\n"
+                    "const DAYS_THRESHOLD = 7;\n"
+                    "let report = "
+                    "'🗂️ **GITHUB BACKUP REPORT**\\n';\n"
+                    "report += `⏰ "
+                    "${now.toLocaleString('es-ES')}"
+                    "\\n\\n`;\n\n"
+                    "let inactive = [];\n"
+                    "let total = 0;\n\n"
+                    "for (const repo of repos) {\n"
+                    "  if (repo.fork) continue;\n"
+                    "  total++;\n"
+                    "  const pushed = "
+                    "new Date(repo.pushed_at);\n"
+                    "  const daysSince = Math.floor("
+                    "(now - pushed) / (1000*60*60*24));\n"
+                    "  \n"
+                    "  if (daysSince > DAYS_THRESHOLD) {\n"
+                    "    inactive.push(`⚠️ "
+                    "**${repo.name}** — "
+                    "${daysSince}d sin actividad`);\n"
+                    "  }\n}\n\n"
+                    "report += `📦 Total repos propios: "
+                    "${total}\\n`;\n"
+                    "report += `✅ Activos "
+                    "(< ${DAYS_THRESHOLD}d): "
+                    "${total - inactive.length}\\n`;\n"
+                    "report += `⚠️ Inactivos "
+                    "(> ${DAYS_THRESHOLD}d): "
+                    "${inactive.length}\\n\\n`;\n\n"
+                    "if (inactive.length > 0) {\n"
+                    "  report += "
+                    "'**Repos inactivos:**\\n';\n"
+                    "  report += "
+                    "inactive.slice(0, 10).join('\\n');\n"
+                    "  if (inactive.length > 10) "
+                    "report += `\\n... y "
+                    "${inactive.length - 10} más`;\n"
+                    "}\n\n"
+                    "return [{ json: { report, "
+                    "inactiveCount: inactive.length } }];"
+                )
             },
             "id": gen_id(),
             "name": "Analyze Repos",

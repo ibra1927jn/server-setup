@@ -58,7 +58,11 @@ print(f"\n  Using nip.io instead: {NIP_DOMAIN}")
 print("  nip.io auto-resolves IPs embedded in the domain name - no registration needed!")
 
 # Verify it resolves
-_, o, _ = ssh.exec_command(f"host {NIP_DOMAIN} 2>/dev/null || dig +short {NIP_DOMAIN} 2>/dev/null || echo 'DNS_CHECK_FAILED'")
+_, o, _ = ssh.exec_command(
+    f"host {NIP_DOMAIN} 2>/dev/null"
+    f" || dig +short {NIP_DOMAIN} 2>/dev/null"
+    " || echo 'DNS_CHECK_FAILED'"
+)
 dns_result = o.read().decode().strip()
 print(f"  DNS check: {dns_result}")
 
@@ -147,7 +151,12 @@ if "successful" in test:
 
     # Try Let's Encrypt (may fail with nip.io but worth trying)
     print("\n  Attempting Let's Encrypt certificate...")
-    certbot_cmd = f"certbot certonly --webroot -w /var/www/certbot -d {NIP_DOMAIN} --non-interactive --agree-tos --email admin@agenticosvps.local --no-eff-email 2>&1"
+    certbot_cmd = (
+        f"certbot certonly --webroot -w /var/www/certbot"
+        f" -d {NIP_DOMAIN} --non-interactive --agree-tos"
+        " --email admin@agenticosvps.local"
+        " --no-eff-email 2>&1"
+    )
     _, o, _ = ssh.exec_command(certbot_cmd)
     certbot_result = o.read().decode().strip()
     print(f"  Certbot: {certbot_result[:300]}")
@@ -155,8 +164,18 @@ if "successful" in test:
     if "Congratulations" in certbot_result or "Successfully" in certbot_result:
         print("  SSL certificate obtained!")
         # Update nginx to use real cert
-        ssh.exec_command(f"sed -i 's|/etc/ssl/n8n/self-signed.crt|/etc/letsencrypt/live/{NIP_DOMAIN}/fullchain.pem|' /etc/nginx/sites-available/n8n")
-        ssh.exec_command(f"sed -i 's|/etc/ssl/n8n/self-signed.key|/etc/letsencrypt/live/{NIP_DOMAIN}/privkey.pem|' /etc/nginx/sites-available/n8n")
+        ssh.exec_command(
+            "sed -i 's|/etc/ssl/n8n/self-signed.crt"
+            f"|/etc/letsencrypt/live/{NIP_DOMAIN}"
+            "/fullchain.pem|'"
+            " /etc/nginx/sites-available/n8n"
+        )
+        ssh.exec_command(
+            "sed -i 's|/etc/ssl/n8n/self-signed.key"
+            f"|/etc/letsencrypt/live/{NIP_DOMAIN}"
+            "/privkey.pem|'"
+            " /etc/nginx/sites-available/n8n"
+        )
         ssh.exec_command("systemctl reload nginx")
         print("  Nginx updated with real SSL!")
     else:
@@ -254,14 +273,17 @@ dashboard_html = """<!DOCTYPE html>
             padding: 6px 14px; border-radius: 20px;
             font-size: 12px; font-weight: 600;
         }
-        .wf-status.active { background: rgba(34, 197, 94, 0.12); color: #22c55e; border: 1px solid rgba(34,197,94,0.25); }
-        .wf-status.error { background: rgba(239, 68, 68, 0.12); color: #ef4444; border: 1px solid rgba(239,68,68,0.25); }
+        .wf-status.active { background: rgba(34, 197, 94, 0.12);
+            color: #22c55e; border: 1px solid rgba(34,197,94,0.25); }
+        .wf-status.error { background: rgba(239, 68, 68, 0.12);
+            color: #ef4444; border: 1px solid rgba(239,68,68,0.25); }
         .server-info {
             background: linear-gradient(180deg, rgba(30, 30, 60, 0.6), rgba(20, 20, 45, 0.8));
             border: 1px solid rgba(99, 102, 241, 0.12);
             border-radius: 12px; padding: 24px;
         }
-        .info-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid rgba(99,102,241,0.08); }
+        .info-row { display: flex; justify-content: space-between;
+            padding: 10px 0; border-bottom: 1px solid rgba(99,102,241,0.08); }
         .info-row:last-child { border: none; }
         .info-row .key { color: #8b8ba7; font-size: 13px; }
         .info-row .val { color: #e0e0f0; font-size: 13px; font-weight: 500; }
@@ -303,14 +325,35 @@ dashboard_html = """<!DOCTYPE html>
 
         <div class="section-title">📊 Workflows</div>
         <div class="workflows-grid" id="wf-grid">
-            <div class="wf-card"><div class="wf-info"><h3>🤖 AI Agent Base</h3><div class="schedule">Webhook — GLM-4.5 Air</div></div><div class="wf-status active">Activo</div></div>
-            <div class="wf-card"><div class="wf-info"><h3>📋 CRM Bridge</h3><div class="schedule">Webhook — Leads → Telegram</div></div><div class="wf-status active">Activo</div></div>
-            <div class="wf-card"><div class="wf-info"><h3>📈 Trade Digest</h3><div class="schedule">Cron diario — CT4 resumen</div></div><div class="wf-status active">Activo</div></div>
-            <div class="wf-card"><div class="wf-info"><h3>🛡️ Server Sentinel</h3><div class="schedule">Cada 6h — Health check</div></div><div class="wf-status active">Activo</div></div>
-            <div class="wf-card"><div class="wf-info"><h3>🌅 Daily Briefing</h3><div class="schedule">8:00 AM — Resumen matutino</div></div><div class="wf-status active">Activo</div></div>
-            <div class="wf-card"><div class="wf-info"><h3>💰 Crypto Portfolio</h3><div class="schedule">Cada 1h — BTC/ETH/SOL/XRP/DOGE</div></div><div class="wf-status active">Activo</div></div>
-            <div class="wf-card"><div class="wf-info"><h3>🚨 Uptime Monitor</h3><div class="schedule">Cada 5 min — Ping servicios</div></div><div class="wf-status active">Activo</div></div>
-            <div class="wf-card"><div class="wf-info"><h3>🗂️ GitHub Auto-Backup</h3><div class="schedule">Cada 12h — Repos check</div></div><div class="wf-status active">Activo</div></div>
+            <div class="wf-card"><div class="wf-info"><h3>🤖 AI Agent Base</h3>
+            <div class="schedule">Webhook — GLM-4.5 Air</div></div>
+            <div class="wf-status active">Activo</div></div>
+            <div class="wf-card"><div class="wf-info"><h3>📋 CRM Bridge</h3>
+            <div class="schedule">Webhook — Leads → Telegram</div></div>
+            <div class="wf-status active">Activo</div></div>
+            <div class="wf-card"><div class="wf-info"><h3>📈 Trade Digest</h3>
+            <div class="schedule">Cron diario — CT4 resumen</div></div>
+            <div class="wf-status active">Activo</div></div>
+            <div class="wf-card"><div class="wf-info">
+            <h3>🛡️ Server Sentinel</h3>
+            <div class="schedule">Cada 6h — Health check</div></div>
+            <div class="wf-status active">Activo</div></div>
+            <div class="wf-card"><div class="wf-info">
+            <h3>🌅 Daily Briefing</h3>
+            <div class="schedule">8:00 AM — Resumen matutino</div></div>
+            <div class="wf-status active">Activo</div></div>
+            <div class="wf-card"><div class="wf-info">
+            <h3>💰 Crypto Portfolio</h3>
+            <div class="schedule">Cada 1h — BTC/ETH/SOL/XRP/DOGE</div>
+            </div><div class="wf-status active">Activo</div></div>
+            <div class="wf-card"><div class="wf-info">
+            <h3>🚨 Uptime Monitor</h3>
+            <div class="schedule">Cada 5 min — Ping servicios</div>
+            </div><div class="wf-status active">Activo</div></div>
+            <div class="wf-card"><div class="wf-info">
+            <h3>🗂️ GitHub Auto-Backup</h3>
+            <div class="schedule">Cada 12h — Repos check</div></div>
+            <div class="wf-status active">Activo</div></div>
         </div>
 
         <div class="section-title">🖥️ Servidor</div>

@@ -45,9 +45,12 @@ chat_widget = '''
     flex: 1; overflow-y: auto; padding: 14px; max-height: 320px;
     display: flex; flex-direction: column; gap: 10px;
   }
-  .msg { padding: 10px 14px; border-radius: 12px; font-size: 13px; line-height: 1.5; max-width: 85%; word-wrap: break-word; }
-  .msg.user { background: rgba(124,58,237,0.25); color: #e2e8f0; align-self: flex-end; border-bottom-right-radius: 4px; }
-  .msg.bot { background: rgba(255,255,255,0.06); color: #cbd5e1; align-self: flex-start; border-bottom-left-radius: 4px; }
+  .msg { padding: 10px 14px; border-radius: 12px; font-size: 13px;
+    line-height: 1.5; max-width: 85%; word-wrap: break-word; }
+  .msg.user { background: rgba(124,58,237,0.25); color: #e2e8f0;
+    align-self: flex-end; border-bottom-right-radius: 4px; }
+  .msg.bot { background: rgba(255,255,255,0.06); color: #cbd5e1;
+    align-self: flex-start; border-bottom-left-radius: 4px; }
   .msg.typing { color: #94a3b8; font-style: italic; }
 
   #chat-input-area {
@@ -71,7 +74,8 @@ chat_widget = '''
 </style>
 
 <button id="chat-toggle" onclick="toggleChat()" title="Chat con IA">
-  <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
+  <svg viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-2 .9-2 2v18l4-4h14c1.1
+    0 2-.9 2-2V4c0-1.1-.9-2-2-2zm0 14H6l-2 2V4h16v12z"/></svg>
 </button>
 
 <div id="chat-panel">
