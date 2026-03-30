@@ -3,6 +3,7 @@ import json
 
 # --- Credential extraction logic (mirrors rebuild_v2.py lines 17-21) ---
 
+
 def _extract_credentials(creds):
     """Extract telegram and SSH credentials from n8n credential list."""
     tg_cred = None

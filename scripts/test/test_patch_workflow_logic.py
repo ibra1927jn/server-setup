@@ -3,6 +3,7 @@ import json
 
 # --- Node filtering (mirrors patch_workflow.py line 24) ---
 
+
 def _filter_node(nodes, exclude_name):
     """Remove a node by name from the list."""
     return [n for n in nodes if n["name"] != exclude_name]

@@ -116,6 +116,7 @@ class TestCreateTelegramAiBotV3Main:
     def test_main_success(self, mock_get_ssh, mock_sleep, capsys):
         from create_telegram_ai_bot_v3 import main
         ssh = _mock_ssh_sftp()
+
         # v3 checks for "error" in stdout to decide activation
         def exec_side(cmd):
             stdout = MagicMock()

@@ -16,8 +16,11 @@ def main():
     new_cred = N8N_CRED_TELEGRAM
 
     print("=== PATCHING SQLITE DIRECTLY ===")
-    patch_cmd = f'''docker exec n8n-n8n-1 sqlite3 /home/node/.n8n/database.sqlite \
-      "UPDATE workflow_entity SET nodes = REPLACE(nodes, '{old_cred}', '{new_cred}'), active = 1 WHERE id = '{w_id}';" '''
+    patch_cmd = (
+        f"docker exec n8n-n8n-1 sqlite3 /home/node/.n8n/database.sqlite"
+        f''' "UPDATE workflow_entity SET nodes = REPLACE(nodes, '{old_cred}','''
+        f''' '{new_cred}'), active = 1 WHERE id = '{w_id}';" '''
+    )
     ssh.exec_command(patch_cmd)
 
     time.sleep(1)

@@ -5,6 +5,7 @@ import scripts.create_telegram_ai_bot_v3 as bot_v3
 
 # ---------- v1: create_telegram_ai_bot ----------
 
+
 class TestBotV1:
     def test_workflow_name(self):
         wf = bot_v1.build_telegram_ai_workflow()

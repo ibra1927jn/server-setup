@@ -13,14 +13,14 @@ def main():
     ssh = get_ssh_client()
 
     # First verify the correct model works
-    cmd = f'''curl -s https://openrouter.ai/api/v1/chat/completions \
-  -H "Authorization: Bearer {OPENROUTER_API_KEY}" \
-  -H "Content-Type: application/json" \
-  -d '{
-    "model": "z-ai/glm-4.5-air:free",
-    "messages": [{"role": "user", "content": "Di solamente OK"}],
-    "max_tokens": 50
-  }' --max-time 30'''
+    cmd = (
+        f'curl -s https://openrouter.ai/api/v1/chat/completions'
+        f' -H "Authorization: Bearer {OPENROUTER_API_KEY}"'
+        f' -H "Content-Type: application/json"'
+        ' -d \'{"model": "z-ai/glm-4.5-air:free",'
+        ' "messages": [{"role": "user", "content": "Di solamente OK"}],'
+        " \"max_tokens\": 50}' --max-time 30"
+    )
     _, o, _ = ssh.exec_command(cmd)
     time.sleep(20)
     result = o.read().decode()

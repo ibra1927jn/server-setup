@@ -36,213 +36,217 @@ def fetch_workflow_ids(ssh):
 def build_crypto_workflow(wf_id, chat_id, tg_cred):
     """Build the Crypto Portfolio Alerts workflow definition."""
     return {
-            "id": wf_id,
-            "name": "Crypto Portfolio Alerts",
-            "active": True,
-            "nodes": [
-                {
-                    "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}},
-                    "name": "Every Hour",
-                    "type": "n8n-nodes-base.scheduleTrigger",
-                    "typeVersion": 1.2,
-                    "position": [250, 300],
-                    "id": "node1"
+        "id": wf_id,
+        "name": "Crypto Portfolio Alerts",
+        "active": True,
+        "nodes": [
+            {
+                "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 1}]}},
+                "name": "Every Hour",
+                "type": "n8n-nodes-base.scheduleTrigger",
+                "typeVersion": 1.2,
+                "position": [250, 300],
+                "id": "node1"
+            },
+            {
+                "parameters": {
+                    "url": (
+                        "https://api.coingecko.com/api/v3/simple/price"
+                        "?ids=bitcoin,ethereum,solana,ripple,dogecoin"
+                        "&vs_currencies=usd&include_24hr_change=true"
+                    ),
+                    "options": {}
                 },
-                {
-                    "parameters": {
-                        "url": (
-                            "https://api.coingecko.com/api/v3/simple/price"
-                            "?ids=bitcoin,ethereum,solana,ripple,dogecoin"
-                            "&vs_currencies=usd&include_24hr_change=true"
-                        ),
-                        "options": {}
-                    },
-                    "name": "Get Prices",
-                    "type": "n8n-nodes-base.httpRequest",
-                    "typeVersion": 4.2,
-                    "position": [470, 300],
-                    "id": "node2"
+                "name": "Get Prices",
+                "type": "n8n-nodes-base.httpRequest",
+                "typeVersion": 4.2,
+                "position": [470, 300],
+                "id": "node2"
+            },
+            {
+                "parameters": {
+                    "chatId": chat_id,
+                    "text": (
+                        "=📊 *Crypto Portfolio*\n\n"
+                        "💰 BTC: ${{ $json.bitcoin.usd }} "
+                        "({{ $json.bitcoin.usd_24h_change.toFixed(1) }}%)\n"
+                        "💠 ETH: ${{ $json.ethereum.usd }} "
+                        "({{ $json.ethereum.usd_24h_change.toFixed(1) }}%)\n"
+                        "☀️ SOL: ${{ $json.solana.usd }} "
+                        "({{ $json.solana.usd_24h_change.toFixed(1) }}%)\n"
+                        "🪙 XRP: ${{ $json.ripple.usd }} "
+                        "({{ $json.ripple.usd_24h_change.toFixed(1) }}%)\n"
+                        "🐕 DOGE: ${{ $json.dogecoin.usd }} "
+                        "({{ $json.dogecoin.usd_24h_change.toFixed(1) }}%)"
+                    ),
+                    "additionalFields": {"parse_mode": "Markdown"}
                 },
-                {
-                    "parameters": {
-                        "chatId": chat_id,
-                        "text": (
-                            "=📊 *Crypto Portfolio*\n\n"
-                            "💰 BTC: ${{ $json.bitcoin.usd }} "
-                            "({{ $json.bitcoin.usd_24h_change.toFixed(1) }}%)\n"
-                            "💠 ETH: ${{ $json.ethereum.usd }} "
-                            "({{ $json.ethereum.usd_24h_change.toFixed(1) }}%)\n"
-                            "☀️ SOL: ${{ $json.solana.usd }} "
-                            "({{ $json.solana.usd_24h_change.toFixed(1) }}%)\n"
-                            "🪙 XRP: ${{ $json.ripple.usd }} "
-                            "({{ $json.ripple.usd_24h_change.toFixed(1) }}%)\n"
-                            "🐕 DOGE: ${{ $json.dogecoin.usd }} "
-                            "({{ $json.dogecoin.usd_24h_change.toFixed(1) }}%)"
-                        ),
-                        "additionalFields": {"parse_mode": "Markdown"}
-                    },
-                    "name": "Send Telegram",
-                    "type": "n8n-nodes-base.telegram",
-                    "typeVersion": 1.2,
-                    "position": [690, 300],
-                    "id": "node3",
-                    "credentials": {"telegramApi": tg_cred}
-                }
-            ],
-            "connections": {
-                "Every Hour": {"main": [[{"node": "Get Prices", "type": "main", "index": 0}]]},
-                "Get Prices": {"main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]}
+                "name": "Send Telegram",
+                "type": "n8n-nodes-base.telegram",
+                "typeVersion": 1.2,
+                "position": [690, 300],
+                "id": "node3",
+                "credentials": {"telegramApi": tg_cred}
             }
+        ],
+        "connections": {
+            "Every Hour": {"main": [[{"node": "Get Prices", "type": "main", "index": 0}]]},
+            "Get Prices": {"main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]}
         }
+    }
+
 
 def build_daily_workflow(wf_id, chat_id, ssh_cred, tg_cred):
     """Build the Daily Briefing workflow definition."""
     return {
-            "id": wf_id,
-            "name": "Daily Briefing",
-            "active": True,
-            "nodes": [
-                {
-                    "parameters": {"rule": {"interval": [{"triggerAtHour": 8}]}},
-                    "name": "8AM Daily",
-                    "type": "n8n-nodes-base.scheduleTrigger",
-                    "typeVersion": 1.2,
-                    "position": [250, 300],
-                    "id": "node1"
+        "id": wf_id,
+        "name": "Daily Briefing",
+        "active": True,
+        "nodes": [
+            {
+                "parameters": {"rule": {"interval": [{"triggerAtHour": 8}]}},
+                "name": "8AM Daily",
+                "type": "n8n-nodes-base.scheduleTrigger",
+                "typeVersion": 1.2,
+                "position": [250, 300],
+                "id": "node1"
+            },
+            {
+                "parameters": {
+                    "command": (
+                        "uptime && df -h / | tail -1"
+                        " && free -h | grep Mem"
+                        " && docker ps --format"
+                        " '{{.Names}}: {{.Status}}'"
+                    ),
+                    "authentication": "password"
                 },
-                {
-                    "parameters": {
-                        "command": (
-                            "uptime && df -h / | tail -1"
-                            " && free -h | grep Mem"
-                            " && docker ps --format"
-                            " '{{.Names}}: {{.Status}}'"
-                        ),
-                        "authentication": "password"
-                    },
-                    "name": "Server Stats",
-                    "type": "n8n-nodes-base.ssh",
-                    "typeVersion": 1,
-                    "position": [470, 300],
-                    "id": "node2",
-                    "credentials": {"sshPassword": ssh_cred}
+                "name": "Server Stats",
+                "type": "n8n-nodes-base.ssh",
+                "typeVersion": 1,
+                "position": [470, 300],
+                "id": "node2",
+                "credentials": {"sshPassword": ssh_cred}
+            },
+            {
+                "parameters": {
+                    "chatId": chat_id,
+                    "text": "=🌅 *Daily Briefing*\n\n{{ $json.stdout }}",
+                    "additionalFields": {"parse_mode": "Markdown"}
                 },
-                {
-                    "parameters": {
-                        "chatId": chat_id,
-                        "text": "=🌅 *Daily Briefing*\n\n{{ $json.stdout }}",
-                        "additionalFields": {"parse_mode": "Markdown"}
-                    },
-                    "name": "Send Telegram",
-                    "type": "n8n-nodes-base.telegram",
-                    "typeVersion": 1.2,
-                    "position": [690, 300],
-                    "id": "node3",
-                    "credentials": {"telegramApi": tg_cred}
-                }
-            ],
-            "connections": {
-                "8AM Daily": {"main": [[{"node": "Server Stats", "type": "main", "index": 0}]]},
-                "Server Stats": {"main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]}
+                "name": "Send Telegram",
+                "type": "n8n-nodes-base.telegram",
+                "typeVersion": 1.2,
+                "position": [690, 300],
+                "id": "node3",
+                "credentials": {"telegramApi": tg_cred}
             }
+        ],
+        "connections": {
+            "8AM Daily": {"main": [[{"node": "Server Stats", "type": "main", "index": 0}]]},
+            "Server Stats": {"main": [[{"node": "Send Telegram", "type": "main", "index": 0}]]}
         }
+    }
+
 
 def build_uptime_workflow(wf_id):
     """Build the Uptime Monitor workflow definition."""
     return {
-            "id": wf_id,
-            "name": "Uptime Monitor",
-            "active": True,
-            "nodes": [
-                {
-                    "parameters": {"rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}},
-                    "name": "Every 5 Min",
-                    "type": "n8n-nodes-base.scheduleTrigger",
-                    "typeVersion": 1.2,
-                    "position": [250, 300],
-                    "id": "node1"
+        "id": wf_id,
+        "name": "Uptime Monitor",
+        "active": True,
+        "nodes": [
+            {
+                "parameters": {"rule": {"interval": [{"field": "minutes", "minutesInterval": 5}]}},
+                "name": "Every 5 Min",
+                "type": "n8n-nodes-base.scheduleTrigger",
+                "typeVersion": 1.2,
+                "position": [250, 300],
+                "id": "node1"
+            },
+            {
+                "parameters": {
+                    "url": f"http://{VPS_HOST}:5678/healthz",
+                    "options": {"timeout": 5000}
                 },
-                {
-                    "parameters": {
-                        "url": f"http://{VPS_HOST}:5678/healthz",
-                        "options": {"timeout": 5000}
-                    },
-                    "name": "Ping n8n",
-                    "type": "n8n-nodes-base.httpRequest",
-                    "typeVersion": 4.2,
-                    "position": [470, 300],
-                    "id": "node2",
-                    "onError": "continueRegularOutput"
-                },
-                {
-                    "parameters": {},
-                    "name": "All OK",
-                    "type": "n8n-nodes-base.noOp",
-                    "typeVersion": 1,
-                    "position": [690, 300],
-                    "id": "node3"
-                }
-            ],
-            "connections": {
-                "Every 5 Min": {"main": [[{"node": "Ping n8n", "type": "main", "index": 0}]]},
-                "Ping n8n": {"main": [[{"node": "All OK", "type": "main", "index": 0}]]}
+                "name": "Ping n8n",
+                "type": "n8n-nodes-base.httpRequest",
+                "typeVersion": 4.2,
+                "position": [470, 300],
+                "id": "node2",
+                "onError": "continueRegularOutput"
+            },
+            {
+                "parameters": {},
+                "name": "All OK",
+                "type": "n8n-nodes-base.noOp",
+                "typeVersion": 1,
+                "position": [690, 300],
+                "id": "node3"
             }
+        ],
+        "connections": {
+            "Every 5 Min": {"main": [[{"node": "Ping n8n", "type": "main", "index": 0}]]},
+            "Ping n8n": {"main": [[{"node": "All OK", "type": "main", "index": 0}]]}
         }
+    }
+
 
 def build_github_workflow(wf_id, chat_id, tg_cred):
     """Build the GitHub Auto-Backup workflow definition."""
     return {
-            "id": wf_id,
-            "name": "GitHub Auto-Backup",
-            "active": True,
-            "nodes": [
-                {
-                    "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 12}]}},
-                    "name": "Every 12h",
-                    "type": "n8n-nodes-base.scheduleTrigger",
-                    "typeVersion": 1.2,
-                    "position": [250, 300],
-                    "id": "node1"
+        "id": wf_id,
+        "name": "GitHub Auto-Backup",
+        "active": True,
+        "nodes": [
+            {
+                "parameters": {"rule": {"interval": [{"field": "hours", "hoursInterval": 12}]}},
+                "name": "Every 12h",
+                "type": "n8n-nodes-base.scheduleTrigger",
+                "typeVersion": 1.2,
+                "position": [250, 300],
+                "id": "node1"
+            },
+            {
+                "parameters": {
+                    "url": "https://api.github.com/user/repos?per_page=5&sort=pushed",
+                    "sendHeaders": True,
+                    "headerParameters": {"parameters": [
+                        {"name": "Authorization", "value": f"Bearer {GITHUB_PAT}"},
+                        {"name": "User-Agent", "value": "AgenticOS"}
+                    ]},
+                    "options": {}
                 },
-                {
-                    "parameters": {
-                        "url": "https://api.github.com/user/repos?per_page=5&sort=pushed",
-                        "sendHeaders": True,
-                        "headerParameters": {"parameters": [
-                            {"name": "Authorization", "value": f"Bearer {GITHUB_PAT}"},
-                            {"name": "User-Agent", "value": "AgenticOS"}
-                        ]},
-                        "options": {}
-                    },
-                    "name": "Get Repos",
-                    "type": "n8n-nodes-base.httpRequest",
-                    "typeVersion": 4.2,
-                    "position": [470, 300],
-                    "id": "node2"
+                "name": "Get Repos",
+                "type": "n8n-nodes-base.httpRequest",
+                "typeVersion": 4.2,
+                "position": [470, 300],
+                "id": "node2"
+            },
+            {
+                "parameters": {
+                    "chatId": chat_id,
+                    "text": (
+                        "=🗂️ *GitHub Backup Report*\n\n"
+                        "Repos recientes revisados\n"
+                        "🕐 {{ new Date().toLocaleString('es-ES') }}"
+                    ),
+                    "additionalFields": {"parse_mode": "Markdown"}
                 },
-                {
-                    "parameters": {
-                        "chatId": chat_id,
-                        "text": (
-                            "=🗂️ *GitHub Backup Report*\n\n"
-                            "Repos recientes revisados\n"
-                            "🕐 {{ new Date().toLocaleString('es-ES') }}"
-                        ),
-                        "additionalFields": {"parse_mode": "Markdown"}
-                    },
-                    "name": "Send Report",
-                    "type": "n8n-nodes-base.telegram",
-                    "typeVersion": 1.2,
-                    "position": [690, 300],
-                    "id": "node3",
-                    "credentials": {"telegramApi": tg_cred}
-                }
-            ],
-            "connections": {
-                "Every 12h": {"main": [[{"node": "Get Repos", "type": "main", "index": 0}]]},
-                "Get Repos": {"main": [[{"node": "Send Report", "type": "main", "index": 0}]]}
+                "name": "Send Report",
+                "type": "n8n-nodes-base.telegram",
+                "typeVersion": 1.2,
+                "position": [690, 300],
+                "id": "node3",
+                "credentials": {"telegramApi": tg_cred}
             }
+        ],
+        "connections": {
+            "Every 12h": {"main": [[{"node": "Get Repos", "type": "main", "index": 0}]]},
+            "Get Repos": {"main": [[{"node": "Send Report", "type": "main", "index": 0}]]}
         }
+    }
+
 
 def import_and_deploy_workflows(ssh, workflows):
     """Import workflows to n8n via SFTP, restart, and activate all."""

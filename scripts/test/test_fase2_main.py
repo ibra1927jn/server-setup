@@ -118,6 +118,7 @@ def test_main_writes_valid_workflow_json(mock_get_ssh, mock_time):
             buf.__enter__ = lambda s: s
             buf.__exit__ = lambda s, *a: None
             original_close = buf.close
+
             def capturing_close():
                 written_data[path] = buf.getvalue()
                 original_close()

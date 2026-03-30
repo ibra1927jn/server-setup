@@ -20,7 +20,7 @@ def main():
     print("PASO 1: DUCKDNS SETUP")
     print("=" * 50)
 
-    # Register agenticosvps.duckdns.org → 95.217.158.7
+    # Register agenticosvps.duckdns.org → VPS_HOST
     # DuckDNS API: just need to create a token and update
     # We'll do it via their API
     DUCK_DOMAIN = "agenticosvps"
@@ -196,7 +196,8 @@ def main():
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>AgenticOS Dashboard</title>
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
+              rel="stylesheet">
         <style>
             * { margin: 0; padding: 0; box-sizing: border-box; }
             body {
@@ -365,9 +366,12 @@ def main():
                 <div class="info-row"><span class="key">n8n</span><span class="val">Docker Container</span></div>
                 <div class="info-row"><span class="key">SSL</span>\
     <span class="val" id="ssl-status">Self-signed (activo)</span></div>
-                <div class="info-row"><span class="key">Firewall</span><span class="val">UFW — 22/80/443/5678</span></div>
-                <div class="info-row"><span class="key">Backups</span><span class="val">Diario 3:00 AM (7 días)</span></div>
-                <div class="info-row"><span class="key">Telegram</span><span class="val">ChatID 5822131920 ✅</span></div>
+                <div class="info-row"><span class="key">Firewall</span>\
+<span class="val">UFW — 22/80/443/5678</span></div>
+                <div class="info-row"><span class="key">Backups</span>\
+<span class="val">Diario 3:00 AM (7 días)</span></div>
+                <div class="info-row"><span class="key">Telegram</span>\
+<span class="val">ChatID 5822131920 ✅</span></div>
             </div>
             <div class="refresh-note">Actualización automática cada 60 segundos</div>
         </div>

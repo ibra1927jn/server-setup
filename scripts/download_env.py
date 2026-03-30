@@ -7,7 +7,10 @@ def main():
     ssh = get_ssh_client()
 
     # Dump everything to a file
-    ssh.exec_command('docker inspect --format="{{range .Config.Env}}{{println .}}{{end}}" n8n-n8n-1 > /root/n8n_env.txt')
+    ssh.exec_command(
+        'docker inspect --format="{{range .Config.Env}}{{println .}}{{end}}"'
+        ' n8n-n8n-1 > /root/n8n_env.txt'
+    )
 
     time.sleep(2)
 
