@@ -34,6 +34,16 @@ select = [
     "PGH",    # pygrep-hooks
     "INT",    # flake8-gettext
     "EXE",    # flake8-executable
+    "T10",    # flake8-debugger
+    "A",      # flake8-builtins (no shadowing builtins)
+    "PT",     # flake8-pytest-style
+    "DTZ",    # flake8-datetimez
+    "TC",     # flake8-type-checking
+    "ASYNC",  # flake8-async
+    "SLF",    # flake8-self (no private member access)
+    "N",      # pep8-naming
+    "ARG",    # flake8-unused-arguments
+    "FBT",    # flake8-boolean-trap
 ]
 ignore = [
     "S603",   # subprocess-without-shell-check (false positives)
@@ -55,7 +65,7 @@ ignore = [
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"scripts/test/*.py" = ["S106"]  # test passwords are not real secrets
+"scripts/test/*.py" = ["S106", "ARG001", "ARG002", "ARG005", "PT019"]  # test passwords, unused mock/lambda args from @patch, pytest fixture style
 "scripts/test/test_gen_id.py" = ["E402"]  # imports after mock setup (intentional)
 
 [tool.ruff.lint.mccabe]
