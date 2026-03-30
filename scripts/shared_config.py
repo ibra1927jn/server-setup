@@ -39,6 +39,9 @@ OPENROUTER_API_KEY: str = os.getenv("OPENROUTER_API_KEY", "")
 # --- GitHub ---
 GITHUB_PAT: str = os.getenv("GITHUB_PAT", "")
 
+# --- n8n Workflow IDs ---
+N8N_AI_WORKFLOW_ID: str = os.getenv("N8N_AI_WORKFLOW_ID", "WiTcSI66bHwdSgkd")
+
 # --- Headers reutilizables para n8n API ---
 N8N_HEADERS: dict = {
     "X-N8N-API-KEY": N8N_API_KEY,
