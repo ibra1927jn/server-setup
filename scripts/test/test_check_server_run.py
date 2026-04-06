@@ -1,17 +1,8 @@
 """Tests for check_server.py run() function and main() orchestration."""
 
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 
-
-def _mock_ssh(stdout="", stderr=""):
-    """Create a mock SSH client."""
-    ssh = MagicMock()
-    o = MagicMock()
-    o.read.return_value = stdout.encode()
-    e = MagicMock()
-    e.read.return_value = stderr.encode()
-    ssh.exec_command.return_value = (MagicMock(), o, e)
-    return ssh
+from conftest import mock_ssh as _mock_ssh
 
 
 def test_run_returns_stdout():

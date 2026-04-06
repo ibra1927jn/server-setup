@@ -1,19 +1,7 @@
 """Tests for helper functions in deploy scripts"""
 
-from unittest.mock import MagicMock
-
+from conftest import mock_ssh as _mock_ssh
 from deploy.deploy_n8n_hetzner import run
-
-
-def _mock_ssh(stdout="", stderr=""):
-    """Create a mock SSH client that returns given stdout/stderr."""
-    ssh = MagicMock()
-    o = MagicMock()
-    o.read.return_value = stdout.encode()
-    e = MagicMock()
-    e.read.return_value = stderr.encode()
-    ssh.exec_command.return_value = (MagicMock(), o, e)
-    return ssh
 
 
 def test_run_returns_stdout():
