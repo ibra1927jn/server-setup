@@ -13,6 +13,8 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-04-06] | Heartbeat #43: deduplicated severity-to-status ternary (5x) into _STATUS_FROM_SEVERITY dict in server_monitor.py, consolidated identical _mock_ssh helper from 6 test files into conftest.py (net -50 lines). 556/556 passing, 100% coverage, 0 lint errors, 0 format issues
+- [2026-04-06] | Heartbeat #42: added encoding='utf-8' to 2 state file open() calls in server_monitor.py, applied ruff format to server_monitor.py and test_server_monitor.py (2 files reformatted). 556/556 passing, 100% coverage, 0 lint errors, 0 format issues
 - [2026-04-06] | Heartbeat #41: security fix in fix_node_types.py (log credential keys only, not full values), removed redundant info_alert check in server_monitor.py main(), added 6 new edge-case tests for server_monitor (config fallback, non-standard mount, CPU warning, WARNING severity, --info-alert), fixed E501 line-too-long lint error. 556/556 passing, 100% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #40: fixed 17 ruff lint errors in server_monitor.py (EXE001, I001, N811, TRY300, ERA001, PTH123, SIM102, PERF401, S310, BLE001), fixed severity bug in error CheckResults (status was set but severity defaulted to info), added 58 tests for server_monitor.py (0%→98% coverage). 551/551 passing, 99% coverage, 0 lint errors
 - [2026-03-30] | Heartbeat #39: replaced 9 remaining hardcoded Windows paths (C:\Users\ibrab\...) in operational scripts — upgrade_agent_node, mejoras_ssl_github, download_env, download_index, fase3_ssl_dashboard, fix_dashboard_nginx5, fix_dashboard_isolation, deploy_ct4 (now uses CT4_LOCAL_DIR env var). 490/490 passing, 100% coverage, 0 lint errors. Zero hardcoded Windows paths confirmed across entire codebase
