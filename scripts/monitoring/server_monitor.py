@@ -520,8 +520,6 @@ def main():
 
     # Decide whether to alert
     do_alert = args.force_alert or args.info_alert or should_alert(report)
-    if args.info_alert and report.overall_severity == INFO:
-        do_alert = True
 
     if do_alert:
         success = send_telegram(msg)
