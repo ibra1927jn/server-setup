@@ -23,6 +23,21 @@ from monitoring.server_monitor import (
     should_alert,
 )
 
+# ── _load_telegram_config ───────────────────────────────────
+
+def test_load_telegram_config_import_error():
+    """Lines 34-35: fallback to env vars when shared_config is unavailable."""
+    from monitoring.server_monitor import _load_telegram_config
+
+    with (
+        patch.dict("sys.modules", {"shared_config": None}),
+        patch.dict("os.environ", {"TELEGRAM_BOT_TOKEN": "env_tok", "TELEGRAM_CHAT_ID": "env_id"}),
+    ):
+        token, chat_id = _load_telegram_config()
+    assert token == "env_tok"  # noqa: S105
+    assert chat_id == "env_id"
+
+
 # ── check_disk ──────────────────────────────────────────────
 
 DF_HEADER = "Mounted on  Use% Size  Used Avail\n"
@@ -74,6 +89,14 @@ def test_check_disk_mnt_prefix():
 
 def test_check_disk_short_line_skipped():
     df_out = DF_HEADER + "short\n"
+    with patch("subprocess.check_output", return_value=df_out):
+        results = check_disk()
+    assert results[0].message == "No monitored filesystems found"
+
+
+def test_check_disk_skips_non_standard_mount():
+    """Line 110: mounts not in the allowed list and not /mnt/* are skipped."""
+    df_out = DF_HEADER + "/opt/custom  50%  100G  50G  50G\n"
     with patch("subprocess.check_output", return_value=df_out):
         results = check_disk()
     assert results[0].message == "No monitored filesystems found"
@@ -186,6 +209,15 @@ def test_check_cpu_mpstat_high():
     with patch("subprocess.check_output", return_value=mpstat_out):
         r = check_cpu()
     assert r.severity == CRITICAL
+
+
+def test_check_cpu_mpstat_warning():
+    """Line 234: CPU usage between warning and critical thresholds."""
+    mpstat_out = "Linux\n\n12:00:00  CPU  %idle\n12:00:01  all  15.0\n"
+    with patch("subprocess.check_output", return_value=mpstat_out):
+        r = check_cpu()
+    assert r.severity == WARNING
+    assert "85%" in r.value
 
 
 def test_check_cpu_loadavg_fallback_error():
@@ -482,6 +514,20 @@ def test_run_checks_critical_severity():
     assert report.overall_severity == CRITICAL
 
 
+def test_run_checks_warning_severity():
+    """Line 484: overall severity is WARNING when no CRITICAL but has WARNING."""
+    with (
+        patch("monitoring.server_monitor.check_disk", return_value=[CheckResult("disk:/", "warning", "85%", "disk 85%", WARNING)]),
+        patch("monitoring.server_monitor.check_ram", return_value=CheckResult("ram", "ok", "30%", "ok", INFO)),
+        patch("monitoring.server_monitor.check_swap", return_value=CheckResult("swap", "ok", "0%", "ok", INFO)),
+        patch("monitoring.server_monitor.check_cpu", return_value=CheckResult("cpu", "ok", "10%", "ok", INFO)),
+        patch("monitoring.server_monitor.check_load", return_value=CheckResult("load", "ok", "0.5", "ok", INFO)),
+        patch("monitoring.server_monitor.check_docker", return_value=[]),
+    ):
+        report = run_checks()
+    assert report.overall_severity == WARNING
+
+
 # ── main ────────────────────────────────────────────────────
 
 def test_main_json(capsys):
@@ -535,6 +581,28 @@ def test_main_force_alert(capsys):
         patch("monitoring.server_monitor.send_telegram", return_value=True) as mock_send,
         patch("monitoring.server_monitor.should_alert", return_value=False),
         patch("sys.argv", ["server_monitor.py", "--force-alert"]),
+    ):
+        main()
+    mock_send.assert_called_once()
+    out = capsys.readouterr().out
+    assert "sent" in out
+
+
+def test_main_info_alert(capsys):
+    """--info-alert sends alert even for INFO severity."""
+    from monitoring.server_monitor import main
+
+    mock_report = MonitorReport(
+        timestamp="2026-03-30",
+        hostname="test",
+        checks=[CheckResult("disk:/", "ok", "30%", "ok", INFO)],
+        overall_severity=INFO,
+    )
+    with (
+        patch("monitoring.server_monitor.run_checks", return_value=mock_report),
+        patch("monitoring.server_monitor.send_telegram", return_value=True) as mock_send,
+        patch("monitoring.server_monitor.should_alert", return_value=False),
+        patch("sys.argv", ["server_monitor.py", "--info-alert"]),
     ):
         main()
     mock_send.assert_called_once()
