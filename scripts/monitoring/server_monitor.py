@@ -64,6 +64,8 @@ SEVERITY_EMOJI = {
     CRITICAL: "\U0001f534",  # red circle
 }
 
+_STATUS_FROM_SEVERITY = {INFO: "ok", WARNING: "warning", CRITICAL: "critical"}
+
 STATE_DIR = Path(os.getenv("MON_STATE_DIR", "/opt/heartbeat/state"))
 LOG_DIR = Path(os.getenv("MON_LOG_DIR", "/opt/heartbeat/logs"))
 
@@ -125,7 +127,7 @@ def check_disk() -> list[CheckResult]:
         results.append(
             CheckResult(
                 name=f"disk:{mount}",
-                status="critical" if severity == CRITICAL else "warning" if severity == WARNING else "ok",
+                status=_STATUS_FROM_SEVERITY[severity],
                 value=f"{pct}%",
                 message=f"{mount}: {used}/{size} ({pct}%), {avail} free",
                 severity=severity,
@@ -159,7 +161,7 @@ def check_ram() -> CheckResult:
 
             return CheckResult(
                 name="ram",
-                status="critical" if severity == CRITICAL else "warning" if severity == WARNING else "ok",
+                status=_STATUS_FROM_SEVERITY[severity],
                 value=f"{pct}%",
                 message=f"RAM: {used}MB / {total}MB ({pct}%), {available}MB available",
                 severity=severity,
@@ -193,7 +195,7 @@ def check_swap() -> CheckResult:
 
             return CheckResult(
                 name="swap",
-                status="critical" if severity == CRITICAL else "warning" if severity == WARNING else "ok",
+                status=_STATUS_FROM_SEVERITY[severity],
                 value=f"{pct}%",
                 message=f"Swap: {used}MB / {total}MB ({pct}%)",
                 severity=severity,
@@ -242,7 +244,7 @@ def check_cpu() -> CheckResult:
 
     return CheckResult(
         name="cpu",
-        status="critical" if severity == CRITICAL else "warning" if severity == WARNING else "ok",
+        status=_STATUS_FROM_SEVERITY[severity],
         value=f"{pct}%",
         message=f"CPU: {pct}% utilized",
         severity=severity,
@@ -268,7 +270,7 @@ def check_load() -> CheckResult:
 
     return CheckResult(
         name="load",
-        status="critical" if severity == CRITICAL else "warning" if severity == WARNING else "ok",
+        status=_STATUS_FROM_SEVERITY[severity],
         value=f"{load5:.2f}",
         message=f"Load avg: {load1:.2f} / {load5:.2f} / {load15:.2f} ({ncpu} CPUs, ratio={ratio:.2f})",
         severity=severity,
