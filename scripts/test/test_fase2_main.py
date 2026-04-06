@@ -3,17 +3,13 @@
 import json
 from unittest.mock import MagicMock, mock_open, patch
 
+from conftest import mock_ssh
+
 
 def _mock_ssh(stdout="", stderr=""):
-    """Create a mock SSH client that returns given stdout/stderr."""
-    ssh = MagicMock()
-    o = MagicMock()
-    o.read.return_value = stdout.encode()
-    e = MagicMock()
-    e.read.return_value = stderr.encode()
-    ssh.exec_command.return_value = (MagicMock(), o, e)
-    sftp = MagicMock()
-    ssh.open_sftp.return_value = sftp
+    """Create a mock SSH client with SFTP support."""
+    ssh = mock_ssh(stdout, stderr)
+    ssh.open_sftp.return_value = MagicMock()
     return ssh
 
 
