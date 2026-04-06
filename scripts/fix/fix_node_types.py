@@ -20,7 +20,8 @@ def print_sentinel_nodes(all_wfs):
                 print(f"  {node['name']} -> {t} v{node.get('typeVersion')}")
                 if "ssh" in t.lower():
                     print(f"    PARAMS: {json.dumps(node.get('parameters', {}), indent=2)[:300]}")
-                    print(f"    CREDS: {json.dumps(node.get('credentials', {}))}")
+                    cred_keys = list(node.get("credentials", {}).keys())
+                    print(f"    CREDS: {cred_keys}")
 
 
 def replace_execute_command_nodes(wf):
