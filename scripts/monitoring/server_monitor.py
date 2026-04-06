@@ -434,7 +434,7 @@ def should_alert(report: MonitorReport) -> bool:
 
     try:
         if state_file.exists():
-            with state_file.open() as f:
+            with state_file.open(encoding="utf-8") as f:
                 state = json.load(f)
             last_time = state.get("timestamp", 0)
             last_severity = state.get("severity", INFO)
@@ -448,7 +448,7 @@ def should_alert(report: MonitorReport) -> bool:
     # Save state
     try:
         STATE_DIR.mkdir(parents=True, exist_ok=True)
-        with state_file.open("w") as f:
+        with state_file.open("w", encoding="utf-8") as f:
             json.dump({"timestamp": now, "severity": report.overall_severity}, f)
     except OSError:
         pass  # State dir may not be writable
