@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-04-06] | Heartbeat #45: full audit — no issues found. 556/556 passing, 100% coverage, 0 lint errors, 0 format issues. Scanned for: bare excepts, hardcoded paths/creds, TODO/FIXME markers, functions >100 lines (only HTML/JSON template builders remain, not worth splitting), duplicate strings (only standard mock paths in tests), extended ruff rules (only PLR2004 on HTTP 200 — standard practice). .env.example doc improvements still blocked by pre-commit hook (branch name must contain 'infra' or 'docker')
 - [2026-04-06] | Heartbeat #44: full audit — no issues found. 556/556 passing, 100% coverage, 0 lint errors, 0 format issues. Codebase is fully clean: no dead code, no unused imports, no hardcoded credentials, no security issues. .env.example has pending doc improvements (new config vars) blocked by pre-commit hook false positive on CHANGE_ME placeholders
 - [2026-04-06] | Heartbeat #43: deduplicated severity-to-status ternary (5x) into _STATUS_FROM_SEVERITY dict in server_monitor.py, consolidated identical _mock_ssh helper from 6 test files into conftest.py (net -50 lines). 556/556 passing, 100% coverage, 0 lint errors, 0 format issues
 - [2026-04-06] | Heartbeat #42: added encoding='utf-8' to 2 state file open() calls in server_monitor.py, applied ruff format to server_monitor.py and test_server_monitor.py (2 files reformatted). 556/556 passing, 100% coverage, 0 lint errors, 0 format issues
