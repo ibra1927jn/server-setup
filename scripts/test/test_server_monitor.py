@@ -517,7 +517,9 @@ def test_run_checks_critical_severity():
 def test_run_checks_warning_severity():
     """Line 484: overall severity is WARNING when no CRITICAL but has WARNING."""
     with (
-        patch("monitoring.server_monitor.check_disk", return_value=[CheckResult("disk:/", "warning", "85%", "disk 85%", WARNING)]),
+        patch("monitoring.server_monitor.check_disk", return_value=[
+            CheckResult("disk:/", "warning", "85%", "disk 85%", WARNING),
+        ]),
         patch("monitoring.server_monitor.check_ram", return_value=CheckResult("ram", "ok", "30%", "ok", INFO)),
         patch("monitoring.server_monitor.check_swap", return_value=CheckResult("swap", "ok", "0%", "ok", INFO)),
         patch("monitoring.server_monitor.check_cpu", return_value=CheckResult("cpu", "ok", "10%", "ok", INFO)),
