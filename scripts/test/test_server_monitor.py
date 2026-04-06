@@ -25,6 +25,7 @@ from monitoring.server_monitor import (
 
 # ── _load_telegram_config ───────────────────────────────────
 
+
 def test_load_telegram_config_import_error():
     """Lines 34-35: fallback to env vars when shared_config is unavailable."""
     from monitoring.server_monitor import _load_telegram_config
@@ -143,6 +144,7 @@ def test_check_ram_no_mem_line():
 
 # ── check_swap ──────────────────────────────────────────────
 
+
 def test_check_swap_ok():
     with patch("subprocess.check_output", return_value=FREE_OK):
         r = check_swap()
@@ -184,6 +186,7 @@ def test_check_swap_no_swap_line():
 
 
 # ── check_cpu ───────────────────────────────────────────────
+
 
 def test_check_cpu_via_loadavg():
     with (
@@ -239,6 +242,7 @@ def test_check_cpu_mpstat_unparseable():
 
 # ── check_load ──────────────────────────────────────────────
 
+
 def test_check_load_ok():
     with patch("os.getloadavg", return_value=(0.5, 0.4, 0.3)), patch("os.cpu_count", return_value=4):
         r = check_load()
@@ -265,6 +269,7 @@ def test_check_load_error():
 
 
 # ── check_docker ────────────────────────────────────────────
+
 
 def test_check_docker_running():
     docker_out = "abc123\tn8n\tUp 2 hours (healthy)\tn8nio/n8n\n"
@@ -322,6 +327,7 @@ def test_check_docker_short_line():
 
 # ── docker_check_results ────────────────────────────────────
 
+
 def test_docker_check_results_empty():
     results = docker_check_results([])
     assert len(results) == 1
@@ -347,6 +353,7 @@ def test_docker_check_results_exited():
 
 
 # ── format_telegram_message ─────────────────────────────────
+
 
 def test_format_message_all_ok():
     report = MonitorReport(
@@ -405,6 +412,7 @@ def test_format_message_with_docker():
 
 # ── send_telegram ───────────────────────────────────────────
 
+
 def test_send_telegram_no_creds():
     result = send_telegram("test", token="", chat_id="")
     assert result is False
@@ -440,6 +448,7 @@ def test_send_telegram_truncates_long_message():
 
 
 # ── should_alert ────────────────────────────────────────────
+
 
 def test_should_alert_info_returns_false():
     report = MonitorReport(overall_severity=INFO)
@@ -487,6 +496,7 @@ def test_should_alert_state_file_error():
 
 # ── run_checks ──────────────────────────────────────────────
 
+
 def test_run_checks_returns_report():
     with (
         patch("monitoring.server_monitor.check_disk", return_value=[CheckResult("disk:/", "ok", "30%", "ok", INFO)]),
@@ -517,9 +527,12 @@ def test_run_checks_critical_severity():
 def test_run_checks_warning_severity():
     """Line 484: overall severity is WARNING when no CRITICAL but has WARNING."""
     with (
-        patch("monitoring.server_monitor.check_disk", return_value=[
-            CheckResult("disk:/", "warning", "85%", "disk 85%", WARNING),
-        ]),
+        patch(
+            "monitoring.server_monitor.check_disk",
+            return_value=[
+                CheckResult("disk:/", "warning", "85%", "disk 85%", WARNING),
+            ],
+        ),
         patch("monitoring.server_monitor.check_ram", return_value=CheckResult("ram", "ok", "30%", "ok", INFO)),
         patch("monitoring.server_monitor.check_swap", return_value=CheckResult("swap", "ok", "0%", "ok", INFO)),
         patch("monitoring.server_monitor.check_cpu", return_value=CheckResult("cpu", "ok", "10%", "ok", INFO)),
@@ -531,6 +544,7 @@ def test_run_checks_warning_severity():
 
 
 # ── main ────────────────────────────────────────────────────
+
 
 def test_main_json(capsys):
     from monitoring.server_monitor import main

@@ -27,6 +27,7 @@ from pathlib import Path
 # Add parent dir so shared_config is importable
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
+
 def _load_telegram_config():
     """Load Telegram config from shared_config or environment."""
     try:
@@ -35,6 +36,7 @@ def _load_telegram_config():
         return os.getenv("TELEGRAM_BOT_TOKEN", ""), os.getenv("TELEGRAM_CHAT_ID", "")
     else:
         return TELEGRAM_BOT_TOKEN, TELEGRAM_CHAT_ID
+
 
 _TG_TOKEN, _TG_CHAT = _load_telegram_config()
 
@@ -57,9 +59,9 @@ WARNING = "warning"
 CRITICAL = "critical"
 
 SEVERITY_EMOJI = {
-    INFO: "\u2705",       # green check
+    INFO: "\u2705",  # green check
     WARNING: "\u26a0\ufe0f",  # warning sign
-    CRITICAL: "\U0001f534",   # red circle
+    CRITICAL: "\U0001f534",  # red circle
 }
 
 STATE_DIR = Path(os.getenv("MON_STATE_DIR", "/opt/heartbeat/state"))
@@ -85,6 +87,7 @@ class MonitorReport:
 
 
 # ── System checks ────────────────────────────────────────────
+
 
 def check_disk() -> list[CheckResult]:
     """Check disk usage for all mounted filesystems."""
@@ -119,13 +122,15 @@ def check_disk() -> list[CheckResult]:
         else:
             severity = INFO
 
-        results.append(CheckResult(
-            name=f"disk:{mount}",
-            status="critical" if severity == CRITICAL else "warning" if severity == WARNING else "ok",
-            value=f"{pct}%",
-            message=f"{mount}: {used}/{size} ({pct}%), {avail} free",
-            severity=severity,
-        ))
+        results.append(
+            CheckResult(
+                name=f"disk:{mount}",
+                status="critical" if severity == CRITICAL else "warning" if severity == WARNING else "ok",
+                value=f"{pct}%",
+                message=f"{mount}: {used}/{size} ({pct}%), {avail} free",
+                severity=severity,
+            )
+        )
 
     return results or [CheckResult("disk", INFO, "N/A", "No monitored filesystems found")]
 
@@ -272,6 +277,7 @@ def check_load() -> CheckResult:
 
 # ── Docker checks ────────────────────────────────────────────
 
+
 def check_docker() -> list[dict]:
     """Check Docker container health. Returns list of container status dicts."""
     containers = []
@@ -305,13 +311,15 @@ def check_docker() -> list[dict]:
         elif "Restarting" in status:
             health = "restarting"
 
-        containers.append({
-            "id": cid,
-            "name": name,
-            "image": image,
-            "status": status,
-            "health": health,
-        })
+        containers.append(
+            {
+                "id": cid,
+                "name": name,
+                "image": image,
+                "status": status,
+                "health": health,
+            }
+        )
 
     return containers
 
@@ -319,11 +327,15 @@ def check_docker() -> list[dict]:
 def docker_check_results(containers: list[dict]) -> list[CheckResult]:
     """Convert docker container list to CheckResults."""
     if not containers:
-        return [CheckResult(
-            "docker", INFO, "N/A",
-            "Docker: no containers found or no access",
-            severity=INFO,
-        )]
+        return [
+            CheckResult(
+                "docker",
+                INFO,
+                "N/A",
+                "Docker: no containers found or no access",
+                severity=INFO,
+            )
+        ]
 
     results = []
     for c in containers:
@@ -334,18 +346,21 @@ def docker_check_results(containers: list[dict]) -> list[CheckResult]:
         else:
             severity = INFO
 
-        results.append(CheckResult(
-            name=f"docker:{c['name']}",
-            status=c["health"],
-            value=c["health"],
-            message=f"{c['name']} ({c['image']}): {c['status']}",
-            severity=severity,
-        ))
+        results.append(
+            CheckResult(
+                name=f"docker:{c['name']}",
+                status=c["health"],
+                value=c["health"],
+                message=f"{c['name']} ({c['image']}): {c['status']}",
+                severity=severity,
+            )
+        )
 
     return results
 
 
 # ── Telegram alerting ────────────────────────────────────────
+
 
 def send_telegram(message: str, token: str = "", chat_id: str = "") -> bool:
     """Send a Telegram message. Returns True on success."""
@@ -365,12 +380,14 @@ def send_telegram(message: str, token: str = "", chat_id: str = "") -> bool:
         message = message[:3990] + "\n..."
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"
-    data = urllib.parse.urlencode({
-        "chat_id": chat_id,
-        "text": message,
-        "parse_mode": "Markdown",
-        "disable_web_page_preview": "true",
-    }).encode()
+    data = urllib.parse.urlencode(
+        {
+            "chat_id": chat_id,
+            "text": message,
+            "parse_mode": "Markdown",
+            "disable_web_page_preview": "true",
+        }
+    ).encode()
 
     try:
         req = urllib.request.Request(url, data=data, method="POST")  # noqa: S310
@@ -457,6 +474,7 @@ def should_alert(report: MonitorReport) -> bool:
 
 
 # ── Main ─────────────────────────────────────────────────────
+
 
 def run_checks() -> MonitorReport:
     """Run all monitoring checks and return a report."""
