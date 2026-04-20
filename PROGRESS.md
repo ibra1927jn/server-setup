@@ -13,6 +13,7 @@
 - Limpieza de contexto.
 
 ## Completado recientemente
+- [2026-04-20] | Heartbeat #51: full audit — no issues found. 556/556 passing, 100% coverage, 0 lint errors, 0 format issues. Scanned: bare excepts (0), TODO/FIXME/HACK (0), hardcoded creds (0), noqa directives (3 — verified still needed via non-preview S310/S105 triggers), complexity (C901/PLR0915/PLR0912/PLR0911 all clean), debug logs (none in Python — console.log only inside JS payload strings). Preview-only findings (FURB103/FURB113/RUF069) deemed style-only, not applied. Codebase fully stable
 - [2026-04-06] | Heartbeat #50: full audit — no issues found. 556/556 passing, 100% coverage, 0 lint errors, 0 format issues. Scanned: bare excepts (0), TODO/FIXME/HACK (0), hardcoded creds (0), noqa directives (3 — all verified needed), formatting (132 files clean). Codebase fully stable
 - [2026-04-06] | Heartbeat #49: full audit — no issues found. 556/556 passing, 100% coverage, 0 lint errors, 0 format issues. Scanned: bare excepts (0), TODO/FIXME/HACK (0), hardcoded creds (0), formatting (132 files clean). Codebase fully stable
 - [2026-04-06] | Heartbeat #48: full audit — no issues found. 556/556 passing, 100% coverage, 0 lint errors, 0 format issues. Scanned: bare excepts (0), TODO/FIXME/HACK (0), hardcoded creds (0), noqa directives (3 — all verified needed), extended ruff ALL rules (only PLR2004 on HTTP 200). .env.example doc improvements still blocked by pre-commit hook (branch requires 'infra'/'docker')
